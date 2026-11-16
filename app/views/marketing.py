@@ -1,7 +1,7 @@
 """The customer-facing marketing website."""
 from __future__ import annotations
 
-from .. import auth, catalog, config, db
+from .. import auth, catalog, config, db, stock
 from ..icons import i
 from ..services import email as mail
 from ..web import HTTPError, esc, redirect, router, url
@@ -46,7 +46,9 @@ def category_art(group: str) -> str:
 def category_tiles() -> str:
     tiles = []
     for key, g in catalog.GROUPS.items():
-        tiles.append(f"""<a class="cat-tile" href="{g['path']}" data-reveal>{category_art(key)}
+        photo = stock.url(key)
+        art = (f'<div class="cat-tile__photo"><img src="{photo}" alt="" loading="lazy" decoding="async"></div>' if photo else category_art(key))
+        tiles.append(f"""<a class="cat-tile" href="{g['path']}" data-reveal>{art}
 <h3>{esc(g['name'])}</h3><p>{esc(g['blurb'])}</p><span class="arrow-link"><span>Explore {esc(g['name'].lower())}</span>{i("arrow")}</span></a>""")
     return f'<div class="grid grid--4" data-stagger>{"".join(tiles)}</div>'
 
@@ -164,6 +166,23 @@ FEATURES = [
 TESTIMONIALS: list = []
 
 
+def why_digital() -> str:
+    """Printed cards versus one link, for 300 guests. Printing estimate: R30 to R50 per printed invitation
+    in South Africa (Bridebook, 2025 guide), before envelopes, RSVP cards and delivery."""
+    low = min((p["price_cents"] for p in catalog.packages()), default=0)
+    rows = [("Cost", "About R9,000 to R15,000 to print 300 cards, before envelopes, RSVP cards and delivery",
+             f"From {catalog.money(low)} once-off, however many guests you invite"),
+            ("Sending", "Weeks of hand-delivering and posting", "On WhatsApp in minutes, to everyone"),
+            ("Changes", "A new venue or time means reprinting", "Change it once and every guest sees it"),
+            ("Replies", "Phone calls, messages and a spreadsheet", "RSVPs, meal choices and dietary needs arrive in one place"),
+            ("On the day", "Separate menus, programmes and seating lists to print", "Programme, menu, map and their table on their phone")]
+    body = "".join(f'<div class="vs-row"><span class="vs-label mono tiny">{esc(k)}</span><span class="vs-old">{i("close")}<span><span class="vs-tag">Printed: </span>{esc(a)}</span></span>'
+                   f'<span class="vs-new">{i("check")}<span><span class="vs-tag">{esc(config.BRAND_NAME)}: </span>{esc(b)}</span></span></div>' for k, a, b in rows)
+    return (f'<section class="section"><div class="container">{section_head("Why send your invitations this way", "Say you are inviting 300 people.")}'
+            f'<div class="vs box"><div class="vs-row vs-head"><span></span><b>Printed cards</b><b>One {esc(config.BRAND_NAME)} link</b></div>{body}</div>'
+            f'<p class="tiny muted" style="margin-top:10px">Printing estimate based on South African prices of about R30 to R50 per printed invitation.</p></div></section>')
+
+
 @router.get("/")
 def home(req):
     pastel_first = ["bloom", "confetti", "aurora", "cradle", "atelier", "linea"]
@@ -190,6 +209,8 @@ def home(req):
 
 <section class="section"><div class="container">{section_head("Made for every celebration", "Pick your occasion. Each one comes with templates and tools that fit it, from family delegations at a lobola to meal choices at a gala.")}
 {category_tiles()}</div></section>
+
+{why_digital()}
 
 <section class="section section--surface"><div class="container">
 {section_head("Finished event websites", "Real layouts, filled with sample content. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}

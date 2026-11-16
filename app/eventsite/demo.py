@@ -107,7 +107,7 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
     menus = [{"name": "Menu" if group != "weddings" else "Reception menu", "description": "", "items": items}] if items else []
     return {
         "_demo": True, "_design": design, "_group": group,
-        "_functions": functions, "_schedule": schedule, "_menus": menus, "_hero": "",
+        "_functions": functions, "_schedule": schedule, "_menus": menus, "_hero": _stock_hero(template_slug, group),
         "_gallery": [{"url": "", "caption": c} for c in ("", "", "", "", "", "")],
         "id": 0, "uid": "demo", "slug": f"sample-{template_slug}", "status": "published", "owner_id": 0,
         "template": template_slug, "category": s["category"], "name": s["name"], "hosts": s["hosts"],
@@ -128,3 +128,11 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
         "sections": {}, "report_prefs": {}, "selected_package": "signature", "paid_package": "signature",
         "hosting_until": None, "rsvp_open": 1, "published_at": None, "wizard_done": [],
     }
+
+
+def _stock_hero(slug: str, group: str) -> str:
+    from .. import stock
+    if slug == "heritage" and stock.url("traditional"):
+        return stock.url("traditional")
+    return stock.url(group)
+

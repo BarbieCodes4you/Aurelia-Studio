@@ -816,6 +816,11 @@ def step_food(req, ev):
 
 
 # --- step 6: seating -----------------------------------------------------------------------------------
+SEATING_HOWTO = ('<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">How you\'ll seat your guests</h3>'
+                 '<ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:12px">'
+                 '<li><span class="mono">01</span><div><b>Guests reply on your website</b><p class="small muted" style="margin-top:4px">Their names, plus-ones and meal choices come into your dashboard.</p></div></li><li><span class="mono">02</span><div><b>Tap “Seat everyone automatically”</b><p class="small muted" style="margin-top:4px">In your dashboard\'s seating chart. Families and groups stay together at the tables you chose, and nobody is put at the top table.</p></div></li><li><span class="mono">03</span><div><b>Move anyone you like</b><p class="small muted" style="margin-top:4px">Drag a guest to another table, or tap a guest and then a table. Then print the plan or download it for your venue.</p></div></li>'
+                 '</ol></div>')
+
 TOP_CHOICES = {
     "weddings": ("Where will the couple sit?", [("sweetheart", "Sweetheart table", "Just the two of you, facing your guests."),
                                                 ("head", "Head table", "The couple with the bridal party, along one side, facing guests."),
@@ -877,6 +882,7 @@ def step_seating(req, ev):
 <div class="form-row form-row--2">{field("capacity", "Seats per table", layout.get("capacity") or 10, type="number", errors=f.errors, attrs={"min": 2, "max": 40})}
 {field("table_count", "Number of guest tables", len(guest_tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 120}, hint=f"About {suggested} for {est} guests." if est else "We'll adjust this once you know your numbers.")}</div>
 <div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview data-dance="{1 if group in ("weddings", "parties") else 0}"></div></div>
+{SEATING_HOWTO}
 <div class="field{' has-error' if 'plan_now' in f.errors else ''}">{check("plan_now", "Create these tables now", bool(req.get("plan_now")), hint="Optional. Otherwise we create them from this layout when you open the seating editor. You can rename and move tables there.")}</div>
 {field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}{SEATING_STEP_JS}"""
     return wizard_frame(req, ev, 6, inner)

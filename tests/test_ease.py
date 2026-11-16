@@ -143,6 +143,26 @@ class EaseTests(unittest.TestCase):
         add_guest(self.ev, "Ann", status="pending", phone="082 111 2222")
         self.assertIn("Send your invitations", self.client.get(self.base).text)
 
+    def test_booking_box_on_overview(self):
+        self.assertNotIn("Your booking", self.client.get(self.base).text)
+        events.touch(self.ev["id"], paid_package="premium", status="published", hosting_until="2027-09-30")
+        db.insert("orders", {"uid": "ord123", "event_id": self.ev["id"], "user_id": self.owner["id"], "package_code": "premium",
+                             "amount_cents": 1299900, "description": "Premium Experience", "status": "paid", "mode": "sandbox", "gateway": "sandbox", "invoice_no": "INV-0001",
+                             "paid_at": "2026-11-16T10:00:00", "created_at": db.now(), "updated_at": db.now()})
+        t = self.client.get(self.base).text
+        self.assertIn("Your booking", t)
+        self.assertIn("R12,999", t)
+        self.assertIn("/dashboard/orders/ord123/receipt", t)
+        self.assertIn("Online until", t)
+
+    def test_home_explains_why_digital(self):
+        t = Client(self.app).get("/").text
+        self.assertIn("Why send your invitations this way", t)
+        self.assertLess(t.index("Why send your invitations this way"), t.index("Finished event websites"))
+
+    def test_seating_step_explains_placing_guests(self):
+        self.assertIn("Seat everyone automatically", self.client.get(self.base + "/setup/6").text)
+
     # --- set-up help ------------------------------------------------------------------------------------------
     def test_setup_help_request(self):
         anon = Client(self.app)

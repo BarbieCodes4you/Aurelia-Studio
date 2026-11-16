@@ -153,12 +153,33 @@ def overview(req, uid):
     actions = (f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/setup/1">{i("edit")}Edit details</a>'
                f'<a class="btn btn--secondary btn--sm" href="{events.public_path(ev)}" target="_blank" rel="noopener">{i("eye")}View website</a>')
     head = page_head(ev["name"], esc(" · ".join(x for x in (catalog.category_name(ev["category"]), venue.get("name", "")) if x)), actions)
-    body = head + banner + next_html + kpis + f"""<div class="cols cols--2"><div class="stack"><div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
+    booking = _booking_box(ev, paid, live)
+    body = head + banner + next_html + kpis + f"""<div class="cols cols--2"><div class="stack">{booking}<div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
 <a class="arrow-link" href="{base(ev)}/rsvps"><span>All responses</span>{i("arrow")}</a></div>{recent_box}</div>{share}</div>
 <div class="box"><div class="box__head"><h2>Checklist</h2><span class="small muted">{done} of {len(checklist)}</span></div>
 <div class="progress" style="margin-bottom:12px"><span style="width:{round(100 * done / len(checklist))}%"></span></div>
 <ul class="list-plain list-rows">{check_html}</ul></div></div>"""
     return organiser_page(req, ev, "Overview", body, "")
+
+
+def _booking_box(ev, paid, live) -> str:
+    """The client's booking at a glance: package, payment, receipt, website link and how long it stays online."""
+    if not paid:
+        return ""
+    order = db.one("SELECT * FROM orders WHERE event_id = ? AND status = 'paid' ORDER BY paid_at DESC, id DESC LIMIT 1", (ev["id"],))
+    rows = [("Package", esc(paid["name"]))]
+    if order:
+        rows.append(("Paid", f'{catalog.money(order["amount_cents"])} on {esc(forms.fmt_date((order["paid_at"] or "")[:10]))}'
+                             f'{" (test payment)" if order["mode"] == "sandbox" else ""}'))
+        rows.append(("Reference", f'<span class="mono">{esc(order["invoice_no"] or order["uid"])}</span> · '
+                                  f'<a class="text-link" href="/dashboard/orders/{esc(order["uid"])}/receipt">Receipt</a>'))
+    pill = '<span class="pill pill--ok">Live</span>' if live else '<span class="pill pill--draft">Not live</span>'
+    rows.append(("Website", f'<a class="text-link" href="{esc(events.public_path(ev))}" target="_blank" rel="noopener">{esc(events.public_url(ev))}</a> {pill}'))
+    if ev.get("hosting_until"):
+        rows.append(("Online until", esc(forms.fmt_date(ev["hosting_until"]))))
+    dl = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
+    return (f'<div class="box"><div class="box__head"><h2>Your booking</h2><a class="arrow-link" href="/dashboard/billing"><span>Billing</span>{i("arrow")}</a></div>'
+            f'<dl class="dl">{dl}</dl></div>')
 
 
 def _next_steps(ev, s, paid, live, days, tables) -> str:
