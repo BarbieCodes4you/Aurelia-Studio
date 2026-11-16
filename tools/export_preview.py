@@ -52,6 +52,38 @@ open(os.path.join(OUT, "static/js/app.js"), "w").write(js)
 # --- data for the browser journey ----------------------------------------------------------------
 links_file = os.path.join(SRC, "preview_site", "payment_links.json")
 payment_links = json.load(open(links_file)) if os.path.isfile(links_file) else {}
+PAY_HOSTS = ("payfast.io", "payfast.co.za", "payf.st")
+
+
+def _pay_host_ok(url: str) -> bool:
+    m = re.match(r"^https://([^/?#]+)", url or "")
+    return bool(m) and any(m.group(1) == h or m.group(1).endswith("." + h) for h in PAY_HOSTS)
+
+
+def payment_option(value):
+    """A package's payment set-up: a PayFast link, or the HTML of a PayFast "Pay Now" button pasted as it
+    was generated. The button's form is rebuilt from its action and hidden fields only, and only for
+    PayFast addresses, so nothing else from the pasted code reaches the page."""
+    value = (value or "").strip() if isinstance(value, str) else ""
+    if not value:
+        return ""
+    if "<form" in value.lower():
+        action = re.search(r'<form[^>]*\saction=["\']([^"\']+)', value, re.I)
+        if not action or not _pay_host_ok(action.group(1)):
+            sys.exit("payment_links.json: a pasted button must post to a PayFast address (payfast.io or payfast.co.za).")
+        fields = {}
+        for tag in re.findall(r"<input[^>]*>", value, re.I):
+            name = re.search(r'\sname=["\']([^"\']+)', tag, re.I)
+            val = re.search(r'\svalue=["\']([^"\']*)', tag, re.I)
+            kind = re.search(r'\stype=["\']([^"\']+)', tag, re.I)
+            if name and (not kind or kind.group(1).lower() == "hidden"):
+                fields[name.group(1)] = val.group(1) if val else ""
+        if not fields:
+            sys.exit("payment_links.json: the pasted button has no hidden fields. Paste the whole code PayFast gives you.")
+        return {"action": action.group(1), "fields": fields}
+    if not _pay_host_ok(value):
+        sys.exit(f"payment_links.json: {value[:60]} isn't a PayFast link (https://...payfast.io or payfast.co.za).")
+    return value
 data = {
     "brand": config.BRAND_NAME, "email": EMAIL,
     "groups": {k: {"name": g["name"]} for k, g in catalog.GROUPS.items()},
@@ -74,7 +106,7 @@ data = {
                   "moon": designs.MOON, "star": designs.STAR},
     "host_label": {k: list(v) for k, v in wizard.HOST_LABEL.items()},
     "courses": wizard.COURSES, "kinds": [list(k) for k in wizard.KINDS], "dress_codes": wizard.DRESS_CODES,
-    "payment_links": {k: v for k, v in payment_links.items() if isinstance(v, str)},
+    "payment_links": {k: payment_option(v) for k, v in payment_links.items() if not k.startswith("_")},
     "suggest": {"wording": suggestions.WORDING, "programmes": {k: [list(x) for x in v] for k, v in suggestions.PROGRAMMES.items()},
                 "programme_for": suggestions.PROGRAMME_FOR, "default_start": suggestions.DEFAULT_START, "name_noun": suggestions.NAME_NOUN},
     # Netlify Forms only exist on a standalone (Netlify) build; elsewhere the booking falls back to email.

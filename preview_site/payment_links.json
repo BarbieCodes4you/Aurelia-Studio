@@ -1,4 +1,5 @@
 {
+  "_help": "For each package, paste EITHER a PayFast payment link (https://...) OR the whole HTML code of a PayFast Pay Now button, exactly as PayFast gives it. Leave empty to email clients a payment link instead. Then rebuild: python3 tools/export_preview.py dist/aurelia-site --standalone",
   "essential": "",
   "premium": "",
   "signature": ""

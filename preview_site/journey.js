@@ -909,9 +909,13 @@
         ((ev.images.gallery || []).length > 40 ? " Your first 40 gallery photos came through; email the rest to " + esc(email) + " with your reference." : "") + "</div></div>" +
         (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you sent it.<div style="margin-top:10px"><button class="btn btn--primary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "");
     }
+    var payBtn = typeof link === "object" && link.action
+      ? '<form method="post" action="' + esc(link.action) + '" target="_blank">' + Object.keys(link.fields).map(function (k) { return '<input type="hidden" name="' + esc(k) + '" value="' + esc(link.fields[k]) + '">'; }).join("") +
+        '<button class="btn btn--primary btn--lg" type="submit">' + icon("card") + " Pay " + money(p.price_cents) + " securely</button></form>"
+      : '<a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a>";
     var pay = link
-      ? '<div class="box" style="display:grid;gap:10px"><h2 style="font-size:1.25rem">Pay now</h2><p class="small muted">Pay securely with PayFast by card, instant EFT and more. Use <b class="mono">' + esc(b.ref) + '</b> as your reference. Your website goes live once payment is confirmed.</p>' +
-        '<div><a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a></div></div>"
+      ? '<div class="box" style="display:grid;gap:10px"><h2 style="font-size:1.25rem">Pay now</h2><p class="small muted">Pay securely with PayFast by card, instant EFT and more. If PayFast asks for a reference, use <b class="mono">' + esc(b.ref) + '</b>. Your website goes live once payment is confirmed.</p>' +
+        "<div>" + payBtn + "</div></div>"
       : '<div class="notice">' + icon("card") + "<span><b>Payment:</b> we'll email you a secure PayFast payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
     var next = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.25rem">What happens next</h2><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:14px">' +
       [["01", "We check your details", "Within one working day. If anything's missing, we ask you."], ["02", link ? "You pay" : "You get a payment link", link ? "Use the button above whenever you're ready." : "By email, for " + money(p.price_cents) + "."],
