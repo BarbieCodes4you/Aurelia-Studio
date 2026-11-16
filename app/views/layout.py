@@ -93,17 +93,21 @@ def header(req, current: str = "") -> str:
 
 def footer() -> str:
     year = __import__("datetime").date.today().year
+    wa = config.whatsapp_link()
     social = "".join(
-        f'<a href="{href}" aria-label="{label} (link to be confirmed)">{i(icon)}</a>'
-        for label, href, icon in [("Instagram", "#", "image"), ("Facebook", "#", "users"), ("WhatsApp", "#", "chat")])
+        f'<a href="{esc(href)}" target="_blank" rel="noopener" aria-label="{label}">{i(icon)}</a>'
+        for label, href, icon in [("Instagram", config.SOCIAL_INSTAGRAM, "image"), ("Facebook", config.SOCIAL_FACEBOOK, "users"),
+                                  ("TikTok", config.SOCIAL_TIKTOK, "music"), ("WhatsApp", wa, "chat")] if href)
+    chat = (f'<a class="wa-float" href="{esc(config.whatsapp_link("Hi " + config.BRAND_NAME + ", I have a question about my event."))}" target="_blank" rel="noopener">'
+            f'{i("chat")}<span>Chat on WhatsApp</span></a>') if wa else ""
     return f"""<footer class="site-footer on-dark"><div class="container">
 <div class="footer-grid"><div class="stack" style="--stack:14px">{brand()}<p class="muted" style="max-width:38ch">{esc(config.BRAND_TAGLINE)} {esc(config.BRAND_LINE)}</p>
 <p class="small muted">{esc(config.COMPANY_ADDRESS)}<br><a class="text-link" href="mailto:{esc(config.SUPPORT_EMAIL)}">{esc(config.SUPPORT_EMAIL)}</a></p></div>
 <div><h3>Events</h3><ul><li><a href="/weddings">Weddings</a></li><li><a href="/baby-celebrations">Baby celebrations</a></li><li><a href="/parties">Parties</a></li><li><a href="/celebrations">Other events</a></li></ul></div>
-<div><h3>Platform</h3><ul><li><a href="/templates">Templates</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/faq">FAQ</a></li></ul></div>
+<div><h3>Platform</h3><ul><li><a href="/templates">Templates</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/help-me-set-up">We'll set it up for you</a></li><li><a href="/faq">FAQ</a></li></ul></div>
 <div><h3>Company</h3><ul><li><a href="/contact">Contact &amp; support</a></li><li><a href="/privacy">Privacy (POPIA)</a></li><li><a href="/terms">Terms of service</a></li><li><a href="/refunds">Refund policy</a></li></ul></div></div>
 <div class="footer-bottom"><span>© {year} {esc(config.BRAND_NAME)}. Prices in South African Rand, VAT inclusive.</span><div class="socials">{social}</div></div>
-<div class="wordmark-giant" aria-hidden="true"><span>A</span>urelia</div></div></footer>"""
+<div class="wordmark-giant" aria-hidden="true"><span>A</span>urelia</div></div></footer>{chat}"""
 
 
 def page(req, title: str, body: str, current: str = "", description: str = "", body_class: str = "site",

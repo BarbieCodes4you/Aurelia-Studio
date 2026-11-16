@@ -83,6 +83,24 @@ BRAND_LINE = "One event. One platform. One link. Everything organised."
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "invitesaurelia@gmail.com")
 COMPANY_ADDRESS = env("COMPANY_ADDRESS", "Johannesburg, South Africa")  # [TBC]
 INFORMATION_OFFICER = env("INFORMATION_OFFICER_EMAIL", SUPPORT_EMAIL)   # POPIA contact
+# Support on WhatsApp: set a number (e.g. 082 123 4567) to show a chat button on every page. Empty hides it.
+WHATSAPP_NUMBER = env("WHATSAPP_NUMBER", "")
+# Footer social links: full web addresses. Each one shows only when it is set.
+SOCIAL_INSTAGRAM = env("SOCIAL_INSTAGRAM", "")
+SOCIAL_FACEBOOK = env("SOCIAL_FACEBOOK", "")
+SOCIAL_TIKTOK = env("SOCIAL_TIKTOK", "")
+
+
+def whatsapp_link(text: str = "") -> str:
+    """wa.me link to the support number (South African 0XX numbers become 27XX), or "" when none is set."""
+    import re
+    from urllib.parse import quote
+    d = re.sub(r"\D", "", WHATSAPP_NUMBER)
+    if d.startswith("0") and len(d) == 10:
+        d = "27" + d[1:]
+    if not d:
+        return ""
+    return f"https://wa.me/{d}" + (f"?text={quote(text)}" if text else "")
 CURRENCY = "ZAR"
 TIMEZONE = env("TIMEZONE", "Africa/Johannesburg")
 

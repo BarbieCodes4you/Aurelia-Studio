@@ -160,11 +160,8 @@ FEATURES = [
     ("file", "Reports in one click", "Guest list, RSVPs, seating, dietary and final reports as PDF or Excel-ready CSV."),
 ]
 
-TESTIMONIALS = [
-    ("We sent one link on WhatsApp and the RSVPs simply arrived. Seating took an evening, not a week.", "Demonstration quote · white wedding, Pretoria"),
-    ("Both families had their own guest lists for the traditional ceremony and the reception. It kept everyone calm.", "Demonstration quote · traditional wedding, Durban"),
-    ("The baby shower page looked like a boutique invitation, and the registry link saved so many questions.", "Demonstration quote · baby shower, Cape Town"),
-]
+# Real customer reviews only: (quote, "Name · occasion, city"). The section is hidden while this is empty.
+TESTIMONIALS: list = []
 
 
 @router.get("/")
@@ -176,6 +173,11 @@ def home(req):
                     for ic, t, d in FEATURES)
     quotes = "".join(f'<figure class="card quote" data-reveal><blockquote>“{esc(q)}”</blockquote><figcaption>{esc(c)}</figcaption></figure>'
                      for q, c in TESTIMONIALS)
+    reviews = (f'<section class="section"><div class="container">{section_head("What hosts say", "From hosts who used " + esc(config.BRAND_NAME) + " for their events.")}'
+               f'<div class="grid grid--3" data-stagger>{quotes}</div></div></section>') if TESTIMONIALS else ""
+    reviews += f"""<section class="section"><div class="container"><div class="cta-panel"><div><h2 style="font-size:1.6rem">Short on time? We'll set it up for you.</h2>
+<p>Send us your details on WhatsApp or by email and our team builds your website. You check it, we change anything you like, and you pay once you're happy.</p></div>
+<div class="btn-row"><a class="btn btn--primary btn--lg" href="/help-me-set-up">Ask us to set it up</a></div></div></div></section>"""
     body = f"""
 <section class="hero"><div class="grid-texture"></div><div class="hero__haze"></div>
 <div class="container hero-grid"><div class="hero-enter">
@@ -216,8 +218,7 @@ def home(req):
 {section_head("Affordable luxury, priced once", "No per-guest charges, no per-invitation fees. One payment covers your website, your guests and your tools.", '<a class="arrow-link" href="/pricing"><span>Compare every feature</span>' + i("arrow") + '</a>', "split")}
 {price_cards()}</div></section>
 
-<section class="section"><div class="container">{section_head("What hosts will tell you", '<span class="demo-flag">Demonstration content</span> These quotes illustrate the experience. Real customer reviews will replace them after launch.')}
-<div class="grid grid--3" data-stagger>{quotes}</div></div></section>
+{reviews}
 
 <section class="section section--surface"><div class="container container--narrow">{section_head("Questions, answered")}{faq_list(FAQ[:6])}
 <p style="margin-top:24px"><a class="arrow-link" href="/faq"><span>More questions</span>{i("arrow")}</a></p></div></section>
@@ -367,7 +368,8 @@ def pricing(req):
     body = page_hero('Simple pricing, <span class="serif grad">paid once</span>',
                      "Every package includes your personalised event website, a premium template and unlimited link sharing. Choose the tools you need.",
                      [("Pricing", "")]) + f"""
-<section class="section"><div class="container">{price_cards()}</div></section>
+<section class="section"><div class="container">{price_cards()}
+<div class="notice" style="margin-top:22px">{i("wand")}<span>Short on time? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>. Tell us about your event and we'll send you a quote.</span></div></div></section>
 <section class="section section--surface"><div class="container">{section_head("Compare every feature")}
 <div class="table-wrap table-wrap--sticky"><table class="compare"><thead><tr><th scope="col">Feature</th>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div></div></section>
 <section class="section"><div class="container">{section_head("Good to know")}<div class="grid grid--4">{note_html}</div></div></section>
@@ -537,6 +539,7 @@ def contact(req):
     body = page_hero('Contact and <span class="serif grad">support</span>', "Questions before you start, help with your event, or a privacy request. We're here.",
                      [("Contact", "")]) + f"""<section class="section"><div class="container"><div class="split split--57" style="align-items:start">
 <div class="stack" style="--stack:18px"><div class="notice">{i("mail")}<div><b>Email</b><br><a class="text-link" href="mailto:{esc(config.SUPPORT_EMAIL)}">{esc(config.SUPPORT_EMAIL)}</a></div></div>
+{f'<div class="notice">{i("chat")}<div><b>WhatsApp</b><br><a class="text-link" href="{esc(config.whatsapp_link())}" target="_blank" rel="noopener">{esc(config.WHATSAPP_NUMBER)}</a></div></div>' if config.WHATSAPP_NUMBER else ""}
 <div class="notice">{i("shield")}<div><b>Information officer (POPIA)</b><br><a class="text-link" href="mailto:{esc(config.INFORMATION_OFFICER)}">{esc(config.INFORMATION_OFFICER)}</a></div></div></div>
 <div>{form_html}</div></div></div></section>"""
     return page(req, "Contact", body, "/contact")
