@@ -277,9 +277,6 @@ def package_gaps(ev, code: str) -> list[str]:
     design = ev["design"] if isinstance(ev["design"], dict) else db.loads(ev["design"], {})
     if (design or {}).get("colors") and "advanced_design" not in feats:
         gaps.append("your own colours")
-    gs = ev["guest_settings"] if isinstance(ev["guest_settings"], dict) else db.loads(ev["guest_settings"], {})
-    if len((gs or {}).get("categories") or []) > 1 and "guest_categories" not in feats:
-        gaps.append("several guest categories")
     return gaps
 
 
@@ -300,3 +297,29 @@ def draft_url(ev) -> str:
 def draft_token_ok(ev, token: str) -> bool:
     import hmac
     return bool(token) and hmac.compare_digest(token, draft_token(ev))
+
+
+def hosting_end(ev, months: int, start=None) -> str:
+    """When the website goes offline: `months` after `start` (default today), but never before one month
+    after the event date, so a client who books early never loses the site before the day."""
+    from datetime import date, timedelta
+    start = start or date.today()
+    end = start + timedelta(days=int(months * 30.5))
+    if ev.get("event_date"):
+        try:
+            end = max(end, date.fromisoformat(ev["event_date"]) + timedelta(days=31))
+        except ValueError:
+            pass
+    return end.isoformat()
+
+
+def keep_online_past_event(ev) -> None:
+    """After the event date changes on a live site, push hosting_until out if it would end too soon."""
+    if ev.get("hosting_until") and ev.get("event_date"):
+        from datetime import date, timedelta
+        try:
+            floor = (date.fromisoformat(ev["event_date"]) + timedelta(days=31)).isoformat()
+        except ValueError:
+            return
+        if ev["hosting_until"] < floor:
+            touch(ev["id"], hosting_until=floor)

@@ -297,3 +297,13 @@ class PaymentsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HostingRuleTest(unittest.TestCase):
+    def test_site_never_ends_before_a_month_after_the_event(self):
+        fresh_app("hosting")
+        ev = {"event_date": "2028-06-01"}
+        self.assertEqual(events.hosting_end(ev, 6, start=__import__("datetime").date(2026, 11, 16)), "2028-07-02")
+        self.assertEqual(events.hosting_end({"event_date": "2027-01-10"}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
+        self.assertEqual(events.hosting_end({"event_date": ""}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
+

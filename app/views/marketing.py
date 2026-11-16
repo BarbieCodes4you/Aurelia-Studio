@@ -100,7 +100,7 @@ FAQ = [
     ("Can I send invitations on WhatsApp?",
      "Yes. Share your event link or each guest's personal link straight into WhatsApp from your dashboard, copy a ready-made invitation message, or download a QR code for printed signage."),
     ("What happens after the event?",
-     "Your website stays online for your hosting period (6 to 18 months depending on package), so guests can revisit the gallery. You can download every report before it closes."),
+     "Your website stays online for your hosting period (6 to 18 months depending on package, counted from publishing), and never goes offline before a month after your event, so guests can revisit the gallery. You can download every report before it closes."),
     ("Can I upgrade later?",
      "Yes. Upgrade from your dashboard and pay only the difference between packages. Your content carries over."),
     ("What if I need help?",
@@ -361,7 +361,7 @@ def pricing(req):
         ("Unlimited link sharing", "Share your event link with as many people as you like, on any channel. It is not unlimited email: each package includes the guest email allowance shown above."),
         ("Pay once", "One payment per event. No subscriptions, no per-guest or per-invitation charges. Prices include 15% VAT."),
         ("Upgrade any time", "Move to a bigger package from your dashboard and pay only the difference."),
-        ("Hosting period", "Your website stays online for the months shown, starting when it is published. Extensions are available."),
+        ("Hosting period", "Your website stays online for the months shown, counted from when it is published, and never goes offline before a month after your event. Extensions are available."),
     ]
     note_html = "".join(f'<div class="box"><h3 style="font-size:1rem">{esc(t)}</h3><p class="muted small" style="margin-top:8px">{esc(d)}</p></div>' for t, d in notes)
     body = page_hero('Simple pricing, <span class="serif grad">paid once</span>',
@@ -577,7 +577,7 @@ def terms(req):
 <h2>Your account</h2><p>Keep your password safe. You are responsible for activity on your account and for the content you publish, including photos you upload, which must be yours to use.</p>
 <h2>Guests and communication</h2><p>You confirm you have a lawful basis to add each guest's details and to email them about your event. Don't use the platform for marketing, spam or anything unlawful. We may suspend events that break these terms.</p>
 <h2>Payments</h2><p>Prices are in South African Rand and include VAT. Your website is published only once our payment gateway confirms payment. Upgrades are charged as the difference between packages.</p>
-<h2>Hosting period</h2><p>Your event website stays online for the hosting period of your package from the date it is first published. We'll remind you before it ends.</p>
+<h2>Hosting period</h2><p>Your event website stays online for the hosting period of your package from the date it is first published. Whenever you book, it never goes offline before one month after your event date, including if you move the date. We'll remind you before it ends.</p>
 <h2>Email allowance</h2><p>Unlimited link sharing means you can share your link as often as you like. Emails sent through the platform are limited to your package's allowance.</p>
 <h2>Liability</h2><p>We work hard to keep the service available, but we can't guarantee it will be uninterrupted. To the extent the law allows, our liability is limited to the amount you paid for the event concerned. Nothing in these terms limits your rights under the Consumer Protection Act.</p>
 <h2>Changes</h2><p>We'll tell you about material changes to these terms by email before they take effect.</p>""")

@@ -136,6 +136,33 @@ class ManageTests(unittest.TestCase):
         self.assertIn("data-seating", r.text)
 
     # --- seating ----------------------------------------------------------------------------------
+    def test_auto_seat_keeps_families_together(self):
+        import json
+        mok = [add_guest(self.ev, n, family_group="Mokoena family", plus=1) for n in ("Thabo", "Lindi")]   # 4 people
+        dla = [add_guest(self.ev, n, family_group="Dlamini family") for n in ("Sipho", "Ayanda", "Zola")]  # 3 people
+        add_guest(self.ev, "Pending Pat", status="pending")
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        self.assertIn("created 1 tables", r["message"])
+        tables = {g["table"] for g in r["state"]["guests"] if g["name"].split()[0] in ("Thabo", "Lindi", "Sipho", "Ayanda", "Zola")}
+        self.assertEqual(len(tables), 1)                      # 7 people fit one table of 10
+        self.assertEqual(r["warning"], "")
+        self.assertIsNone(db.one("SELECT 1 FROM seat_assignments a JOIN guests g ON g.id = a.guest_id WHERE g.first_name = 'Pending'"))
+        # a second run with nothing left to seat says so; including pending seats Pat
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        self.assertIn("already has a seat", r["message"])
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={"include_pending": True}).text)
+        self.assertIn("Seated 1 party", r["message"])
+
+    def test_auto_seat_splits_big_groups_and_reports_overflow(self):
+        import json
+        for n in range(7):
+            add_guest(self.ev, f"Cousin{n}", family_group="Big family", plus=1)        # 14 people
+        self.client.post(self.base + "/seating/api/autocreate", json_body={"count": 1, "capacity": 10})
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        self.assertIn("Seated 5 parties", r["message"])
+        self.assertIn("2 parties (4 people) didn't fit", r["warning"])
+        self.assertEqual(r["state"]["tables"][0]["seated"], 10)
+
     def test_seating_api(self):
         a = add_guest(self.ev, "Ann", plus=1)      # party of 2
         b = add_guest(self.ev, "Ben", kids=2)       # party of 3

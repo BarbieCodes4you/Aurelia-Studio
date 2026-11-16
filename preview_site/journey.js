@@ -62,6 +62,11 @@
 
   // --- ready-made content and parsers (mirror app/suggestions.py) ---------------------------------
   var SUG = D.suggest || { wording: {}, programmes: {}, programme_for: {}, default_start: {} };
+  function autoName(category, hosts) {
+    var h = (hosts || "").trim(), noun = (SUG.name_noun || {})[category];
+    if (!h || !noun) return h;
+    return h + (/s$/.test(h) && !/'s$/.test(h) ? "' " : "'s ") + noun;
+  }
   function wordingOptions(ev) { return SUG.wording[ev.category] || SUG.wording["private-celebration"] || []; }
   function fillWording(text, hosts, deadline) {
     text = text.split("{hosts}").join(hosts || "the hosts");
@@ -142,7 +147,6 @@
     n = ev.functions.length; allowed = has("multi_functions") ? (lim.functions || 1) : 1;
     if (n > allowed) out.push((n - allowed) + " of your " + n + " event functions");
     if (ev.design.colors && !has("advanced_design")) out.push("your own colours");
-    if ((ev.guest_settings.categories || []).length > 1 && !has("guest_categories")) out.push("several guest categories");
     n = (ev.guest_list || []).length; if (n && !has("guest_management")) out.push("your guest list (" + plural(n, "guest") + ")");
     return out;
   }
@@ -449,8 +453,8 @@
       field("contact_email", "Your email", ev.contact.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your booking confirmation and payment link go here." }) +
       field("contact_phone", "Your mobile (optional)", ev.contact.phone, { type: "tel", attrs: { autocomplete: "tel" } }) + "</div></fieldset>" +
       field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
-      '<div class="form-row form-row--2">' + field("name", "Event name (only you see this)", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name) ? "1" : "0" },
-        hint: "Filled in from the names above. Change it if you like." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
+      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name || ev.name === autoName(ev.category, ev.hosts)) ? "1" : "0" },
+        hint: "Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
       field("description", "A short welcome or description", ev.description, { type: "textarea", hint: "Optional. One or two sentences guests read first." }) +
       '<div class="form-row form-row--3">' + field("event_date", "Date", ev.event_date, { type: "date", required: true, attrs: { min: todayIso() } }) +
       field("start_time", "Starts", ev.start_time, { type: "time" }) + field("end_time", "Ends", ev.end_time, { type: "time" }) + "</div>" +
@@ -459,7 +463,7 @@
   function collect1(ev, fd) {
     ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
     ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
-    ev.name = val(fd, "name") || ev.hosts || (cat(ev.category) || {}).name || "My event";
+    ev.name = val(fd, "name") || autoName(ev.category, ev.hosts) || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
   }
   function validate1(ev) {
@@ -1125,7 +1129,7 @@
     if (!form || e.target.type === "file") return;
     if (e.target.name && e.target.name.indexOf("color_") === 0) { var c = form.querySelector('input[type=color][data-sync="' + e.target.name + '"]'); if (c && /^#[0-9a-f]{6}$/i.test(e.target.value)) c.value = e.target.value; }
     if (e.target.name === "name") e.target.setAttribute("data-autoname", "0");
-    if (e.target.name === "hosts") { var nm = form.querySelector('[data-autoname="1"]'); if (nm) nm.value = e.target.value; }
+    if (e.target.name === "hosts") { var nm = form.querySelector('[data-autoname="1"]'), cs = form.querySelector("[name=category]"); if (nm) nm.value = autoName(cs ? cs.value : cur().category, e.target.value); }
     if (e.target.name === "guest_paste" || e.target.name === "menu_paste") return;
     clearTimeout(form._t);
     form._t = setTimeout(function () { collectStep(form); save(); refreshPreview(); }, 400);

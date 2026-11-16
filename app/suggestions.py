@@ -169,6 +169,21 @@ PROGRAMME_FOR = {"white-wedding": "wedding", "multi-day-wedding": "wedding"}
 DEFAULT_START = {"weddings": "14:00", "baby": "11:00", "parties": "18:00", "other": "10:00"}
 
 
+# How the automatic event name reads: "<names>'s <noun>". Occasions not listed use the names as typed
+# (party and corporate names are usually typed in full, e.g. "Kagiso's 40th").
+NAME_NOUN = {"white-wedding": "wedding", "traditional-wedding": "wedding", "multi-day-wedding": "wedding",
+             "lobola": "lobola celebration", "engagement": "engagement party", "baby-shower": "baby shower",
+             "gender-reveal": "gender reveal", "welcome-baby": "baby welcome", "graduation": "graduation celebration"}
+
+
+def auto_event_name(category: str, hosts: str) -> str:
+    hosts = (hosts or "").strip()
+    noun = NAME_NOUN.get(category)
+    if not hosts or not noun:
+        return hosts
+    return f"{hosts}' {noun}" if hosts.endswith("s") and not hosts.endswith("'s") else f"{hosts}'s {noun}"
+
+
 def wording_options(category: str) -> list[dict]:
     return WORDING.get(category) or WORDING["private-celebration"]
 

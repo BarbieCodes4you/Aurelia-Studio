@@ -608,6 +608,8 @@ def rsvps(req, uid):
     actions = ""
     if has(ev, "reminders") and s["pending"]:
         actions += f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/communications?template=guest_reminder&amp;audience=pending">{i("bell")}Remind pending guests</a>'
+    if has(ev, "personal_invites") and s["pending"]:
+        actions += f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/share/whatsapp?mode=remind">{i("chat")}Remind on WhatsApp</a>'
     if has(ev, "reports"):
         actions += f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/reports/rsvp.csv">{i("download")}Export CSV</a>'
     trs = []
@@ -718,6 +720,8 @@ def seating(req, uid):
 <span class="small">tables of</span><input class="input input--sm" name="capacity" type="number" min="1" max="40" value="10" style="width:80px" aria-label="Seats per table">
 <button class="btn btn--secondary btn--sm" type="submit">Create</button></form></details>
 <div data-table-editor hidden style="margin-top:14px;padding-top:14px;border-top:1px solid var(--color-line)"></div>
+<hr><button class="btn btn--primary btn--sm btn--block" type="button" data-autoseat>{i("wand")}Seat everyone automatically</button>
+<p class="tiny muted" style="margin:6px 0 0">Keeps families and groups together. Guests you've already placed stay where they are.</p>
 <hr><div class="row row--between"><h2 style="font-size:1rem">Not seated</h2><label class="switch small"><input type="checkbox" data-include-pending><span>Include pending</span></label></div>
 <p class="small muted" style="margin:4px 0 10px">Drag a guest onto a table, or tap a guest then tap a table.</p>
 <div data-pool aria-live="polite"></div></aside>
@@ -822,9 +826,70 @@ def seating_api(req, uid, action):
                       ON CONFLICT(guest_id) DO UPDATE SET table_id = excluded.table_id, assigned_at = excluded.assigned_at""",
                    (g["id"], t["id"], ev["id"], db.now()))
             _check_seating_complete(ev)
+    elif action == "autoseat":
+        message, warning = _auto_seat(ev, bool(body.get("include_pending")), count)
+        _check_seating_complete(ev)
+        return json_response({"ok": True, "warning": warning, "message": message, "state": seating_state(ev)})
     else:
         raise HTTPError(404)
     return json_response({"ok": True, "warning": warning, "state": seating_state(ev)})
+
+
+def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
+    """Seat every unseated party, keeping each family or group together where it fits. Groups go
+    largest first, VIPs first within a group, each to the table that leaves the least space over."""
+    statuses = ("attending", "pending") if include_pending else ("attending",)
+    marks = ",".join("?" * len(statuses))
+    guests = db.q(f"""SELECT g.* FROM guests g LEFT JOIN seat_assignments a ON a.guest_id = g.id
+                      WHERE g.event_id = ? AND a.guest_id IS NULL AND g.status IN ({marks})""", (ev["id"], *statuses))
+    if not guests:
+        return "Everyone who's coming already has a seat.", ""
+    people = sum(events.party_size(g) for g in guests)
+    created = 0
+    if table_count == 0:
+        need = min(60, -(-people // 10))
+        with db.transaction():
+            for k in range(need):
+                x, y = _auto_pos(k)
+                db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": 10, "shape": "round",
+                                             "pos_x": x, "pos_y": y, "sort": k})
+        created = need
+    tables = events.tables(ev["id"])
+    free = {t["id"]: t["capacity"] - t["seated"] for t in tables}
+    groups: dict[str, list] = {}
+    for g in guests:
+        groups.setdefault((g["family_group"] or g["side"] or g["category"] or "").strip().lower() or f"~{g['id']}", []).append(g)
+    ordered = sorted(groups.values(), key=lambda grp: -sum(events.party_size(g) for g in grp))
+    seated, left_out, now = 0, [], db.now()
+    with db.transaction():
+        for grp in ordered:
+            grp.sort(key=lambda g: (not g["is_vip"], g["last_name"].lower(), g["first_name"].lower()))
+            size = sum(events.party_size(g) for g in grp)
+            fits = [tid for tid, room in free.items() if room >= size]
+            if fits:                                # the whole group at one table
+                tid = min(fits, key=lambda t: free[t] - size)
+                free[tid] -= size
+                plan = [(g, tid) for g in grp]
+            else:                                   # too big for any table: party by party, roomiest table first
+                plan = []
+                for g in grp:
+                    room = [t for t, r in free.items() if r >= events.party_size(g)]
+                    if not room:
+                        left_out.append(g)
+                        continue
+                    tid = max(room, key=lambda t: free[t])
+                    free[tid] -= events.party_size(g)
+                    plan.append((g, tid))
+            for g, tid in plan:
+                db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, ?, ?, ?)",
+                       (g["id"], tid, ev["id"], now))
+                seated += 1
+    message = f"Seated {seated} part{'y' if seated == 1 else 'ies'}" + (f" and created {created} tables of 10" if created else "") + ". Drag anyone to fine-tune."
+    warning = ""
+    if left_out:
+        n = sum(events.party_size(g) for g in left_out)
+        warning = f"{len(left_out)} part{'y' if len(left_out) == 1 else 'ies'} ({n} people) didn't fit. Add a table or raise a table's capacity, then seat again."
+    return message, warning
 
 
 @router.get("/dashboard/events/<uid>/seating/print")

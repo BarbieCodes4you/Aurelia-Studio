@@ -11,7 +11,7 @@ from ..services.storage import storage
 from ..web import HTTPError, Response, download, esc, redirect, router
 from . import forms
 from .forms import Form, csrf
-from .manage import base, go, has, load, status_pill
+from .manage import base, go, guest_whatsapp, has, load, status_pill, wa_digits
 from .shell import account_page, locked_panel, organiser_page, page_head
 
 
@@ -115,6 +115,7 @@ def overview(req, uid):
 <div class="kpi"><span>RSVP completion</span><b>{s["completion"]}%</b><div class="progress" style="margin-top:10px"><span style="width:{s["completion"]}%"></span></div></div></div>"""
 
     tables = events.tables(ev["id"])
+    next_html = _next_steps(ev, s, paid, live, days, tables)
     checklist = [
         ("Event details and date", bool(ev.get("event_date") and ev.get("name")), f"{base(ev)}/setup/1"),
         ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/2"),
@@ -152,12 +153,46 @@ def overview(req, uid):
     actions = (f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/setup/1">{i("edit")}Edit details</a>'
                f'<a class="btn btn--secondary btn--sm" href="{events.public_path(ev)}" target="_blank" rel="noopener">{i("eye")}View website</a>')
     head = page_head(ev["name"], esc(" · ".join(x for x in (catalog.category_name(ev["category"]), venue.get("name", "")) if x)), actions)
-    body = head + banner + kpis + f"""<div class="cols cols--2"><div class="stack"><div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
+    body = head + banner + next_html + kpis + f"""<div class="cols cols--2"><div class="stack"><div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
 <a class="arrow-link" href="{base(ev)}/rsvps"><span>All responses</span>{i("arrow")}</a></div>{recent_box}</div>{share}</div>
 <div class="box"><div class="box__head"><h2>Checklist</h2><span class="small muted">{done} of {len(checklist)}</span></div>
 <div class="progress" style="margin-bottom:12px"><span style="width:{round(100 * done / len(checklist))}%"></span></div>
 <ul class="list-plain list-rows">{check_html}</ul></div></div>"""
     return organiser_page(req, ev, "Overview", body, "")
+
+
+def _next_steps(ev, s, paid, live, days, tables) -> str:
+    """The next three things to do, in order, so the organiser never has to work out what's next."""
+    venue = ev.get("venue") or {}
+    not_sent = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined'", (ev["id"],), 0)
+    steps = []   # (title, why, link, button)
+    if not (ev.get("hosts") and ev.get("event_date")):
+        steps.append(("Add your names and date", "Guests see these first.", f"{base(ev)}/setup/1", "Add details"))
+    if not (venue.get("name") and venue.get("address")):
+        steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/2", "Add venue"))
+    if not paid:
+        steps.append(("Choose a package and pay", "Your website goes live as soon as payment is confirmed.", f"{base(ev)}/setup/10", "Choose a package"))
+    elif not live and ev["status"] != "suspended":
+        steps.append(("Publish your website", "It's paid for. Publish it so guests can open your link.", f"{base(ev)}/settings", "Publish"))
+    if live and has(ev, "guest_management") and s["invited"] == 0:
+        steps.append(("Add your guest list", "Paste names or import a spreadsheet. Each guest gets a personal RSVP link.", f"{base(ev)}/guests/import", "Add guests"))
+    if live and has(ev, "personal_invites") and not_sent:
+        steps.append(("Send your invitations", f"{not_sent} guest{'s' if not_sent != 1 else ''} haven't been sent their invitation yet. Send them on WhatsApp, one tap each.",
+                      f"{base(ev)}/share/whatsapp", "Start sending"))
+    elif live and not has(ev, "personal_invites") and s["invited"] == 0:
+        steps.append(("Share your link", "Send it on WhatsApp, by email or as a QR code. Guests reply on the website.", f"{base(ev)}/share", "Share"))
+    if live and s["pending"] and s["invited"] - not_sent > 0 and (days is None or days >= 0):
+        steps.append(("Remind guests who haven't replied", f"{s['pending']} still to reply.", f"{base(ev)}/share/whatsapp?mode=remind", "Send reminders"))
+    if has(ev, "seating") and s["attending"] and s["unseated_parties"]:
+        steps.append(("Seat your guests", f"{s['unseated_parties']} confirmed part{'y' if s['unseated_parties'] == 1 else 'ies'} without a table. Seat everyone automatically, then fine-tune.",
+                      f"{base(ev)}/seating", "Open seating"))
+    if days is not None and days < 0 and has(ev, "reports"):
+        steps.append(("Download your final report", "Attendance, meals and seating in one file to keep.", f"{base(ev)}/reports", "Reports"))
+    if not steps:
+        return ""
+    cards = "".join(f'<a class="next-step" href="{href}"><span class="mono tiny">NEXT {n}</span><b>{esc(t)}</b><span class="small muted">{esc(w)}</span>'
+                    f'<span class="arrow-link small"><span>{esc(btn)}</span>{i("arrow")}</span></a>' for n, (t, w, href, btn) in enumerate(steps[:3], 1))
+    return f'<div class="next-steps" style="margin-bottom:22px">{cards}</div>'
 
 
 # =============================================================================================
@@ -170,6 +205,94 @@ def _invite_message(ev) -> str:
             f"is on our event page: {events.public_url(ev)}")
 
 
+def _reminder_message(ev, g) -> str:
+    gs = ev.get("guest_settings") or {}
+    by = f" by {forms.fmt_date(gs['rsvp_deadline'], long=False)}" if gs.get("rsvp_deadline") else ""
+    return (f"Hi {g['first_name']}, a quick reminder to let us know{by} if you can make it to {ev['name']}. "
+            f"It takes a minute: {events.invite_url(ev, g)}")
+
+
+def _broadcast_box(ev) -> str:
+    msg = _invite_message(ev)
+    return f"""<div class="box"><div class="box__head"><h2>Send to many people at once</h2></div>
+<p class="small muted">Use a WhatsApp broadcast list: everyone gets the message privately, as if you'd sent it to them alone.</p>
+<ol class="small" style="margin:10px 0 12px;padding-left:20px;display:grid;gap:6px"><li>In WhatsApp, open <b>Broadcast lists</b> (Android: ⋮ › New broadcast; iPhone: Chats › Lists or Broadcast lists).</li>
+<li>Add your guests, up to 256 per list.</li><li>Paste this message and send.</li></ol>
+<textarea class="textarea" id="broadcast-msg" rows="4" readonly aria-label="Message for a broadcast list">{esc(msg)}</textarea>
+<div class="row" style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-copy-target="#broadcast-msg" data-copied="Message copied">{i("copy")}Copy message</button></div>
+<p class="tiny muted" style="margin-top:10px">Only people who have your number saved in their phone receive broadcasts. For everyone else, send one by one above, or post the message in a group.</p></div>"""
+
+
+@router.route("/dashboard/events/<uid>/share/whatsapp", methods=("GET", "POST"))
+def whatsapp_queue(req, uid):
+    """Send personal invitations (or reminders) on WhatsApp one guest at a time: one tap to open
+    WhatsApp with the message ready, one tap for the next guest. Nothing is sent automatically."""
+    ev = load(req, uid)
+    mode = "remind" if (req.arg("mode") or req.get("mode")) == "remind" else "invite"
+    skip = [int(x) for x in (req.arg("skip") or req.get("skip") or "").split(",") if x.isdigit()][:500]
+    title = "Remind guests on WhatsApp" if mode == "remind" else "Send invitations on WhatsApp"
+    if not has(ev, "personal_invites"):
+        body = page_head(title, "Personal links for each guest are part of Premium. You can still share your one link with everyone.") + _broadcast_box(ev)
+        return organiser_page(req, ev, title, body, "/share")
+    today = db.now()[:10]
+    if req.method == "POST":
+        g = db.one("SELECT * FROM guests WHERE id = ? AND event_id = ?", (req.get("guest_id"), ev["id"]))
+        if g and req.get("action") == "sent":
+            if mode == "invite":
+                db.run("UPDATE guests SET invited_at = COALESCE(invited_at, ?), updated_at = ? WHERE id = ?", (db.now(), db.now(), g["id"]))
+            else:
+                db.run("INSERT OR IGNORE INTO sent_markers (event_id, marker, created_at) VALUES (?, ?, ?)",
+                       (ev["id"], f"wa-remind:{g['id']}:{today}", db.now()))
+        elif g:
+            skip.append(g["id"])
+        q = {"mode": mode if mode == "remind" else "", "skip": ",".join(map(str, skip))}
+        return redirect(f"{base(ev)}/share/whatsapp" + ("?" + "&".join(f"{k}={v}" for k, v in q.items() if v) if any(q.values()) else ""))
+    if mode == "invite":
+        todo = db.q("""SELECT * FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined' AND phone != ''
+                       ORDER BY is_vip DESC, last_name COLLATE NOCASE, first_name COLLATE NOCASE""", (ev["id"],))
+        done = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NOT NULL AND phone != ''", (ev["id"],), 0)
+    else:
+        todo = db.q("""SELECT g.* FROM guests g WHERE g.event_id = ? AND g.status = 'pending' AND g.phone != '' AND g.invited_at IS NOT NULL
+                       AND NOT EXISTS (SELECT 1 FROM sent_markers m WHERE m.event_id = g.event_id AND m.marker = 'wa-remind:' || g.id || ':' || ?)
+                       ORDER BY g.last_name COLLATE NOCASE, g.first_name COLLATE NOCASE""", (ev["id"], today))
+        done = db.val("SELECT COUNT(*) FROM sent_markers WHERE event_id = ? AND marker LIKE ?", (ev["id"], f"wa-remind:%:{today}"), 0)
+    queue = [g for g in todo if g["id"] not in skip and wa_digits(g["phone"])]
+    skipped = [g for g in todo if g["id"] in skip]
+    no_phone = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND phone = '' AND status != 'declined'", (ev["id"],), 0)
+    total = done + len(queue) + len(skipped)
+    tabs_html = (f'<nav class="tabs" aria-label="Section" style="margin-bottom:18px"><a href="{base(ev)}/share/whatsapp"{" aria-current=page" if mode == "invite" else ""}>Invitations</a>'
+                 f'<a href="{base(ev)}/share/whatsapp?mode=remind"{" aria-current=page" if mode == "remind" else ""}>Reminders</a></nav>')
+    if queue:
+        g = queue[0]
+        msg = guest_whatsapp(ev, g) if mode == "invite" else f"https://wa.me/{wa_digits(g['phone'])}?text={quote(_reminder_message(ev, g))}"
+        text = (f"Hi {g['first_name']}, you're invited to {ev['name']}. Your personal invitation and RSVP link: {events.invite_url(ev, g)}"
+                if mode == "invite" else _reminder_message(ev, g))
+        form = lambda action, label, cls: (f'<form method="post">{csrf(req)}<input type="hidden" name="mode" value="{mode}"><input type="hidden" name="skip" value="{",".join(map(str, skip))}">'
+                                           f'<input type="hidden" name="guest_id" value="{g["id"]}"><input type="hidden" name="action" value="{action}">'
+                                           f'<button class="btn {cls}" type="submit"{" data-next-guest" if action == "sent" else ""}>{label}</button></form>')
+        card = f"""<div class="box wa-queue"><div class="row row--between"><span class="mono small">{done + 1} of {total}</span><span class="small muted">{len(queue) - 1} after this one</span></div>
+<div class="progress"><span style="width:{round(100 * done / total) if total else 0}%"></span></div>
+<div><h2 style="font-size:1.375rem">{esc(events.guest_name(g))}{' <span class="pill pill--gold pill--plain">VIP</span>' if g["is_vip"] else ""}</h2><p class="mono small muted">{esc(g["phone"])}</p></div>
+<div class="notice">{i("chat")}<span class="small" style="white-space:pre-wrap">{esc(text)}</span></div>
+<div class="btn-row"><a class="btn btn--primary btn--lg" href="{esc(msg)}" target="_blank" rel="noopener" data-open-wa>{i("chat")}Open WhatsApp</a>
+{form("sent", "Sent, next guest " + i("arrow", "i--arrow"), "btn--secondary btn--lg")}{form("skip", "Skip for now", "btn--ghost")}</div>
+<p class="tiny muted">WhatsApp opens with the message ready. Press send there, come back and tap “Sent, next guest”.</p></div>"""
+    else:
+        msg_done = ("Everyone with a mobile number has their invitation." if mode == "invite" else "Everyone who hasn't replied has had a reminder today.")
+        card = (f'<div class="box"><div class="empty"><span class="icon-tile icon-tile--soft">{i("check")}</span><h2 style="font-size:1.25rem">{msg_done}</h2>'
+                + (f'<p>You skipped {len(skipped)}. <a class="text-link" href="{base(ev)}/share/whatsapp{"?mode=remind" if mode == "remind" else ""}">Go through them again</a>.</p>' if skipped else "")
+                + f'<a class="btn btn--secondary" href="{base(ev)}/rsvps">See RSVPs</a></div></div>')
+    extra = ""
+    if no_phone:
+        extra = (f'<div class="notice" style="margin-top:14px">{i("info")}<span>{no_phone} guest{"s have" if no_phone != 1 else " has"} no mobile number. '
+                 f'<a class="text-link" href="{base(ev)}/guests">Add numbers</a> or <a class="text-link" href="{base(ev)}/communications">email them instead</a>.</span></div>')
+    js = """<script>(function(){var a=document.querySelector('[data-open-wa]'),n=document.querySelector('[data-next-guest]');if(a&&n)a.addEventListener('click',function(){setTimeout(function(){n.classList.remove('btn--secondary');n.classList.add('btn--primary');n.focus();},400);});})();</script>"""
+    intro = ("One guest at a time, each with their own RSVP link. Two taps per guest." if mode == "invite"
+             else "Guests who were invited but haven't replied yet, each with their own RSVP link.")
+    body = page_head(title, intro) + tabs_html + f'<div class="cols cols--2"><div>{card}{extra}</div>{_broadcast_box(ev)}</div>' + js
+    return organiser_page(req, ev, title, body, "/share")
+
+
 @router.get("/dashboard/events/<uid>/share")
 def share(req, uid):
     ev = load(req, uid)
@@ -180,8 +303,8 @@ def share(req, uid):
     note = "" if live else (f'<div class="notice notice--warn" style="margin-bottom:18px">{i("info")}<div>Your link is reserved, '
                             f'but guests will only see the website once it is paid for and published. '
                             f'<a class="text-link" href="{base(ev)}/setup/10">Publish now</a></div></div>')
-    personal = (f'<p class="small muted" style="margin-top:12px">Each guest also has a personal link that opens their own RSVP. '
-                f'Find them on the <a class="text-link" href="{base(ev)}/guests">Guests</a> page.</p>') if has(ev, "personal_invites") else ""
+    personal = (f'<div class="notice" style="margin-top:12px">{i("chat")}<div><span>Each guest also has a personal link that opens their own RSVP.</span>'
+                f'<div style="margin-top:10px"><a class="btn btn--secondary btn--sm" href="{base(ev)}/share/whatsapp">Send personal invitations on WhatsApp</a></div></div></div>') if has(ev, "personal_invites") else ""
     sub_js = json.dumps("Invitation: " + ev["name"]).replace("<", "\\u003c")
     body = page_head("Share your event", "One link for everything. Paste it anywhere: WhatsApp, email, SMS or social media.") + note + f"""
 <div class="cols cols--2"><div class="stack">

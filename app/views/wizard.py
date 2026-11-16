@@ -262,7 +262,9 @@ var plan=document.querySelector('[data-plan-package]');if(plan){var b=plan.query
 var f=document.querySelector('[data-wizard-form]');if(!f)return;var dirty=false;
 function fire(el){el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
 f.addEventListener('input',function(e){dirty=true;if(e.target.name==='name')e.target.setAttribute('data-autoname','0');
-if(e.target.name==='hosts'){var n=f.querySelector('[data-autoname="1"]');if(n)n.value=e.target.value;}});
+if(e.target.name==='hosts'||e.target.name==='category'){var n=f.querySelector('[data-autoname="1"]');if(n){var h=f.querySelector('[name=hosts]').value.trim(),c=f.querySelector('[name=category]');
+var nn=JSON.parse(n.getAttribute('data-nouns')||'{}')[c?c.value:''];n.value=!h||!nn?h:h+(/s$/.test(h)&&!/'s$/.test(h)?"' ":"'s ")+nn;}}});
+f.addEventListener('change',function(e){if(e.target.name==='category')f.dispatchEvent(new Event('input'));});
 f.addEventListener('submit',function(){dirty=false;});
 document.querySelectorAll('[data-step-link]').forEach(function(a){a.addEventListener('click',function(e){if(dirty&&!confirm('You have unsaved changes on this step. Leave without saving?'))e.preventDefault();});});
 f.addEventListener('click',function(e){var t=e.target.closest('[data-fill],[data-surprise],[data-confirm]');if(!t)return;
@@ -316,7 +318,7 @@ def step1(req, ev):
         name = f.text("name", "Event name", max=120)
         cat = f.choice("category", [c["slug"] for c in catalog.categories()], "event types", required=True)
         hosts = f.text("hosts", HOST_LABEL.get(g, ("Hosts",))[0], required=True, max=120)
-        name = name or hosts or catalog.category_name(cat or ev["category"])
+        name = name or suggestions.auto_event_name(cat or ev["category"], hosts) or catalog.category_name(cat or ev["category"])
         desc = f.text("description", "Description", max=1500)
         d = f.date("event_date", "Event date", required=True, future=not ev["paid_package"])
         st = f.time("start_time", "Start time")
@@ -328,16 +330,19 @@ def step1(req, ev):
                          start_time=st, end_time=et)
             if not ev["published_at"] and hosts and ev["slug"].startswith(forms.slugify(ev["name"], 50)):
                 events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
+            events.keep_online_past_event(events.by_id(ev["id"]))
         r = finish_step(req, events.by_id(ev["id"]), 1, f)
         if r:
             return r
     d = {**ev, **f.data}
     label, ph = HOST_LABEL.get(g, ("Hosts", ""))
     cats = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
-    auto = "1" if (not d.get("name") or d.get("name") in (d.get("hosts"), catalog.category_name(d.get("category")))) else "0"
+    auto = "1" if (not d.get("name") or d.get("name") in (d.get("hosts"), catalog.category_name(d.get("category")),
+                                                           suggestions.auto_event_name(d.get("category"), d.get("hosts")))) else "0"
+    nouns = esc(json.dumps(suggestions.NAME_NOUN))
     inner = f"""{errors_summary(f.errors)}
 {field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph, "autofocus": not d.get("hosts")}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
-<div class="form-row form-row--2">{field("name", "Event name (only you see this)", d.get("name"), errors=f.errors, attrs={"data-autoname": auto}, hint="Filled in from the names above. Change it if you like.")}
+<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), errors=f.errors, attrs={"data-autoname": auto, "data-nouns": nouns}, hint="Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above.")}
 {select("category", "Type of event", cats, d.get("category"), required=True, errors=f.errors)}</div>
 {field("description", "A short welcome or description", d.get("description"), type="textarea", errors=f.errors, hint="Optional. One or two sentences guests read first.")}
 <div class="form-row form-row--3">{field("event_date", "Date", d.get("event_date"), type="date", required=True, errors=f.errors)}

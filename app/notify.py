@@ -112,7 +112,6 @@ def rsvp_details_html(ev, g) -> str:
 
 def publish(ev, actor_id: Optional[int] = None, send_emails: bool = True) -> tuple[bool, str]:
     """Make the event website public. Requires a verified payment and an unsuspended event."""
-    from datetime import date, timedelta
     ev = events.by_id(ev["id"])
     if not ev["paid_package"]:
         return False, "Publishing needs a confirmed payment."
@@ -124,7 +123,7 @@ def publish(ev, actor_id: Optional[int] = None, send_emails: bool = True) -> tup
         fields["published_at"] = db.now()
     if not ev["hosting_until"]:
         months = catalog.limit(ev, "hosting_months", 6)
-        fields["hosting_until"] = (date.today() + timedelta(days=int(months * 30.5))).isoformat()
+        fields["hosting_until"] = events.hosting_end(ev, months)
     events.touch(ev["id"], **fields)
     db.insert("audit_log", {"actor_id": actor_id, "action": "event.publish", "target": ev["uid"], "meta": "{}",
                             "created_at": db.now()})

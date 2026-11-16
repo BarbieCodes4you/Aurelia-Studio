@@ -76,7 +76,7 @@ data = {
     "courses": wizard.COURSES, "kinds": [list(k) for k in wizard.KINDS], "dress_codes": wizard.DRESS_CODES,
     "payment_links": {k: v for k, v in payment_links.items() if isinstance(v, str)},
     "suggest": {"wording": suggestions.WORDING, "programmes": {k: [list(x) for x in v] for k, v in suggestions.PROGRAMMES.items()},
-                "programme_for": suggestions.PROGRAMME_FOR, "default_start": suggestions.DEFAULT_START},
+                "programme_for": suggestions.PROGRAMME_FOR, "default_start": suggestions.DEFAULT_START, "name_noun": suggestions.NAME_NOUN},
     # Netlify Forms only exist on a standalone (Netlify) build; elsewhere the booking falls back to email.
     "forms": STANDALONE,
 }

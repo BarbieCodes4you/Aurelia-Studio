@@ -83,6 +83,17 @@
       '<button class="btn btn--ghost btn--sm" type="button" data-close-editor>Done</button></div></form>';
   }
 
+  // --- automatic seating ------------------------------------------------------------------------
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-autoseat]");
+    if (!b) return;
+    b.disabled = true;
+    call("autoseat", { include_pending: !!(includePending && includePending.checked) }).then(function (res) {
+      b.disabled = false;
+      if (res && res.message) Aurelia.toast(res.message);
+    });
+  });
+
   // --- forms -------------------------------------------------------------------------------
   root.addEventListener("submit", function (e) {
     var f = e.target;
