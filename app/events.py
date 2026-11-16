@@ -1,6 +1,7 @@
 """Event model helpers shared by the wizard, dashboard, event websites, admin and emails."""
 from __future__ import annotations
 
+import re
 import secrets
 from typing import Optional
 
@@ -123,6 +124,31 @@ def new_guest_token() -> str:
     return secrets.token_urlsafe(12)
 
 
+def add_pasted_guests(ev, people: list[dict]) -> int:
+    """Add guests from suggestions.parse_guest_list(). People already on the list (same name, or same
+    email or mobile) are skipped. Returns how many were added."""
+    have = db.q("SELECT first_name, last_name, email, phone FROM guests WHERE event_id = ?", (ev["id"],))
+    names = {f"{g['first_name']} {g['last_name']}".strip().lower() for g in have}
+    emails = {g["email"].lower() for g in have if g["email"]}
+    phones = {re.sub(r"\D", "", g["phone"]) for g in have if g["phone"]}
+    now, added = db.now(), 0
+    for p in people:
+        digits = re.sub(r"\D", "", p.get("phone", ""))
+        if p["name"].lower() in names or (p.get("email") and p["email"] in emails) or (digits and digits in phones):
+            continue
+        first, _, last = p["name"].partition(" ")
+        db.insert("guests", {"event_id": ev["id"], "token": new_guest_token(), "first_name": first[:60], "last_name": last[:80],
+                             "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "source": "import",
+                             "email_consent": 1, "created_at": now, "updated_at": now})
+        names.add(p["name"].lower())
+        if p.get("email"):
+            emails.add(p["email"])
+        if digits:
+            phones.add(digits)
+        added += 1
+    return added
+
+
 def is_live(ev) -> bool:
     """Guests can open the website."""
     return ev["status"] == "published" and bool(ev["paid_package"])
@@ -225,3 +251,52 @@ def email_quota(ev) -> tuple[int, int]:
     used = db.val("SELECT COUNT(*) FROM email_logs WHERE event_id = ? AND audience = 'guest' AND status = 'sent'",
                   (ev["id"],), 0)
     return used, allowed
+
+
+def package_gaps(ev, code: str) -> list[str]:
+    """What this event already has that package `code` would not show guests, in plain words.
+    Used on the review and package steps so nobody pays for less than they set up."""
+    feats, lim = catalog.package_features(code), catalog.package_limits(code)
+    gaps = []
+    n = db.val("SELECT COUNT(*) FROM schedule_items WHERE event_id = ?", (ev["id"],), 0)
+    if n and "programme" not in feats:
+        gaps.append(f"your programme ({n} item{'s' if n != 1 else ''})")
+    n = db.val("SELECT COUNT(*) FROM menu_items WHERE event_id = ?", (ev["id"],), 0)
+    if n and "menu" not in feats:
+        gaps.append(f"your menu ({n} dish{'es' if n != 1 else ''})")
+    if db.val("SELECT COUNT(*) FROM seating_tables WHERE event_id = ?", (ev["id"],), 0) and "seating" not in feats:
+        gaps.append("the seating chart")
+    n = db.val("SELECT COUNT(*) FROM uploads WHERE event_id = ? AND kind = 'gallery'", (ev["id"],), 0)
+    allowed = int(lim.get("gallery_photos", 0)) if "gallery" in feats else 0
+    if n > allowed:
+        gaps.append(f"your photo gallery ({n} photos)" if not allowed else f"{n - allowed} of your {n} gallery photos")
+    n = db.val("SELECT COUNT(*) FROM event_functions WHERE event_id = ?", (ev["id"],), 0)
+    allowed = int(lim.get("functions", 1)) if "multi_functions" in feats else 1
+    if n > allowed:
+        gaps.append(f"{n - allowed} of your {n} event functions")
+    design = ev["design"] if isinstance(ev["design"], dict) else db.loads(ev["design"], {})
+    if (design or {}).get("colors") and "advanced_design" not in feats:
+        gaps.append("your own colours")
+    gs = ev["guest_settings"] if isinstance(ev["guest_settings"], dict) else db.loads(ev["guest_settings"], {})
+    if len((gs or {}).get("categories") or []) > 1 and "guest_categories" not in feats:
+        gaps.append("several guest categories")
+    return gaps
+
+
+DRAFT_COOKIE = "aurelia_draft"
+
+
+def draft_token(ev) -> str:
+    """Token for the shareable draft preview (/events/<slug>/draft/<token>). Tied to the event's uid
+    and creation time, so it stays the same for the event's life and works for nothing else."""
+    from . import auth
+    return auth.sign(f"{ev['uid']}~{ev['created_at']}", "draft-preview").rpartition(".")[2]
+
+
+def draft_url(ev) -> str:
+    return f"{config.BASE_URL}/events/{ev['slug']}/draft/{draft_token(ev)}"
+
+
+def draft_token_ok(ev, token: str) -> bool:
+    import hmac
+    return bool(token) and hmac.compare_digest(token, draft_token(ev))

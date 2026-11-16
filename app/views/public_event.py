@@ -273,6 +273,20 @@ def calendar(req, slug):
 
 
 # --- previews --------------------------------------------------------------------------------------
+@router.get("/events/<slug:slug>/draft/<token>")
+def draft_preview(req, slug, token):
+    """Read-only draft the organiser shares with family before paying. RSVPs are switched off."""
+    ev = events.by_slug(slug)
+    if ev is None or ev["status"] in ("suspended", "archived") or not events.draft_token_ok(ev, token):
+        raise HTTPError(404)
+    r = Response(R.render(ev, "preview", None, req, notice="Shared draft from " + (ev["hosts"] or "the hosts")))
+    r.header("Cache-Control", "no-store")
+    r.header("X-Robots-Tag", "noindex, nofollow")
+    r.set_cookie(events.DRAFT_COOKIE, f"{ev['id']}.{token}", max_age=3 * 3600, path="/media/")
+    return r
+
+
+
 @router.get("/templates/<slug:slug>/preview")
 def template_preview(req, slug):
     t = catalog.template(slug)

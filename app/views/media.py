@@ -13,7 +13,9 @@ def media(req, key):
         raise HTTPError(404)
     ev = events.by_id(row["event_id"])
     from .public_event import is_available
-    if ev is None or not (is_available(ev) or auth.can_manage_event(req.user, ev)):
+    draft_id, _, draft_tok = req.cookies.get(events.DRAFT_COOKIE, "").partition(".")
+    shared_draft = ev is not None and draft_id == str(ev["id"]) and events.draft_token_ok(ev, draft_tok)
+    if ev is None or not (is_available(ev) or auth.can_manage_event(req.user, ev) or shared_draft):
         raise HTTPError(404)
     data = storage.get(key)
     if data is None:

@@ -852,3 +852,29 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 
 /* Phones: the wizard save bar sits at the end of the form instead of covering it */
 @media (max-width: 767px) { .wizard-actions { position: static; } }
+
+/* --- ease-of-use additions (2026-11): optional steps, package switcher, suggestions, checklists ------- */
+.stepper__tag { margin-left: auto; padding-left: 10px; font: 500 .6875rem/1 var(--font-mono); letter-spacing: .02em; color: var(--color-muted); text-transform: uppercase; }
+.stepper__tag .i { width: 14px; height: 14px; }
+.plan-package { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plan-package .select { width: auto; min-width: 0; max-width: 100%; }
+.suggest-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); margin-bottom: 18px; }
+.suggest-card { display: grid; gap: 8px; align-content: start; padding: 14px 16px; border: 1px solid var(--color-line); border-radius: 14px; background: var(--color-surface); }
+.suggest-card p { margin: 0; font-size: .875rem; color: var(--color-muted); }
+.suggest-card b { font-weight: 600; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: flex; align-items: flex-start; gap: 10px; }
+.checklist .i { flex: none; margin-top: 2px; }
+.checklist .is-done { color: var(--color-muted); }
+.checklist .is-done span { text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.next-steps { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.next-step { display: grid; gap: 8px; align-content: start; padding: 16px; border-radius: 16px; border: 1px solid var(--color-line); background: var(--color-surface); text-decoration: none; color: inherit; }
+.next-step:hover { border-color: var(--color-border-strong); }
+.next-step .mono { color: var(--color-accent-text); }
+.wa-queue { display: grid; gap: 14px; }
+.wa-float { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 40; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 999px; background: #1f8f4e; color: #fff; text-decoration: none; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.wa-float:hover { background: #18773f; color: #fff; }
+.wa-float .i { width: 20px; height: 20px; }
+@media (max-width: 520px) { .wa-float span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .wa-float { padding: 0; width: 52px; justify-content: center; } }
+@media print { .wa-float { display: none; } }
+.price__gap { display: flex; gap: 8px; align-items: flex-start; margin: 0; } .price__gap .i { color: var(--warn); flex: none; margin-top: 2px; }

@@ -90,12 +90,29 @@ class WizardTest(unittest.TestCase):
         uid = find(r"/dashboard/events/([0-9a-f]+)/setup/1", r.location)
         return uid
 
-    def test_create_requires_login_and_preserves_choice(self):
+    def test_create_without_account_needs_only_name_and_email(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "name": "Shower"})
-        self.assertEqual(r.status, 303)
-        self.assertIn("/register?next=", r.location)
-        self.assertIn("baby-shower", r.location)
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("Your name", r.text)
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "package": "essential",
+                                  "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        self.assertIn("/setup/1", r.location)
+        user = db.one("SELECT * FROM users WHERE email = ?", ("amahle@example.com",))
+        self.assertEqual(user["password_hash"], "")
+        ev = db.one("SELECT * FROM events WHERE owner_id = ?", (user["id"],))
+        self.assertEqual(ev["selected_package"], "essential")
+        self.assertEqual(anon.get(r.location).status, 200)      # signed in straight away
+
+    def test_create_with_existing_email_sends_sign_in_link(self):
+        anon = Client(self.app)
+        r = anon.post("/create", {"category": "birthday", "template": "pulse", "contact_name": "Thandi",
+                                  "contact_email": "organiser@example.com", "terms": "1"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("sign-in link", r.text)
+        log = db.one("SELECT * FROM email_logs WHERE to_email = ? AND template_key = 'login_link' ORDER BY id DESC", ("organiser@example.com",))
+        self.assertIsNotNone(log)
 
     def test_full_wizard(self):
         uid = self.create()
@@ -128,7 +145,7 @@ class WizardTest(unittest.TestCase):
                                       "dietary_options": ["Vegetarian", "Halal"], "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertEqual(len(events.meal_options(events.get(uid)["id"])), 2)
-        r = self.c.post(base + "/7", {"table_count": "15", "capacity": "10", "shape": "round", "apply_capacity": "1",
+        r = self.c.post(base + "/7", {"plan_now": "1", "table_count": "15", "capacity": "10", "shape": "round", "apply_capacity": "1",
                                       "table_names": "Head table\nProtea", "nav": "next"})
         self.assertEqual(r.status, 303)
         tables = events.tables(events.get(uid)["id"])

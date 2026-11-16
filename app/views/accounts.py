@@ -36,6 +36,13 @@ def login_session(resp: Response, req, user_id: int) -> Response:
     return resp
 
 
+def send_login_link(user, nxt: str = "/dashboard") -> None:
+    token = auth.issue_token(user["id"], "login", 2)
+    mail.send(user["email"], "login_link", {"first_name": mail.first_name(user["name"]),
+                                            "login_url": f"{config.BASE_URL}{url('/login/link/' + token, next=nxt)}"},
+              user_id=user["id"])
+
+
 def send_verification(user) -> None:
     token = auth.issue_token(user["id"], "verify", 48)
     mail.send(user["email"], "verify_email", {"first_name": mail.first_name(user["name"]),
@@ -58,9 +65,7 @@ def register(req):
         name = f.text("name", "Your name", required=True, max=120, min=2)
         email = f.email("email", required=True)
         pw = req.get("password")
-        if not pw:
-            f.error("password", "Choose a password.")
-        else:
+        if pw:
             for p in auth.password_problems(pw, email):
                 f.error("password", p)
                 break
@@ -71,7 +76,7 @@ def register(req):
         if email and not f.errors.get("email") and db.one("SELECT 1 FROM users WHERE email = ?", (email,)):
             f.error("email", "An account with this email already exists. Log in or reset your password.")
         if f.ok:
-            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw),
+            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw) if pw else "",
                                       "role": "customer", "marketing_consent": 1 if req.get("marketing") else 0,
                                       "created_at": db.now()})
             user = db.one("SELECT * FROM users WHERE id = ?", (uid,))
@@ -86,8 +91,10 @@ def register(req):
 {errors_summary(f.errors)}
 {field("name", "Your name", d.get("name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("email", "Email", d.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}
-{field("password", "Password", "", type="password", required=True, errors=f.errors, hint="At least 10 characters, with upper- and lower-case letters and a number.", attrs={"autocomplete": "new-password"})}
-{field("password_confirm", "Confirm password", "", type="password", required=True, errors=f.errors, attrs={"autocomplete": "new-password"})}
+<details class="box" style="padding:14px 16px"{" open" if ("password" in f.errors or "password_confirm" in f.errors) else ""}><summary class="small" style="cursor:pointer">Set a password (optional)</summary>
+<p class="hint" style="margin:8px 0 12px">Without one, we email you a sign-in link whenever you need it.</p>
+{field("password", "Password", "", type="password", errors=f.errors, hint="At least 10 characters, with upper- and lower-case letters and a number.", attrs={"autocomplete": "new-password"})}
+{field("password_confirm", "Confirm password", "", type="password", errors=f.errors, attrs={"autocomplete": "new-password"})}</details>
 <div class="field{' has-error' if 'terms' in f.errors else ''}">{forms.check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(d.get("terms")))}</div>
 {forms.check("marketing", "Send me occasional tips and new templates (optional).", bool(req.get("marketing")))}
 <button class="btn btn--primary btn--lg btn--block" type="submit">Create account {i("arrow", "i--arrow")}</button></form>"""
@@ -109,7 +116,9 @@ def login(req):
             f.error("email", "Too many attempts. Wait 15 minutes or reset your password.")
         elif f.ok:
             user = db.one("SELECT * FROM users WHERE email = ?", (email,))
-            if user and auth.verify_password(pw, user["password_hash"]):
+            if user and not user["password_hash"]:
+                f.error("password", "This account has no password yet. Use “Email me a sign-in link” below, or set one with “Forgot your password?”.")
+            elif user and auth.verify_password(pw, user["password_hash"]):
                 if user["status"] != "active":
                     f.error("email", "This account is suspended. Contact support for help.")
                 else:
@@ -122,7 +131,8 @@ def login(req):
 {field("email", "Email", f.data.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email", "autofocus": True})}
 {field("password", "Password", "", type="password", required=True, errors=f.errors, attrs={"autocomplete": "current-password"})}
 <div class="row row--between"><a class="text-link small" href="/forgot-password">Forgot your password?</a></div>
-<button class="btn btn--primary btn--lg btn--block" type="submit">Log in {i("arrow", "i--arrow")}</button></form>"""
+<button class="btn btn--primary btn--lg btn--block" type="submit">Log in {i("arrow", "i--arrow")}</button></form>
+<a class="btn btn--secondary btn--block" style="margin-top:12px" href="{url('/login/email', next=nxt)}">{i("mail")} Email me a sign-in link</a>"""
     return auth_layout(req, "Log in", inner, AUTH_QUOTES[1])
 
 
@@ -132,6 +142,48 @@ def logout(req):
     resp = redirect("/")
     resp.set_cookie(auth.SESSION_COOKIE, "", max_age=0)
     return resp
+
+
+# --- sign-in links by email --------------------------------------------------------------------
+@router.route("/login/email", methods=("GET", "POST"))
+def login_email(req):
+    nxt = safe_next(req.arg("next") or req.get("next"), "/dashboard")
+    if req.user:
+        return redirect(nxt)
+    f = Form(req)
+    if req.method == "POST":
+        email = f.email("email", required=True)
+        if f.ok:
+            user = db.one("SELECT * FROM users WHERE email = ?", (email,))
+            if (user and user["status"] == "active" and not auth.rate_limited(f"login-link:{email}", 5, 3600)
+                    and not auth.rate_limited(f"login-link-ip:{req.ip}", 20, 3600)):
+                send_login_link(user, nxt)
+            back = esc(url("/login", next=nxt))
+            inner = (f'<h1>Check your email</h1><p class="lead" style="margin:10px 0 24px;font-size:1rem">If there\'s an account for '
+                     f'<b>{esc(email)}</b>, we\'ve sent a sign-in link. It works once and expires in 2 hours. Check your spam folder if it '
+                     f'doesn\'t arrive in a few minutes.</p><a class="btn btn--secondary" href="{back}">Back to log in</a>')
+            return auth_layout(req, "Check your email", inner)
+    inner = f"""<h1>Sign in with a link</h1><p class="lead" style="margin:10px 0 28px;font-size:1rem">Enter your email and we'll send you a link that signs you straight in. No password needed.</p>
+<form class="form" method="post" novalidate>{csrf(req)}<input type="hidden" name="next" value="{esc(nxt)}">{errors_summary(f.errors)}
+{field("email", "Email", f.data.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email", "autofocus": True})}
+<button class="btn btn--primary btn--lg btn--block" type="submit">Send my sign-in link</button></form>
+<p class="small muted" style="margin-top:18px"><a class="text-link" href="{url('/login', next=nxt)}">Log in with a password instead</a></p>"""
+    return auth_layout(req, "Sign in with a link", inner)
+
+
+@router.get("/login/link/<token>")
+def login_link(req, token):
+    nxt = safe_next(req.arg("next"), "/dashboard")
+    user_id = auth.consume_token(token, "login")
+    user = db.one("SELECT * FROM users WHERE id = ?", (user_id,)) if user_id else None
+    if not user or user["status"] != "active":
+        inner = ('<h1>This link has expired</h1><p class="lead" style="margin:10px 0 24px;font-size:1rem">Sign-in links work once '
+                 f'and last 2 hours. Ask for a new one.</p><a class="btn btn--primary" href="{url("/login/email", next=nxt)}">Send a new link</a>')
+        return auth_layout(req, "Link expired", inner)
+    db.run("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?", (db.now(), user["id"]))
+    auth.audit(user["id"], "user.login_link", user["email"])
+    req.flash("success", f"Welcome back, {mail.first_name(user['name'])}.")
+    return login_session(redirect(nxt), req, user["id"])
 
 
 # --- password reset ---------------------------------------------------------------------------
