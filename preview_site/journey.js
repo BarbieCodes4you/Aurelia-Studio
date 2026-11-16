@@ -57,6 +57,160 @@
   function limit(ev, key) { var p = pkg(ev.selected_package || "premium"); return p ? (p.limits[key] || 0) : 0; }
   function icon(n) { return '<i class="i i--' + n + '" aria-hidden="true"></i>'; }
   function todayIso() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+  function plural(n, one, many) { return n + " " + (n === 1 ? one : (many || one + "s")); }
+  function joinOr(parts) { return parts.length === 1 ? parts[0] : parts.slice(0, -1).join(", ") + " or " + parts[parts.length - 1]; }
+
+  // --- ready-made content and parsers (mirror app/suggestions.py) ---------------------------------
+  var SUG = D.suggest || { wording: {}, programmes: {}, programme_for: {}, default_start: {} };
+  function wordingOptions(ev) { return SUG.wording[ev.category] || SUG.wording["private-celebration"] || []; }
+  function fillWording(text, hosts, deadline) {
+    text = text.split("{hosts}").join(hosts || "the hosts");
+    return deadline ? text.split("{deadline}").join(deadline) : text.replace(/\s*by \{deadline\}/g, "").split("{deadline}").join("");
+  }
+  function sampleProgramme(ev) {
+    var key = SUG.programme_for[ev.category] || ev.category;
+    if (!SUG.programmes[key]) key = "private-celebration";
+    var start = /^\d{2}:\d{2}$/.test(ev.start_time || "") ? ev.start_time : (SUG.default_start[groupOf(ev)] || "12:00");
+    var base = +start.slice(0, 2) * 60 + +start.slice(3);
+    return (SUG.programmes[key] || []).map(function (x) {
+      var t = ((base + x[0]) % 1440 + 1440) % 1440;
+      return { item_time: ("0" + Math.floor(t / 60)).slice(-2) + ":" + ("0" + t % 60).slice(-2), title: x[1], kind: x[2], description: x[3], function_id: "" };
+    });
+  }
+  var HEADER_WORDS = ["name", "names", "full name", "guest", "guests", "guest name", "first name", "surname", "last name", "phone", "mobile", "cell",
+    "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"];
+  function parseGuests(text) {
+    var out = [], seen = {};
+    (text || "").split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim().replace(/^[,;\t]+|[,;\t]+$/g, "");
+      if (!line) return;
+      var cells = line.split(/[,;\t|]+/).map(function (c) { return c.trim().toLowerCase(); }).filter(Boolean);
+      if (cells.length && cells.every(function (c) { return HEADER_WORDS.indexOf(c) > -1; })) return;
+      var em = /[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}/.exec(line), rest = em ? line.replace(em[0], " ") : line;
+      var ph = /\+?\d[\d ()-]{6,}\d/.exec(rest);
+      if (ph) rest = rest.replace(ph[0], " ");
+      var name = rest.replace(/[,;\t|]+/g, " ").replace(/\s+/g, " ").replace(/^[ -]+|[ -]+$/g, "");
+      if (!name) return;
+      var key = name.toLowerCase() + "|" + (em ? em[0].toLowerCase() : "");
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push({ name: name.slice(0, 120), phone: ph ? ph[0].trim() : "", email: em ? em[0].toLowerCase() : "" });
+    });
+    return out.slice(0, 2000);
+  }
+  var COURSE_WORDS = {
+    "Canapés": ["canapé", "canape", "canapés", "canapes", "snacks", "hors d'oeuvres", "on arrival"],
+    "Starter": ["starter", "starters", "entrée", "entree", "entrées", "appetiser", "appetisers", "appetizer", "appetizers", "first course"],
+    "Main": ["main", "mains", "main course", "main courses", "buffet", "main meal"],
+    "Dessert": ["dessert", "desserts", "pudding", "sweet", "sweets"],
+    "Late-night": ["late-night", "late night", "late night snack", "midnight snack"],
+    "Drinks": ["drinks", "beverages", "bar"]
+  };
+  function courseOf(word) {
+    var w = word.trim().replace(/^:+|:+$/g, "").trim().toLowerCase();
+    return Object.keys(COURSE_WORDS).filter(function (c) { return COURSE_WORDS[c].indexOf(w) > -1; })[0] || "";
+  }
+  function parseMenu(text) {
+    var items = [], course = "Main";
+    (text || "").split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim().replace(/^[•*\-·– ]+/, "").trim();
+      if (!line || items.length >= 60) return;
+      var c = courseOf(line);
+      if (c) { course = c; return; }
+      var m = /^([^:]{2,30}):\s*(.+)$/.exec(line), here = course;
+      if (m && courseOf(m[1])) { here = course = courseOf(m[1]); line = m[2].trim(); }
+      var name = line, desc = "", seps = [" - ", " – ", " — ", " | "], k;
+      for (k = 0; k < seps.length; k++) {
+        var at = line.indexOf(seps[k]);
+        if (at > -1) { name = line.slice(0, at).trim(); desc = line.slice(at + seps[k].length).trim(); break; }
+      }
+      if (k === seps.length) { var b = /^(.+?)\s*\((.+)\)$/.exec(line); if (b) { name = b[1].trim(); desc = b[2].trim(); } }
+      if (name) items.push({ course: here, name: name.slice(0, 120), description: desc.slice(0, 240), tags: [], selectable: false });
+    });
+    return items;
+  }
+
+  // --- what a package would leave out (mirror events.package_gaps) ----------------------------------
+  function gaps(ev, code) {
+    var p = pkg(code) || {}, feats = p.features || [], lim = p.limits || {}, out = [], n, allowed;
+    var has = function (k) { return feats.indexOf(k) > -1; };
+    n = ev.schedule.length; if (n && !has("programme")) out.push("your programme (" + plural(n, "item") + ")");
+    n = ev.menu.items.length; if (n && !has("menu")) out.push("your menu (" + plural(n, "dish", "dishes") + ")");
+    if (ev.tables.plan_now && +ev.tables.count > 0 && !has("seating")) out.push("the seating chart");
+    n = (ev.images.gallery || []).length; allowed = has("gallery") ? (lim.gallery_photos || 0) : 0;
+    if (n > allowed) out.push(allowed ? (n - allowed) + " of your " + n + " gallery photos" : "your photo gallery (" + plural(n, "photo") + ")");
+    n = ev.functions.length; allowed = has("multi_functions") ? (lim.functions || 1) : 1;
+    if (n > allowed) out.push((n - allowed) + " of your " + n + " event functions");
+    if (ev.design.colors && !has("advanced_design")) out.push("your own colours");
+    if ((ev.guest_settings.categories || []).length > 1 && !has("guest_categories")) out.push("several guest categories");
+    n = (ev.guest_list || []).length; if (n && !has("guest_management")) out.push("your guest list (" + plural(n, "guest") + ")");
+    return out;
+  }
+
+  // --- links that carry a draft: continue on another device, or show someone ----------------------------
+  function b64url(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+  function unb64url(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var s = atob(str), b = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return b;
+  }
+  function through(bytes, stream) { return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
+  function pack(ev, forSharing) {
+    var copy = Object.assign({}, ev, { images: undefined });
+    if (forSharing) { copy.contact = { name: "", email: "", phone: "" }; copy.guest_list = []; copy.booking = null; }
+    var bytes = new TextEncoder().encode(JSON.stringify(copy));
+    if (window.CompressionStream) return through(bytes, new CompressionStream("deflate-raw")).then(function (z) { return "z" + b64url(z); });
+    return Promise.resolve("j" + b64url(bytes));
+  }
+  function safeUrl(u) { return /^https?:\/\/[^\s<>"]+$/i.test(u || "") ? u : ""; }
+  function clean(raw) {
+    if (!raw || typeof raw !== "object" || !cat(raw.category) || !tpl(raw.template)) throw new Error("Not an Aurelia draft");
+    var ev = newEvent(raw.category, raw.template, String(raw.name || ""));
+    ["id", "created", "updated", "hosts", "description", "event_date", "start_time", "end_time", "ends_next_day", "selected_package", "booking"].forEach(function (k) { if (raw[k] !== undefined) ev[k] = raw[k]; });
+    ["contact", "venue", "design", "guest_settings", "menu", "info", "tables"].forEach(function (k) { if (raw[k] && typeof raw[k] === "object") ev[k] = Object.assign(ev[k], raw[k]); });
+    ["functions", "schedule", "wizard_done", "guest_list"].forEach(function (k) { if (Array.isArray(raw[k])) ev[k] = raw[k]; });
+    if (!/^e[a-z0-9]{4,12}$/.test(String(ev.id))) ev.id = uid("e");
+    if (!pkg(ev.selected_package)) ev.selected_package = "premium";
+    ev.images = { gallery: [] };
+    ev.venue.map_url = safeUrl(ev.venue.map_url);
+    ev.functions.forEach(function (f) { f.map_url = safeUrl(f.map_url); });
+    ["registry", "accommodation"].forEach(function (k) { (ev.info[k] || []).forEach(function (r) { r.url = safeUrl(r.url); }); });
+    return ev;
+  }
+  function unpack(code) {
+    return new Promise(function (resolve) { resolve(unb64url(code.slice(1))); }).then(function (bytes) {
+      if (code.charAt(0) === "z") {
+        if (!window.DecompressionStream) throw new Error("This browser is too old to open the link. Try Chrome, Safari or Edge.");
+        return through(bytes, new DecompressionStream("deflate-raw"));
+      }
+      return bytes;
+    }).then(function (b) { return clean(JSON.parse(new TextDecoder().decode(b))); });
+  }
+  function pageUrl() { return location.href.split("#")[0]; }
+  function shareOrCopy(url, title, done) {
+    if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) { navigator.share({ title: title, url: url }).catch(function () {}); return; }
+    var fallback = function () { window.prompt("Copy this link:", url); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast(done); }, fallback); else fallback();
+  }
+
+  // --- sending to Aurelia (Netlify Forms on the hosted static site) ---------------------------------------
+  function dataUrlBlob(u) {
+    var m = /^data:([^;,]+)(;base64)?,(.*)$/.exec(u || "");
+    if (!m) return null;
+    var s = m[2] ? atob(m[3]) : decodeURIComponent(m[3]), b = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return new Blob([b], { type: m[1] });
+  }
+  function postForm(name, fields, files) {
+    if (!D.forms) return Promise.reject(new Error("Forms are off on this copy of the site"));
+    var fd = new FormData();
+    fd.append("form-name", name);
+    Object.keys(fields).forEach(function (k) { fd.append(k, fields[k] == null ? "" : String(fields[k])); });
+    (files || []).forEach(function (f) { if (f[1]) fd.append(f[0], f[1], f[2]); });
+    return fetch("/", { method: "POST", body: fd }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); });
+  }
 
   // --- form helpers (same markup as app/views/forms.py) -------------------------------------------
   function attrs(a) { return Object.keys(a || {}).map(function (k) { return a[k] === true ? " " + k : (a[k] === false || a[k] == null ? "" : " " + k + '="' + esc(a[k]) + '"'); }).join(""); }
@@ -105,7 +259,7 @@
       var row = {};
       fields.forEach(function (f) { row[f] = (fd.get(prefix + "-" + i + "-" + f) || "").toString().trim(); });
       return row;
-    }).filter(function (r) { return Object.keys(r).some(function (k) { return k !== "id" && r[k]; }); });
+    }).filter(function (r) { return Object.keys(r).some(function (k) { return ["id", "kind", "function", "course"].indexOf(k) < 0 && r[k]; }); });
   }
   function featureNote(ev, key, what) {
     if (feature(ev, key)) return "";
@@ -124,11 +278,17 @@
     return { id: id, created: new Date().toISOString(), updated: new Date().toISOString(), category: category, template: template, name: name,
       hosts: "", description: "", event_date: "", start_time: "", end_time: "", contact: { name: "", email: "", phone: "" },
       venue: {}, design: {}, images: { gallery: [] }, guest_settings: gs, functions: [], schedule: [], menu: { name: "Reception menu", items: [] },
-      info: { dietary_options: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"] }, tables: { count: "", capacity: 10, shape: "round", names: [] },
-      selected_package: "premium", wizard_done: [], booking: null };
+      info: { dietary_options: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"] }, tables: { count: "", capacity: 10, shape: "round", names: [], plan_now: false },
+      guest_list: [], selected_package: "premium", wizard_done: [], booking: null };
   }
 
   // --- views: create ------------------------------------------------------------------------------
+  function packagePicker(selected) {
+    return '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">' + D.packages.map(function (p) {
+      return '<label class="choice"><input type="radio" name="pkg" value="' + p.code + '"' + (p.code === selected ? " checked" : "") + "><span>" + esc(p.name) + " · " + money(p.price_cents) +
+        "<small>" + esc(p.tagline) + "</small></span></label>"; }).join("") + "</div>" +
+      '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, so you don\'t fill in anything your package won\'t show. <a class="text-link" href="#pricing">Compare packages</a></p>';
+  }
   function viewCreate(param) {
     var pre = { category: "", template: "", group: "", pkg: "" };
     var m = /^create-(tpl|cat|grp|pkg)-(.+)$/.exec(param || "");
@@ -147,31 +307,38 @@
         '<span><span class="row row--between" style="gap:8px"><b>' + esc(t.name) + '</b><span class="palette-swatches">' + sw + "</span></span><small>" + esc(t.direction) + "</small></span></label>";
     }).join("");
     root().innerHTML = '<section class="page-hero"><div class="grid-texture"></div><div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>' +
-      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion and a starting template. Everything is saved in this browser as you go; nothing is charged until you choose a package at the end.</p>' +
-      (state.order.length ? '<p style="margin-top:14px"><a class="arrow-link" href="#my-events"><span>Continue an event you started</span>' + icon("arrow") + "</a></p>" : "") + "</div></section>" +
-      '<section class="section"><div class="container"><form class="form" data-create data-no-busy novalidate><input type="hidden" name="pkg" value="' + esc(pre.pkg) + '"><div data-errors></div>' +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>' + groups + "</div>" +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">Templates that suit your occasion are shown first. You can switch any time in the design step. <a class="text-link" href="#templates">Preview the templates</a></p>' +
-      '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>' + tpls + "</div></div>" +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Name it</h2>' + field("name", "Event name", "", { required: true, hint: "Just for you, e.g. “Our wedding” or “Amahle's baby shower”. Guests see the names you add next." }) + "</div>" +
+      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Everything is saved in this browser as you go, and nothing is charged until you\'re ready.</p>' +
+      '<p class="small" style="margin-top:14px">' + (state.order.length ? '<a class="text-link" href="#my-events">Continue an event you started</a> · ' : "") + 'Rather have us do it? <a class="text-link" href="#help-me-set-up">We can set it up for you</a>.</p></div></section>' +
+      '<section class="section"><div class="container"><form class="form" data-create data-no-busy novalidate><div data-errors></div>' +
+      '<div class="box" data-field="category"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>' + groups + "</div>" +
+      '<div class="box" data-field="template"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step. <a class="text-link" href="#templates">Preview the templates</a></p>' +
+      '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>' + tpls + "</div>" +
+      '<button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>' +
+      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>' + packagePicker(pkg(pre.pkg) ? pre.pkg : "premium") + "</div>" +
       '<div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up ' + icon("arrow") + "</button></div></form></div></section>";
-    var form = root().querySelector("[data-create]");
-    function sync() {
-      var c = form.querySelector("input[name=category]:checked"), g = c ? c.getAttribute("data-group") : pre.group;
-      form.querySelectorAll("[data-tpl-grid] .choice").forEach(function (l) {
+    var form = root().querySelector("[data-create]"), grid = form.querySelector("[data-tpl-grid]"), more = form.querySelector("[data-show-all]"), all = false;
+    function sync(auto) {
+      var c = form.querySelector("input[name=category]:checked"), g = c ? c.getAttribute("data-group") : pre.group, first = null;
+      grid.querySelectorAll(".choice").forEach(function (l) {
         var ok = !g || l.getAttribute("data-groups").split(" ").indexOf(g) > -1;
-        l.style.order = ok ? 0 : 1; l.style.opacity = ok ? 1 : 0.55;
+        l.hidden = !(ok || all);
+        if (ok && !first) first = l;
       });
+      more.hidden = !g || all;
+      more.textContent = "Show all " + D.templates.length + " templates";
+      var picked = grid.querySelector("input[name=template]:checked");
+      if (auto && first && (!picked || picked.closest(".choice").hidden)) first.querySelector("input").checked = true;
     }
-    form.addEventListener("change", sync); sync();
+    form.addEventListener("change", function (e) { if (e.target.name === "category") sync(true); });
+    more.addEventListener("click", function () { all = true; sync(false); });
+    sync(false);
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var fd = new FormData(form), errs = {};
       if (!fd.get("category")) errs.category = "Choose the type of event.";
       if (!fd.get("template")) errs.template = "Choose a template. You can change it later.";
-      if (!(fd.get("name") || "").trim()) errs.name = "Event name is required.";
       if (showErrors(form, errs)) return;
-      var ev = newEvent(fd.get("category"), fd.get("template"), fd.get("name").trim());
+      var ev = newEvent(fd.get("category"), fd.get("template"), cat(fd.get("category")).name);
       if (pkg(fd.get("pkg"))) ev.selected_package = fd.get("pkg");
       state.events[ev.id] = ev; state.order.unshift(ev.id); state.current = ev.id; save();
       toast("Your event is saved in this browser as a private draft. Let's add the details.");
@@ -201,7 +368,8 @@
     var cards = state.order.map(function (id) {
       var ev = state.events[id]; if (!ev) return "";
       var pct = Math.round(100 * ev.wizard_done.filter(function (n) { return n <= 9; }).length / 9);
-      var c = cat(ev.category), status = ev.booking ? '<span class="pill pill--ok">Booking requested</span>' : '<span class="pill pill--draft">Draft</span>';
+      var c = cat(ev.category), status = !ev.booking ? '<span class="pill pill--draft">Draft</span>'
+        : (ev.booking.status === "sent" || !D.forms ? '<span class="pill pill--ok">' + (D.forms ? "Booking sent" : "Booking ready") + "</span>" : '<span class="pill pill--draft">Booking not sent yet</span>');
       return '<article class="box event-card"><div class="event-card__top"><div><h2 style="font-size:1.25rem">' + esc(ev.name) + '</h2><div class="event-card__meta"><span>' + esc(c ? c.name : "") + "</span>" +
         (ev.event_date ? "<span>" + esc(R.fmtDate(ev.event_date, false)) + "</span>" : "") + "<span>" + esc((tpl(ev.template) || {}).name || "") + " template</span></div></div>" + status + "</div>" +
         '<div class="progress"><span style="width:' + pct + '%"></span></div><div class="btn-row">' +
@@ -220,27 +388,36 @@
   var STEPS = [[1, "Event details", "calendar"], [2, "Venue", "pin"], [3, "Design", "palette"], [4, "Guests", "users"], [5, "Programme", "list"],
     [6, "Food and drinks", "dish"], [7, "Seating", "seat"], [8, "Extras", "gift"], [9, "Review", "eye"], [10, "Package", "card"]];
   var INTROS = { 1: "The essentials guests see first, and how we reach you.", 2: "Where it's happening and how to get there.", 3: "Make the template yours. The preview updates as you go.",
-    4: "Who's invited and how replies work. You'll add the guest list itself after publishing.", 5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-    7: "Start your seating plan. You'll seat guests once RSVPs arrive.", 8: "Dress code, gifts, contacts, accommodation and photos.", 9: "Check everything before you choose a package.",
-    10: "Choose your package and request your booking." };
+    4: "Your guest list and how replies work.", 5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
+    7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.", 9: "Check everything before you choose a package.",
+    10: "Choose your package and send us your booking." };
+  var OPTIONAL = [4, 5, 6, 7, 8], STEP_FEATURE = { 5: "programme", 6: "menu", 7: "seating" };
 
   function frame(ev, n, inner, opts) {
     opts = opts || {};
     var done = ev.wizard_done;
     var stepper = STEPS.map(function (s) {
+      var tag = STEP_FEATURE[s[0]] && !feature(ev, STEP_FEATURE[s[0]]) ? '<span class="stepper__tag" title="Not in your planned package">' + icon("lock") + "</span>"
+        : (OPTIONAL.indexOf(s[0]) > -1 ? '<span class="stepper__tag">optional</span>' : "");
       return '<li><a href="#setup-' + s[0] + '" class="' + (done.indexOf(s[0]) > -1 ? "is-done" : "") + '"' + (s[0] === n ? ' aria-current="step"' : "") + '><span class="n">' +
-        (done.indexOf(s[0]) > -1 && s[0] !== n ? "✓" : s[0]) + "</span>" + esc(s[1]) + "</a></li>"; }).join("");
+        (done.indexOf(s[0]) > -1 && s[0] !== n ? "✓" : s[0]) + "</span>" + esc(s[1]) + tag + "</a></li>"; }).join("");
     var pct = Math.round(100 * done.filter(function (x) { return x <= 10; }).length / 10);
     var nav = n < 10 ? '<div class="wizard-actions">' + (n > 1 ? '<a class="btn btn--ghost" href="#setup-' + (n - 1) + '">' + icon("arrow-left") + " Back</a>" : "<span></span>") +
-      '<div class="btn-row"><button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button><button class="btn btn--primary" type="submit" name="nav" value="next">' +
+      '<div class="btn-row">' + (n >= 3 && n <= 7 ? '<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' : "") +
+      (OPTIONAL.indexOf(n) > -1 ? '<a class="btn btn--ghost" href="#setup-' + (n + 1) + '">Skip for now</a>' : "") +
+      '<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button><button class="btn btn--primary" type="submit" name="nav" value="next">' +
       esc(opts.nextLabel || "Save and continue") + " " + icon("arrow") + "</button></div></div>" : "";
+    var optional = OPTIONAL.indexOf(n) > -1 ? '<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time before you send your booking, or ask us to add it later.</p>' : "";
     var card = '<div class="glass glass--strong wizard-card"><div class="row" style="gap:14px;margin-bottom:6px"><span class="icon-tile icon-tile--soft">' + icon(STEPS[n - 1][2]) +
-      '</span><div><span class="tiny muted mono">STEP ' + n + "</span><h2>" + esc(STEPS[n - 1][1]) + '</h2></div></div><p class="lead">' + INTROS[n] + "</p><hr>" +
+      '</span><div><span class="tiny muted mono">STEP ' + n + "</span><h2>" + esc(STEPS[n - 1][1]) + '</h2></div></div><p class="lead">' + INTROS[n] + "</p>" + optional + "<hr>" +
       '<form class="form" data-step="' + n + '" data-no-busy novalidate><div data-errors></div>' + inner + nav + "</form></div>";
     var preview = opts.preview ? '<div class="wizard-split">' + card + previewFrame() + "</div>" : card;
+    var plan = '<div class="plan-package"><label class="tiny muted" for="plan-pkg">Planning with</label><select class="select select--sm" id="plan-pkg" data-plan>' +
+      D.packages.map(function (p) { return '<option value="' + p.code + '"' + ((ev.selected_package || "premium") === p.code ? " selected" : "") + ">" + esc(p.name) + " · " + money(p.price_cents) + "</option>"; }).join("") + "</select></div>";
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 28px)"><div class="container">' +
-      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft, saved in this browser as you go. Nothing is shared until you publish.</p></div>" +
-      '<div class="btn-row"><a class="btn btn--ghost btn--sm" href="#my-events">My events</a><a class="btn btn--secondary btn--sm" href="#preview-event">' + icon("eye") + " Full preview</a></div></div>" +
+      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft, saved in this browser as you go. Nothing is shared until you send your booking.</p></div>" +
+      '<div class="btn-row">' + plan + '<button class="btn btn--ghost btn--sm" type="button" data-continue-link>' + icon("link") + ' Continue on another device</button>' +
+      '<a class="btn btn--secondary btn--sm" href="#preview-event">' + icon("eye") + " Full preview</a></div></div>" +
       '<div class="wizard-progress"><span>' + pct + '% complete</span><div class="progress"><span style="width:' + pct + '%"></span></div><span class="mono">Step ' + n + ' of 10</span></div>' +
       '<div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">' + stepper + "</ol></nav><div>" + preview + "</div></div></div></section>";
     refreshPreview(true);
@@ -271,8 +448,9 @@
     return '<fieldset><legend>About you</legend><div class="form-row form-row--3">' + field("contact_name", "Your name", ev.contact.name, { required: true, attrs: { autocomplete: "name" } }) +
       field("contact_email", "Your email", ev.contact.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your booking confirmation and payment link go here." }) +
       field("contact_phone", "Your mobile (optional)", ev.contact.phone, { type: "tel", attrs: { autocomplete: "tel" } }) + "</div></fieldset>" +
-      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { required: true, hint: "For you and your emails." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
       field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
+      '<div class="form-row form-row--2">' + field("name", "Event name (only you see this)", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name) ? "1" : "0" },
+        hint: "Filled in from the names above. Change it if you like." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
       field("description", "A short welcome or description", ev.description, { type: "textarea", hint: "Optional. One or two sentences guests read first." }) +
       '<div class="form-row form-row--3">' + field("event_date", "Date", ev.event_date, { type: "date", required: true, attrs: { min: todayIso() } }) +
       field("start_time", "Starts", ev.start_time, { type: "time" }) + field("end_time", "Ends", ev.end_time, { type: "time" }) + "</div>" +
@@ -280,7 +458,8 @@
   }
   function collect1(ev, fd) {
     ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
-    ev.name = val(fd, "name"); ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
+    ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
+    ev.name = val(fd, "name") || ev.hosts || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
   }
   function validate1(ev) {
@@ -288,7 +467,6 @@
     if (!ev.contact.name) e.contact_name = "Your name is required.";
     if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(ev.contact.email)) e.contact_email = "Enter a valid email address, like name@example.com.";
     if (ev.contact.phone && !/^\+?[0-9 ()-]{7,20}$/.test(ev.contact.phone)) e.contact_phone = "Enter a phone number using digits, spaces and an optional +.";
-    if (!ev.name) e.name = "Event name is required.";
     if (!ev.hosts) e.hosts = (HOST[groupOf(ev)] || ["Hosts"])[0] + " is required.";
     if (!ev.event_date) e.event_date = "Date is required.";
     else if (ev.event_date < todayIso()) e.event_date = "Date can't be in the past.";
@@ -335,6 +513,12 @@
     var bgs = dsg.backgrounds.map(function (k) { return [k, D.themes.backgrounds[k]]; });
     var adv = feature(ev, "advanced_design"), custom = !!(ev.design.colors);
     var w = ev.design.wording || {};
+    var deadline = ev.guest_settings.rsvp_deadline ? R.fmtDate(ev.guest_settings.rsvp_deadline, false) : "";
+    var cards = wordingOptions(ev).map(function (o) {
+      var f = {}; ["welcome", "invitation", "rsvp_note", "closing"].forEach(function (k) { f["w_" + k] = fillWording(o[k], ev.hosts, deadline); });
+      return '<div class="suggest-card"><b>' + esc(o.label) + "</b><p>" + esc(f.w_welcome) + "</p><p>" + esc(f.w_invitation) + "</p>" +
+        '<button class="btn btn--secondary btn--sm" type="button" data-fill="' + esc(JSON.stringify(f)) + '">Use this wording</button></div>';
+    }).join("");
     function upl(kind, label, hint) {
       var cur = ev.images[kind];
       return '<div class="field"><span class="label">' + esc(label) + "</span>" + (cur ? '<div class="row" style="gap:10px"><img src="' + cur + '" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:8px">' +
@@ -344,14 +528,16 @@
     }
     return "<fieldset><legend>Template</legend>" + '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">' + tplOpts + "</div>" +
       '<p class="hint" style="margin-top:8px">Switching template resets colours and fonts to that template\'s defaults. Your content stays.</p></fieldset>' +
-      '<fieldset><legend>Colour palette</legend><div class="choice-grid">' + pal + "</div></fieldset>" +
+      '<fieldset><legend>Colour palette</legend><div class="choice-grid">' + pal + "</div>" +
+      '<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">' + icon("sparkle") + " Try another look</button></fieldset>" +
       '<div class="box" style="padding:16px">' + check("custom_colors", "Use my own colours" + (adv ? "" : " <span class='pill pill--gold pill--plain'>Premium</span>"), custom, { attrs: { disabled: !adv, "data-reveals": "#custom-colors" } }) +
       '<div id="custom-colors" class="form-row form-row--4" style="margin-top:12px"' + (custom ? "" : " hidden") + ">" +
       [["bg", "Background"], ["text", "Text"], ["accent", "Accent"], ["accent2", "Second accent"]].map(function (c) { return color("color_" + c[0], c[1], res.colors[c[0]]); }).join("") + "</div></div>" +
       '<div class="form-row form-row--2">' + select("font_pair", "Typography", fonts, res.font_pair) + select("background", "Background", bgs, res.background) + "</div>" +
       '<div class="form-row form-row--3">' + upl("hero", "Main photo", "Landscape works best.") + upl("background", "Background image", "Used when Background is set to your photo.") + upl("logo", "Logo or crest", "PNG with transparency works best.") + "</div>" +
       field("monogram", "Monogram or initials", ev.design.monogram || "", { attrs: { maxlength: 12, placeholder: "L & S" }, hint: "Shown where the template uses a monogram, if you don't upload a logo." }) +
-      '<fieldset><legend>Your wording</legend><div class="form-row">' + field("w_welcome", "Welcome line", w.welcome || "", { attrs: { placeholder: "Together with their families" } }) +
+      '<fieldset><legend>Your wording</legend><p class="hint" style="margin-bottom:12px">Pick ready-made wording for your occasion, then change anything you like. Leave a box empty to use the template\'s own wording.</p>' +
+      '<div class="suggest-grid">' + cards + '</div><div class="form-row">' + field("w_welcome", "Welcome line", w.welcome || "", { attrs: { placeholder: "Together with their families" } }) +
       field("w_invitation", "Invitation wording", w.invitation || "", { type: "textarea", attrs: { rows: 4, placeholder: "Request the pleasure of your company as they celebrate their marriage." } }) +
       '<div class="form-row form-row--2">' + field("w_rsvp_note", "RSVP note", w.rsvp_note || "", { attrs: { placeholder: "Kindly reply by 1 February." } }) +
       field("w_closing", "Closing line", w.closing || "", { attrs: { placeholder: "We can't wait to celebrate with you." } }) + "</div></div></fieldset>";
@@ -376,8 +562,20 @@
     var gs = ev.guest_settings, preset = ["Family", "Friends", "Colleagues", "VIP", "Church", "Neighbours", "Partners", "Clients"], chosen = gs.categories || [];
     var sides = (gs.sides || ["", ""]).concat(["", ""]).slice(0, 2);
     var pol = [["none", "No plus-ones", "Invitations are for the named guest only."], ["per_guest", "Set per guest", "You decide for each guest in your list."], ["open", "Everyone may bring", "Guests on the general link can add plus-ones."]];
+    var list = ev.guest_list || [], paste;
+    if (feature(ev, "guest_management")) {
+      paste = "<fieldset><legend>Your guest list</legend>" + (list.length ? '<div class="row row--between" style="gap:10px;margin-bottom:10px;flex-wrap:wrap"><p class="small"><b>' + plural(list.length, "guest") + "</b> on your list.</p>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-clear-guests>' + icon("trash") + " Clear the list</button></div>" +
+        '<details style="margin-bottom:12px"><summary class="small" style="cursor:pointer">Show the names</summary><p class="small muted" style="margin-top:8px">' +
+        list.map(function (g) { return esc(g.name) + (g.phone ? " · " + esc(g.phone) : "") + (g.email ? " · " + esc(g.email) : ""); }).join("<br>") + "</p></details>" : "") +
+        field("guest_paste", list.length ? "Add more names (optional)" : "Paste names (optional)", "", { type: "textarea", attrs: { rows: 6, placeholder: "Thandi Mokoena, 082 123 4567\nSipho Dlamini, sipho@example.com\nGogo Nomsa" },
+          hint: "One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. We add them when you save, and each guest gets a personal RSVP link." }) + "</fieldset>";
+    } else {
+      paste = '<div class="notice">' + icon("users") + "<span>With Essential, guests reply through your one link and appear in your dashboard as they do. Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>";
+    }
     return '<div class="form-row form-row--2">' + field("estimated", "Estimated number of guests", gs.estimated, { type: "number", attrs: { min: 0, max: 5000 } }) +
-      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" +
+      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" + paste +
+      '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">More options: plus-ones, children, families and guest groups</summary><div style="display:grid;gap:18px;margin-top:16px">' +
       "<fieldset><legend>Guest categories</legend>" + featureNote(ev, "guest_categories", "Using several guest categories") + '<div class="choice-grid">' +
       preset.map(function (c) { return '<label class="choice"><input type="checkbox" name="categories" value="' + c + '"' + (chosen.indexOf(c) > -1 ? " checked" : "") + "><span>" + c + "</span></label>"; }).join("") + "</div>" +
       field("categories_other", "Other categories", chosen.filter(function (c) { return preset.indexOf(c) < 0; }).join(", "), { hint: "Comma-separated, e.g. Book club, Soccer team" }) + "</fieldset>" +
@@ -389,8 +587,7 @@
         ((gs.plus_one_policy || "per_guest") === x[0] ? " checked" : "") + "><span>" + x[1] + "<small>" + x[2] + "</small></span></label>"; }).join("") + "</div>" +
       field("plus_ones_default", "Plus-ones allowed by default", gs.plus_ones_default || 0, { type: "number", attrs: { min: 0, max: 10 } }) + "</fieldset>" +
       "<fieldset><legend>Children</legend>" + check("children_allowed", "Children are welcome", !!gs.children_allowed, { attrs: { "data-reveals": "#kids" } }) +
-      '<div id="kids"' + (gs.children_allowed ? "" : " hidden") + ">" + field("max_children", "Children per invitation (maximum)", gs.max_children || 0, { type: "number", attrs: { min: 0, max: 10 } }) + "</div></fieldset>" +
-      '<div class="notice">' + icon("info") + "<span>After publishing, you add your actual guest list (or import a spreadsheet). Each guest gets a personal RSVP link.</span></div>";
+      '<div id="kids"' + (gs.children_allowed ? "" : " hidden") + ">" + field("max_children", "Children per invitation (maximum)", gs.max_children || 0, { type: "number", attrs: { min: 0, max: 10 } }) + "</div></fieldset></div></details>";
   }
   function collect4(ev, fd) {
     var gs = ev.guest_settings, cats = fd.getAll("categories").concat(val(fd, "categories_other").split(",").map(function (s) { return s.trim(); }).filter(Boolean));
@@ -434,7 +631,10 @@
     return featureNote(ev, "programme", "The programme") + '<fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">' +
       (multi ? "Traditional and multi-day events often have several parts, each with its own venue. " : "") + "Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows " + mf + ".</p>" +
       repeat("fn", fr, null, "Add a function", mf) + "</fieldset>" +
-      '<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>' + repeat("si", sr, null, "Add an item") + "</fieldset>";
+      '<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>' +
+      '<div class="notice" style="margin-bottom:14px">' + icon("wand") + "<div><span>Start from a typical " + esc(((cat(ev.category) || {}).name || "event").toLowerCase()) + " programme" +
+      (ev.start_time ? " timed from " + esc(ev.start_time) : "") + ', then adjust it.</span><div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-sample>Use a sample programme</button></div></div></div>' +
+      repeat("si", sr, null, "Add an item") + "</fieldset>";
   }
   function collect5(ev, fd) {
     ev.functions = readRows(fd, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"]).map(function (r) {
@@ -463,7 +663,11 @@
     var items = ev.menu.items, info = ev.info, diet = info.dietary_options || [];
     return featureNote(ev, "menu", "The digital menu") + field("menu_name", "Menu name", ev.menu.name || "Reception menu") +
       '<fieldset><legend>Menu</legend><p class="hint" style="margin-bottom:12px">Tick “Guests choose” on main-course options to ask for a meal choice in the RSVP.</p>' +
-      repeat("mi", items.length ? items.map(function (it, i) { return miRow(i, it); }) : [miRow(0), miRow(1)], null, "Add a dish") + "</fieldset>" +
+      repeat("mi", items.length ? items.map(function (it, i) { return miRow(i, it); }) : [miRow(0), miRow(1)], null, "Add a dish") +
+      '<details style="margin-top:14px"' + (items.length ? "" : " open") + '><summary class="small" style="cursor:pointer;font-weight:500">Have the menu from your caterer? Paste it here</summary>' +
+      field("menu_paste", "Paste the menu", "", { type: "textarea", attrs: { rows: 7, placeholder: "Starters\nButternut soup with toasted seeds\nMain: Lamb shank - rosemary jus\nDessert: Malva pudding" },
+        hint: "One dish per line. A line with only a course name (Starters, Mains, Dessert) applies to the dishes below it. Text after a dash becomes the description." }) +
+      '<button class="btn btn--secondary btn--sm" type="button" data-menu-paste>' + icon("plus") + " Add these dishes</button></details></fieldset>" +
       "<fieldset><legend>Dietary requirements guests can tell you about</legend>" + featureNote(ev, "dietary", "Collecting dietary requirements") + '<div class="choice-grid">' +
       D.dietary.map(function (d) { return '<label class="choice"><input type="checkbox" name="dietary_options" value="' + esc(d) + '"' + (diet.indexOf(d) > -1 ? " checked" : "") + "><span>" + esc(d) + "</span></label>"; }).join("") +
       '</div><p class="hint" style="margin-top:8px">Guests can always add allergies in their own words.</p></fieldset>' +
@@ -481,20 +685,24 @@
   // --- step 7 ---------------------------------------------------------------------------------------
   function step7(ev) {
     var t = ev.tables, est = +ev.guest_settings.estimated || 0, sug = est ? Math.max(1, Math.ceil(est / 10)) : 10;
-    return featureNote(ev, "seating", "The seating chart") + '<div class="form-row form-row--3">' +
+    var now = !!t.plan_now;
+    return featureNote(ev, "seating", "The seating chart") +
+      '<div class="notice">' + icon("seat") + "<span>Most hosts plan seating once replies are in. Then the seating editor in your dashboard can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>" +
+      check("plan_now", "Set up my tables now", now, { attrs: { "data-reveals": "#tables-now" } }) +
+      '<div id="tables-now" style="display:grid;gap:18px"' + (now ? "" : " hidden") + '><div class="form-row form-row--3">' +
       field("table_count", "Number of tables", t.count === "" ? sug : t.count, { type: "number", attrs: { min: 0, max: 200 }, hint: est ? "About " + sug + " for " + est + " guests at 10 a table." : "" }) +
       field("capacity", "Seats per table", t.capacity || 10, { type: "number", attrs: { min: 1, max: 40 } }) + select("shape", "Table shape", [["round", "Round"], ["long", "Long / banquet"]], t.shape || "round") + "</div>" +
-      field("table_names", "Table names (optional)", (t.names || []).join("\n"), { type: "textarea", attrs: { rows: 5, placeholder: "Head table\nProtea\nBaobab" }, hint: "One per line, in order. Leave blank for Table 1, Table 2 and so on." }) +
-      field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } }) +
-      '<div class="notice">' + icon("seat") + "<span>Once guests reply, you'll drag them onto tables in the seating editor in your dashboard.</span></div>";
+      field("table_names", "Table names (optional)", (t.names || []).join("\n"), { type: "textarea", attrs: { rows: 5, placeholder: "Head table\nProtea\nBaobab" }, hint: "One per line, in order. Leave blank for Table 1, Table 2 and so on." }) + "</div>" +
+      field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } });
   }
   function collect7(ev, fd) {
     ev.tables = { count: val(fd, "table_count"), capacity: parseInt(val(fd, "capacity") || 10, 10) || 10, shape: val(fd, "shape") || "round",
-      names: val(fd, "table_names").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 200) };
+      names: val(fd, "table_names").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 200), plan_now: !!fd.get("plan_now") };
     ev.info.seating_notes = val(fd, "seating_notes");
   }
   function validate7(ev) {
     var e = {}, c = +ev.tables.count;
+    if (!ev.tables.plan_now) return e;
     if (ev.tables.count !== "" && !(c >= 0 && c <= 200)) e.table_count = "Number of tables must be between 0 and 200.";
     if (!(ev.tables.capacity >= 1 && ev.tables.capacity <= 40)) e.capacity = "Seats per table must be between 1 and 40.";
     return e;
@@ -548,43 +756,62 @@
   // --- step 9: review --------------------------------------------------------------------------------
   function step9(ev) {
     var v = ev.venue, gs = ev.guest_settings, info = ev.info, t = tpl(ev.template) || {};
-    var checks = [[!!ev.event_date, "Event date", 1], [!!(v.name && v.address), "Venue and address", 2], [!!gs.rsvp_deadline, "RSVP deadline", 4],
-      [!!ev.schedule.length || !feature(ev, "programme"), "Programme", 5], [!!(ev.contact.name && ev.contact.email), "Your contact details", 1]];
-    var missing = checks.filter(function (c) { return !c[0]; });
+    var w = ev.design.wording || {};
+    var needed = [[!!(ev.contact.name && ev.contact.email), "Your name and email", 1], [!!(ev.hosts && ev.event_date), "Names and date", 1], [!!(v.name && v.address), "Venue and address", 2]];
+    var nice = [[!!ev.images.hero, "A main photo", 3], [!!(w.welcome || w.invitation || w.rsvp_note || w.closing), "Your own wording (or keep the template's)", 3], [!!gs.rsvp_deadline, "An RSVP deadline", 4]];
+    if (feature(ev, "guest_management")) nice.push([!!(ev.guest_list || []).length, "Your guest list (you can send it later too)", 4]);
+    if (feature(ev, "programme")) nice.push([!!ev.schedule.length, "The programme", 5]);
+    if (feature(ev, "menu")) nice.push([!!ev.menu.items.length, "The menu", 6]);
+    nice.push([!!(info.dress_code || (info.contacts || []).length), "Dress code or contact people", 8]);
+    function li(c, must) {
+      return '<li class="' + (c[0] ? "is-done" : "") + '">' + icon(c[0] ? "check" : (must ? "alert" : "plus")) + "<span>" + (c[0] ? esc(c[1]) : '<a class="text-link" href="#setup-' + c[2] + '">' + esc(c[1]) + "</a>" + (must ? " <b>(needed)</b>" : "")) + "</span></li>";
+    }
+    var g = gaps(ev, ev.selected_package || "premium");
+    var gapNote = g.length ? '<div class="notice notice--warn">' + icon("lock") + "<span>Your planned package, " + esc((pkg(ev.selected_package) || {}).name || "") + ", won't show " + esc(joinOr(g)) +
+      ". Choose a package that includes them in the next step, or remove them.</span></div>" : "";
+    var checklist = '<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3><ul class="checklist">' +
+      needed.map(function (c) { return li(c, true); }).join("") + nice.map(function (c) { return li(c, false); }).join("") +
+      '</ul><p class="tiny muted">Only the first three are needed. Everything else can be added later.</p></div>';
+    var share = '<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you book</h3>' +
+      '<p class="small muted">Send a link to your partner or family. They see your website as it is now, without your contact details or guest list. Photos stay on this device.</p>' +
+      '<div class="btn-row"><button class="btn btn--secondary btn--sm" type="button" data-share-preview>' + icon("link") + ' Copy a preview link</button>' +
+      '<button class="btn btn--ghost btn--sm" type="button" data-share-preview="whatsapp">' + icon("chat") + " Send on WhatsApp</button></div></div>";
     function sec(n, title, rows) {
       return '<div class="review-section"><div class="review-section__head"><h3>' + esc(title) + '</h3><a class="btn btn--sm btn--ghost" href="#setup-' + n + '">' + icon("edit") + ' Edit</a></div><dl class="dl">' +
         rows.map(function (r) { return "<dt>" + esc(r[0]) + "</dt><dd>" + (r[1] ? esc(r[1]) : '<span class="muted">Not added</span>') + "</dd>"; }).join("") + "</dl></div>";
     }
     var tc = +ev.tables.count || 0;
-    return (missing.length ? '<div class="notice notice--warn">' + icon("alert") + '<div><b>Worth adding before you book:</b><ul style="margin:6px 0 0;padding-left:18px">' +
-        missing.map(function (m) { return '<li><a class="text-link" href="#setup-' + m[2] + '">' + esc(m[1]) + "</a></li>"; }).join("") + "</ul></div></div>" : "") +
+    return gapNote + checklist + share +
       '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aurelia.events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
       '<div style="margin:18px 0">' + previewFrame(620) + "</div>" +
       sec(1, "Event details", [["You", ev.contact.name + (ev.contact.email ? " · " + ev.contact.email : "")], ["Event", ev.name], ["Type", (cat(ev.category) || {}).name], ["Hosts", ev.hosts],
         ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""], ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")]]) +
       sec(2, "Venue", [["Venue", v.name], ["Address", v.address], ["Parking", v.parking], ["Directions", v.directions]]) +
       sec(3, "Design", [["Template", t.name], ["Photos", String(["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).length + (ev.images.gallery || []).length) + " added"], ["Welcome", (ev.design.wording || {}).welcome]]) +
-      sec(4, "Guests", [["Estimated", gs.estimated], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""],
+      sec(4, "Guests", [["Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") : ""], ["Estimated", gs.estimated], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""],
         ["Plus-ones", { none: "Not allowed", per_guest: "Set per guest", open: "Allowed" }[gs.plus_one_policy]], ["Children", gs.children_allowed ? "Welcome" : "Adults only"]]) +
       sec(5, "Programme", [["Functions", ev.functions.map(function (f) { return f.name; }).join(", ")], ["Programme items", ev.schedule.length ? String(ev.schedule.length) : ""]]) +
       sec(6, "Food and drinks", [["Menu items", ev.menu.items.length ? String(ev.menu.items.length) : ""], ["Dietary options", (info.dietary_options || []).join(", ")]]) +
-      sec(7, "Seating", [["Tables", tc ? tc + " tables, " + tc * ev.tables.capacity + " seats" : ""]]) +
+      sec(7, "Seating", [["Tables", ev.tables.plan_now ? (tc ? tc + " tables, " + tc * ev.tables.capacity + " seats" : "") : "Planned after RSVPs"]]) +
       sec(8, "Extras", [["Dress code", info.dress_code], ["Registry", (info.registry || []).length ? String(info.registry.length) : ""], ["Contacts", (info.contacts || []).length ? String(info.contacts.length) : ""]]);
   }
 
   // --- step 10: package and booking ----------------------------------------------------------------------
   function step10(ev) {
     var cards = D.packages.map(function (p) {
-      var sel = (ev.selected_package || "premium") === p.code;
+      var sel = (ev.selected_package || "premium") === p.code, pg = gaps(ev, p.code);
       return '<label class="price' + (sel ? " price--highlight" : "") + '" style="cursor:pointer">' + (p.highlight ? '<span class="price__badge">Most chosen</span>' : "") +
         '<div class="row row--between"><h3>' + esc(p.name) + '</h3><input type="radio" name="package" value="' + p.code + '"' + (sel ? " checked" : "") + ' aria-label="Choose ' + esc(p.name) + '" style="width:22px;height:22px;accent-color:var(--color-accent-dark)"></div>' +
         '<p class="muted small">' + esc(p.tagline) + '</p><div class="price__amount">' + money(p.price_cents) + "<small>once-off, VAT incl.</small></div><ul>" +
         p.bullets.map(function (b) { return "<li>" + icon("check") + "<span>" + esc(b) + "</span></li>"; }).join("") + '</ul><div class="price__limits">' +
-        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div></label>";
+        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div>" +
+        (pg.length ? '<p class="small price__gap">' + icon("lock") + "<span>Won't show " + esc(joinOr(pg)) + ".</span></p>" : "") + "</label>";
     }).join("");
     return '<div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' + cards + "</div>" +
       '<div data-field="accept">' + check("accept", 'I accept the <a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>. My website is published once payment is confirmed.', false) + "</div>" +
-      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-9">' + icon("arrow-left") + ' Back</a><div class="btn-row"><button class="btn btn--primary btn--lg" type="submit" name="nav" value="book">Request my booking ' + icon("arrow") + "</button></div></div>";
+      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-9">' + icon("arrow-left") + ' Back</a><div class="btn-row"><button class="btn btn--primary btn--lg" type="submit" name="nav" value="book">' +
+      (D.forms ? "Send my booking " : "Prepare my booking ") + icon("arrow") + "</button></div></div>" +
+      '<p class="small muted" style="margin-top:14px">Questions first, or rather have us finish the set-up? <a class="text-link" href="#help-me-set-up">Ask us to help</a>.</p>';
   }
 
   // --- booking confirmation ---------------------------------------------------------------------------
@@ -600,16 +827,19 @@
     var d = ev.design, w = d.wording || {};
     add("Palette", d.palette); add("Typography", d.font_pair); add("Background", d.background); add("Own colours", d.colors ? JSON.stringify(d.colors) : ""); add("Monogram", d.monogram);
     add("Welcome line", w.welcome); add("Invitation wording", w.invitation); add("RSVP note", w.rsvp_note); add("Closing line", w.closing);
-    add("Photos chosen", ["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).join(", ") + ((ev.images.gallery || []).length ? " + " + ev.images.gallery.length + " gallery" : "") + " (please email them with this request)");
+    var photos = ["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).join(", ") + ((ev.images.gallery || []).length ? " + " + ev.images.gallery.length + " gallery" : "");
+    add("Photos chosen", photos ? photos + (D.forms ? "" : " (please email them with this request)") : "");
     lines.push("");
     add("Estimated guests", gs.estimated); add("RSVP deadline", gs.rsvp_deadline); add("Guest categories", (gs.categories || []).join(", ")); add("Families / sides", (gs.sides || []).join(", "));
     add("Family groups", (gs.family_groups || []).join(", ")); add("VIP note", gs.vip_note); add("Plus-one policy", gs.plus_one_policy + " (default " + (gs.plus_ones_default || 0) + ")");
-    add("Children", gs.children_allowed ? "welcome, up to " + (gs.max_children || 0) + " per invitation" : "adults only"); lines.push("");
+    add("Children", gs.children_allowed ? "welcome, up to " + (gs.max_children || 0) + " per invitation" : "adults only");
+    add("Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") + (D.forms ? " (attached)" : "") : ""); lines.push("");
+    if (!D.forms && (ev.guest_list || []).length) { lines.push("GUEST LIST"); ev.guest_list.forEach(function (x) { lines.push("- " + [x.name, x.phone, x.email].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.functions.length) { lines.push("FUNCTIONS"); ev.functions.forEach(function (f) { lines.push("- " + [f.name, f.func_date, [f.start_time, f.end_time].filter(Boolean).join("-"), f.venue_name, f.address, f.map_url].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.schedule.length) { lines.push("PROGRAMME"); ev.schedule.forEach(function (s) { lines.push("- " + [s.item_time, s.title, s.description, s.kind].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.menu.items.length) { lines.push("MENU: " + ev.menu.name); ev.menu.items.forEach(function (i) { lines.push("- " + [i.course, i.name, i.description, (i.tags || []).join(", "), i.selectable ? "guests choose" : ""].filter(Boolean).join(" | ")); }); }
     add("Dietary options", (info.dietary_options || []).join(", ")); add("Drinks", info.drinks); add("Catering notes", info.catering_notes); lines.push("");
-    add("Tables", ev.tables.count ? ev.tables.count + " x " + ev.tables.capacity + " seats, " + ev.tables.shape : ""); add("Table names", (ev.tables.names || []).join(", ")); add("Seating notes", info.seating_notes); lines.push("");
+    add("Tables", ev.tables.plan_now ? (ev.tables.count ? ev.tables.count + " x " + ev.tables.capacity + " seats, " + ev.tables.shape : "") : "plan after RSVPs"); add("Table names", (ev.tables.names || []).join(", ")); add("Seating notes", info.seating_notes); lines.push("");
     add("Dress code", [info.dress_code, info.dress_code_notes].filter(Boolean).join(" - "));
     (info.registry || []).forEach(function (r) { add("Registry", [r.name, r.url, r.note].filter(Boolean).join(" | ")); });
     add("Gift note", info.gift_note);
@@ -618,27 +848,143 @@
     add("Special instructions", info.instructions);
     return lines.join("\n").replace(/\n{3,}/g, "\n\n");
   }
+  function guestCsv(ev) {
+    return ["Name,Mobile,Email"].concat((ev.guest_list || []).map(function (g) {
+      return [g.name, g.phone, g.email].map(function (x) { return '"' + String(x || "").replace(/"/g, '""') + '"'; }).join(","); })).join("\n");
+  }
+  function sendBooking(ev, kind) {
+    var p = pkg(ev.selected_package) || {};
+    var fields = { website: "", kind: kind, ref: ev.booking.ref, package: p.name || "", amount: money(p.price_cents || 0), name: ev.contact.name, email: ev.contact.email,
+      phone: ev.contact.phone, event: ev.hosts || ev.name, occasion: (cat(ev.category) || {}).name || "", date: ev.event_date,
+      guests: String((ev.guest_list || []).length || ev.guest_settings.estimated || ""), details: summaryText(ev),
+      guest_list: (ev.guest_list || []).length ? guestCsv(ev) : "", draft: JSON.stringify(Object.assign({}, ev, { images: undefined })) };
+    var files = ["hero", "logo", "background"].map(function (k) { var b = dataUrlBlob(ev.images[k]); return [k, b, k + (b && b.type === "image/png" ? ".png" : ".jpg")]; });
+    var gal = (ev.images.gallery || []).slice(0, 40), batches = [];
+    for (var i = 0; i < gal.length; i += 8) batches.push(gal.slice(i, i + 8));
+    return postForm("booking", fields, files).then(function () {
+      return batches.reduce(function (chain, batch, n) {
+        return chain.then(function () {
+          return postForm("booking-photos", { website: "", ref: ev.booking.ref, email: ev.contact.email, batch: (n + 1) + " of " + batches.length },
+            batch.map(function (g, j) { return ["photo" + (j + 1), dataUrlBlob(g.url), "gallery-" + (n * 8 + j + 1) + ".jpg"]; }));
+        });
+      }, Promise.resolve());
+    });
+  }
+  function startSend(ev, kind) {
+    ev.booking.status = "sending"; save(); viewBooked();
+    sendBooking(ev, kind).then(function () {
+      ev.booking.status = "sent"; ev.booking.sent_at = new Date().toISOString(); ev.booking.sent_version = ev.updated; save();
+      if (currentHash === "booked") viewBooked();
+      toast(kind === "update" ? "Your changes are sent." : "Your booking is sent.");
+    }, function () {
+      ev.booking.status = "failed"; save();
+      if (currentHash === "booked") viewBooked();
+    });
+  }
   function viewBooked() {
     var ev = cur();
     if (!ev || !ev.booking) { location.hash = "#my-events"; return; }
-    var p = pkg(ev.selected_package) || {}, link = (D.payment_links || {})[p.code] || "", text = summaryText(ev), email = D.email;
-    var pay = link
-      ? '<a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a>"
-      : '<div class="notice">' + icon("clock") + "<span><b>Online payment opens soon.</b> We'll email you a secure payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
-    var subject = "Booking " + ev.booking.ref + ": " + ev.name;
-    root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 32px)"><div class="container container--narrow" style="display:grid;gap:var(--gap)">' +
-      '<div class="glass glass--strong panel" style="display:grid;gap:14px;text-align:left"><span class="icon-tile icon-tile--soft">' + icon("check") + "</span>" +
-      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">Booking request ready</h1><p class="lead" style="font-size:1.0625rem">Reference <b class="mono">' + esc(ev.booking.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" + pay + "</div>" +
-      '<div class="box" style="display:grid;gap:14px"><h2 style="font-size:1.25rem">Send your booking to us</h2>' +
-      '<p class="muted small">Copy your booking details and email them to us, with any photos you chose. We confirm within one working day.</p>' +
+    var p = pkg(ev.selected_package) || {}, link = (D.payment_links || {})[p.code] || "", text = summaryText(ev), email = D.email, b = ev.booking;
+    if (D.forms && !b.status) { startSend(ev, "new"); return; }
+    var subject = "Booking " + b.ref + ": " + ev.name;
+    var emailBox = '<div class="box" style="display:grid;gap:14px"><h2 style="font-size:1.25rem">' + (D.forms ? "Send it by email instead" : "Send your booking to us") + "</h2>" +
+      '<p class="muted small">Copy your booking details and email them to us' + (ev.images.hero || (ev.images.gallery || []).length ? ", with the photos you chose" : "") + ". We confirm within one working day.</p>" +
       '<div class="notice">' + icon("mail") + '<div><span class="mono" style="user-select:all">' + esc(email) + "</span><br>" +
       '<span class="tiny muted">Subject: <span style="user-select:all">' + esc(subject) + "</span></span></div></div>" +
-      '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + ' Copy booking details</button>' +
+      '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + " Copy booking details</button>" +
       '<button class="btn btn--secondary" type="button" data-copy="' + esc(email) + '" data-copied="Email address copied">Copy email address</button>' +
-      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello Aurelia,\n\nPlease find my booking request " + ev.booking.ref + " below.\n\n") + '">Open my email app</a></div>' +
-      '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>" +
+      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello Aurelia,\n\nPlease find my booking request " + b.ref + " below.\n\n") + '">Open my email app</a></div>' +
+      '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>";
+    var status, showEmail = !D.forms || b.status === "failed";
+    if (!D.forms) status = '<p class="lead" style="font-size:1.0625rem">Your booking details are ready to send. Email them to us below and we\'ll take it from there.</p>';
+    else if (b.status === "sending") status = '<div class="notice" role="status">' + icon("clock") + "<span><b>Sending your booking" + ((ev.images.gallery || []).length ? " and photos" : "") + "…</b> Keep this page open for a moment.</span></div>";
+    else if (b.status === "failed") status = '<div class="notice notice--warn" role="alert">' + icon("alert") + '<div><b>We couldn\'t send it from here.</b> Check your connection and try again, or email it to us below.<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-resend>Try again</button></div></div></div>';
+    else {
+      var changed = b.sent_version && ev.updated > b.sent_version;
+      status = '<div class="notice notice--success" role="status">' + icon("check") + "<div><b>Sent. We have your booking.</b> We\'ll contact " + esc(ev.contact.email) + " within one working day." +
+        ((ev.images.gallery || []).length > 40 ? " Your first 40 gallery photos came through; email the rest to " + esc(email) + " with your reference." : "") + "</div></div>" +
+        (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you sent it.<div style="margin-top:10px"><button class="btn btn--primary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "");
+    }
+    var pay = link
+      ? '<div class="box" style="display:grid;gap:10px"><h2 style="font-size:1.25rem">Pay now</h2><p class="small muted">Pay securely with PayFast by card, instant EFT and more. Use <b class="mono">' + esc(b.ref) + '</b> as your reference. Your website goes live once payment is confirmed.</p>' +
+        '<div><a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a></div></div>"
+      : '<div class="notice">' + icon("card") + "<span><b>Payment:</b> we'll email you a secure PayFast payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
+    var next = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.25rem">What happens next</h2><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:14px">' +
+      [["01", "We check your details", "Within one working day. If anything's missing, we ask you."], ["02", link ? "You pay" : "You get a payment link", link ? "Use the button above whenever you're ready." : "By email, for " + money(p.price_cents) + "."],
+        ["03", "Your website goes live", "We send you your link to share on WhatsApp, by email or as a QR code."]].map(function (x) {
+        return '<li><span class="mono">' + x[0] + "</span><div><b>" + esc(x[1]) + '</b><p class="small muted" style="margin-top:4px">' + esc(x[2]) + "</p></div></li>"; }).join("") + "</ol></div>";
+    root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 32px)"><div class="container container--narrow" style="display:grid;gap:var(--gap)">' +
+      '<div class="glass glass--strong panel" style="display:grid;gap:14px;text-align:left"><span class="icon-tile icon-tile--soft">' + icon("check") + "</span>" +
+      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">' + (D.forms ? "Your booking" : "Booking request ready") + '</h1><p class="small muted">Reference <b class="mono">' + esc(b.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" + status + "</div>" +
+      pay + next + (showEmail ? emailBox : "") +
       '<div class="btn-row"><a class="btn btn--secondary" href="#preview-event">' + icon("eye") + ' Preview your website</a><a class="btn btn--ghost" href="#setup-1">Edit details</a><a class="btn btn--ghost" href="#my-events">My events</a></div></div></section>';
+    window.scrollTo(0, 0);
   }
+
+  // --- a draft opened from a link ---------------------------------------------------------------------
+  function linkError(err) {
+    root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 48px)"><div class="container container--narrow"><div class="empty"><span class="icon-tile">' + icon("alert") +
+      '</span><h1 style="font-size:1.5rem">This link didn\'t open</h1><p>' + esc(err && err.message && /browser/.test(err.message) ? err.message : "It may have been cut short when it was copied. Ask for the link again, and copy all of it.") +
+      '</p><a class="btn btn--primary" href="#create">Create your own event</a></div></div></section>';
+  }
+  function importResume(code) {
+    unpack(code).then(function (ev) {
+      var mine = state.events[ev.id];
+      if (mine && mine.updated > ev.updated) { toast("This device already has a newer copy of that event.", "error"); ev = mine; }
+      else {
+        if (mine) ev.images = mine.images;
+        state.events[ev.id] = ev;
+        if (state.order.indexOf(ev.id) < 0) state.order.unshift(ev.id);
+        toast("Your draft is open on this device." + (ev.images.hero ? "" : " Photos stay on the device you added them on, so add them again in Design."));
+      }
+      state.current = ev.id; save();
+      history.replaceState(null, "", "#setup-" + Math.min(9, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1));
+      route(location.hash.slice(1));
+    }, linkError);
+  }
+  function viewShared(code) {
+    unpack(code).then(function (ev) {
+      root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.hosts || ev.name) +
+        '</h1><p>A draft of this event website, shared with you before it goes live. RSVPs open once it\'s published.</p></div>' +
+        '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#create">Create your own event</a></div></div>' +
+        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aurelia.events/' + esc(slugOf(ev)) + "</span>" +
+        '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
+        '<div class="preview-frame__stage" style="height:' + Math.max(560, window.innerHeight - 220) + 'px"><iframe title="Shared draft of an event website" data-shared></iframe></div></div></div></section>';
+      document.querySelector("iframe[data-shared]").srcdoc = R.render(ev, "preview");
+    }, linkError);
+  }
+
+  // --- forms on the static site: contact and set-up help ------------------------------------------------------
+  var REQUIRED = { contact: { name: "Your name", email: "Email", message: "Your message" }, "setup-help": { name: "Your name", email: "Email", occasion: "What you're celebrating" } };
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest("form[data-static-form]");
+    if (!form) return;
+    e.preventDefault();
+    var name = form.getAttribute("data-static-form"), fd = new FormData(form), fields = {}, errs = [];
+    fd.forEach(function (v, k) { if (k !== "_csrf") fields[k] = String(v).trim(); });
+    Object.keys(REQUIRED[name] || {}).forEach(function (k) { if (!fields[k]) errs.push(REQUIRED[name][k] + " is needed."); });
+    if (fields.email && !/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(fields.email)) errs.push("Enter a valid email address, like name@example.com.");
+    if (name === "setup-help" && /whatsapp|phone/.test(fields.reach || "") && !fields.phone) errs.push("Add a mobile number so we can reach you on " + (fields.reach === "phone" ? "the phone." : "WhatsApp."));
+    var box = form.querySelector("[data-static-errors]");
+    if (!box) { form.insertAdjacentHTML("afterbegin", '<div data-static-errors></div>'); box = form.querySelector("[data-static-errors]"); }
+    if (errs.length) {
+      box.innerHTML = '<div class="form-errors" role="alert" tabindex="-1"><b>Please fix ' + (errs.length === 1 ? "this item" : "these " + errs.length + " items") + ":</b><ul>" + errs.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+      box.firstChild.focus(); return;
+    }
+    box.innerHTML = "";
+    var ref = (name === "contact" ? "C-" : "H-") + Math.random().toString(36).slice(2, 7).toUpperCase(), btn = form.querySelector("[type=submit]");
+    fields.message = (fields.message || "") + "\n\nReference: " + ref;
+    if (btn) { btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+    postForm(name, fields).then(function () {
+      form.outerHTML = '<div class="notice notice--success" role="status">' + icon("check") + "<div><b>Thank you. Your reference is " + ref + '.</b><p class="small" style="margin-top:4px">' +
+        (name === "setup-help" ? "We'll contact you within one working day to go through the details and send you a quote." : "We usually reply within one working day.") + "</p></div></div>";
+    }, function () {
+      if (btn) { btn.disabled = false; btn.removeAttribute("aria-busy"); }
+      var body = Object.keys(fields).filter(function (k) { return k !== "website" && fields[k]; }).map(function (k) { return k + ": " + fields[k]; }).join("\n");
+      box.innerHTML = '<div class="notice notice--warn" role="alert">' + icon("alert") + '<div><b>We couldn\'t send this from here.</b> <a class="text-link" href="mailto:' + esc(D.email) + "?subject=" +
+        encodeURIComponent((name === "setup-help" ? "Set-up help " : "Message ") + ref) + "&body=" + encodeURIComponent(body) + '">Email it to us instead</a>.</div></div>';
+    });
+  });
 
   // --- full preview ------------------------------------------------------------------------------------
   function viewPreview() {
@@ -677,16 +1023,27 @@
       if (showErrors(form, errs)) { save(); return; }
       ev.booking = ev.booking || { ref: "AUR-" + Math.random().toString(36).slice(2, 7).toUpperCase(), at: new Date().toISOString() };
       ev.booking.package = ev.selected_package;
+      if (ev.booking.status !== "sent") delete ev.booking.status;
       if (ev.wizard_done.indexOf(10) < 0) ev.wizard_done.push(10);
       save(); location.hash = "#booked"; return;
     }
-    var e = STEP[n][2] ? STEP[n][2](ev) : {};
+    var e = STEP[n][2] ? STEP[n][2](ev) : {}, added = -1;
+    if (n === 4) {
+      var people = parseGuests((new FormData(form)).get("guest_paste"));
+      if (people.length) {
+        var have = {}; (ev.guest_list || []).forEach(function (g) { have[g.name.toLowerCase()] = 1; if (g.email) have[g.email] = 1; if (g.phone) have[g.phone.replace(/\D/g, "")] = 1; });
+        ev.guest_list = ev.guest_list || []; added = 0;
+        people.forEach(function (g) { var d = g.phone.replace(/\D/g, ""); if (have[g.name.toLowerCase()] || (g.email && have[g.email]) || (d && have[d])) return; ev.guest_list.push(g); have[g.name.toLowerCase()] = 1; added++; });
+      }
+    }
     if (showErrors(form, e)) { save(); return; }
     if (ev.wizard_done.indexOf(n) < 0) ev.wizard_done.push(n);
     if (ev.design._reset) { delete ev.design._reset; }
     save();
+    if (added > -1) toast("Added " + plural(added, "guest") + " to your list.");
     if (nav === "next") location.hash = "#setup-" + (n + 1);
-    else { toast("Saved."); viewStep(n); }
+    else if (nav === "review") location.hash = "#setup-9";
+    else { if (added < 0) toast("Saved."); viewStep(n); }
   }
 
   // --- images ---------------------------------------------------------------------------------------------
@@ -719,6 +1076,14 @@
     submitStep(form, nav);
   });
   document.addEventListener("change", function (e) {
+    if (!e.target.matches("#journey-root [data-plan]")) return;
+    var f = document.querySelector("#journey-root form[data-step]"), ev = cur();
+    if (f) collectStep(f);
+    ev.selected_package = e.target.value; save();
+    toast("Now planning with " + pkg(ev.selected_package).name + ". You can change this until you book.");
+    route(currentHash);
+  });
+  document.addEventListener("change", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
     if (!form) return;
     var t = e.target;
@@ -732,6 +1097,7 @@
         .catch(function (err) { toast(err.message, "error"); });
       return;
     }
+    if (t.name === "guest_paste" || t.name === "menu_paste") return;
     if (t.hasAttribute("data-gallery")) {
       var ev = cur(), lim = limit(ev, "gallery_photos"), files = Array.prototype.slice.call(t.files);
       collectStep(form);
@@ -758,13 +1124,59 @@
     var form = e.target.closest("#journey-root form[data-step]");
     if (!form || e.target.type === "file") return;
     if (e.target.name && e.target.name.indexOf("color_") === 0) { var c = form.querySelector('input[type=color][data-sync="' + e.target.name + '"]'); if (c && /^#[0-9a-f]{6}$/i.test(e.target.value)) c.value = e.target.value; }
+    if (e.target.name === "name") e.target.setAttribute("data-autoname", "0");
+    if (e.target.name === "hosts") { var nm = form.querySelector('[data-autoname="1"]'); if (nm) nm.value = e.target.value; }
+    if (e.target.name === "guest_paste" || e.target.name === "menu_paste") return;
     clearTimeout(form._t);
     form._t = setTimeout(function () { collectStep(form); save(); refreshPreview(); }, 400);
   });
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("#journey-root [data-add-row], #journey-root [data-remove-row], #journey-root [data-device], #journey-root [data-open], #journey-root [data-delete], #journey-root [data-remove-image], #journey-root [data-remove-gallery], #journey-root [data-copy-booking]");
+    var t = e.target.closest("#journey-root [data-add-row], #journey-root [data-remove-row], #journey-root [data-device], #journey-root [data-open], #journey-root [data-delete], #journey-root [data-remove-image], #journey-root [data-remove-gallery], #journey-root [data-copy-booking], " +
+      "#journey-root [data-fill], #journey-root [data-surprise], #journey-root [data-sample], #journey-root [data-menu-paste], #journey-root [data-clear-guests], #journey-root [data-continue-link], #journey-root [data-share-preview], #journey-root [data-resend]");
     if (!t) return;
     var form = t.closest("form[data-step]");
+    if (t.hasAttribute("data-fill")) {
+      var vals = JSON.parse(t.getAttribute("data-fill"));
+      Object.keys(vals).forEach(function (k) { var el = form.querySelector('[name="' + k + '"]'); if (el) el.value = vals[k]; });
+      collectStep(form); save(); refreshPreview(true); toast("Wording added. Edit it as you like."); return;
+    }
+    if (t.hasAttribute("data-surprise")) {
+      var pals = form.querySelectorAll("input[name=palette]");
+      if (pals.length) pals[Math.floor(Math.random() * pals.length)].checked = true;
+      ["font_pair", "background"].forEach(function (k) { var sl = form.querySelector("select[name=" + k + "]"); if (sl && sl.options.length) sl.selectedIndex = Math.floor(Math.random() * Math.min(sl.options.length, k === "font_pair" ? 4 : sl.options.length)); });
+      collectStep(form); save(); refreshPreview(true); return;
+    }
+    if (t.hasAttribute("data-sample")) {
+      collectStep(form);
+      if (cur().schedule.length && !window.confirm("This replaces your programme items with a sample. Continue?")) return;
+      cur().schedule = sampleProgramme(cur()); save(); viewStep(5); toast("Sample programme added. Change the times and titles to match your day."); return;
+    }
+    if (t.hasAttribute("data-menu-paste")) {
+      var txt = form.querySelector("[name=menu_paste]"), dishes = parseMenu(txt ? txt.value : "");
+      if (!dishes.length) { toast("Paste the menu first, one dish per line.", "error"); return; }
+      collectStep(form);
+      var mev = cur(); mev.menu.items = mev.menu.items.filter(function (it) { return it.name; }).concat(dishes); save(); viewStep(6);
+      toast("Added " + plural(dishes.length, "dish", "dishes") + ". Check the courses."); return;
+    }
+    if (t.hasAttribute("data-clear-guests")) {
+      if (!window.confirm("Remove everyone from your guest list?")) return;
+      collectStep(form); cur().guest_list = []; save(); viewStep(4); return;
+    }
+    if (t.hasAttribute("data-continue-link")) {
+      var f0 = document.querySelector("#journey-root form[data-step]"); if (f0) { collectStep(f0); save(); }
+      pack(cur(), false).then(function (code) { shareOrCopy(pageUrl() + "#resume=" + code, "Continue my Aurelia event", "Link copied. Open it on your other device to carry on. Photos stay on this device."); });
+      return;
+    }
+    if (t.hasAttribute("data-share-preview")) {
+      var how = t.getAttribute("data-share-preview");
+      pack(cur(), true).then(function (code) {
+        var url = pageUrl() + "#see=" + code;
+        if (how === "whatsapp") window.open("https://wa.me/?text=" + encodeURIComponent("Have a look at our event website draft: " + url), "_blank", "noopener");
+        else shareOrCopy(url, "Our event website draft", "Preview link copied. Anyone with it can see the draft, without your contact details.");
+      });
+      return;
+    }
+    if (t.hasAttribute("data-resend")) { startSend(cur(), t.getAttribute("data-resend") || "new"); return; }
     if (t.hasAttribute("data-add-row")) {
       var wrap = t.closest("[data-repeat]"), list = wrap.querySelector("[data-rows]"), prefix = wrap.getAttribute("data-repeat"), max = +wrap.getAttribute("data-max");
       if (list.children.length >= max) { toast("Your package allows " + max + " here.", "error"); return; }
@@ -802,6 +1214,8 @@
   // --- routing ---------------------------------------------------------------------------------------------
   function route(id) {
     currentHash = id;
+    if (id.indexOf("resume=") === 0) return importResume(id.slice(7));
+    if (id.indexOf("see=") === 0) return viewShared(id.slice(4));
     if (id.indexOf("create") === 0) return viewCreate(id);
     if (id === "my-events") return viewMyEvents();
     if (id === "preview-event") return viewPreview();
@@ -810,6 +1224,6 @@
     if (m && +m[1] >= 1 && +m[1] <= 10) return viewStep(+m[1]);
     return viewMyEvents();
   }
-  function handles(id) { return /^(create(-.+)?|my-events|preview-event|booked|setup-\d+)$/.test(id); }
+  function handles(id) { return /^(create(-.+)?|my-events|preview-event|booked|setup-\d+|resume=.+|see=.+)$/.test(id); }
   window.AureliaJourney = { route: route, handles: handles };
 })();

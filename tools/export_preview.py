@@ -26,7 +26,7 @@ STANDALONE = "--standalone" in sys.argv[1:]
 OUT = os.path.abspath(ARGS[0] if ARGS else os.path.join(SRC, "preview_build"))
 sys.path.insert(0, SRC)
 from tests.helpers import Client, fresh_app  # noqa: E402  (uses a temporary data folder)
-from app import catalog, config, db, events  # noqa: E402
+from app import catalog, config, db, events, suggestions  # noqa: E402
 from app.eventsite import designs, render as ev_render, themes  # noqa: E402
 from app.views import wizard  # noqa: E402
 
@@ -74,7 +74,11 @@ data = {
                   "moon": designs.MOON, "star": designs.STAR},
     "host_label": {k: list(v) for k, v in wizard.HOST_LABEL.items()},
     "courses": wizard.COURSES, "kinds": [list(k) for k in wizard.KINDS], "dress_codes": wizard.DRESS_CODES,
-    "payment_links": payment_links,
+    "payment_links": {k: v for k, v in payment_links.items() if isinstance(v, str)},
+    "suggest": {"wording": suggestions.WORDING, "programmes": {k: [list(x) for x in v] for k, v in suggestions.PROGRAMMES.items()},
+                "programme_for": suggestions.PROGRAMME_FOR, "default_start": suggestions.DEFAULT_START},
+    # Netlify Forms only exist on a standalone (Netlify) build; elsewhere the booking falls back to email.
+    "forms": STANDALONE,
 }
 open(os.path.join(OUT, "static/js/data.js"), "w").write("window.AURELIA_DATA = " + json.dumps(data, ensure_ascii=False) + ";\n")
 
@@ -82,7 +86,7 @@ open(os.path.join(OUT, "static/js/data.js"), "w").write("window.AURELIA_DATA = "
 PAGES = {"/": "home", "/weddings": "weddings", "/baby-celebrations": "baby-celebrations", "/parties": "parties",
          "/celebrations": "celebrations", "/templates": "templates", "/pricing": "pricing",
          "/how-it-works": "how-it-works", "/faq": "faq", "/contact": "contact", "/privacy": "privacy",
-         "/terms": "terms", "/refunds": "refunds"}
+         "/terms": "terms", "/refunds": "refunds", "/help-me-set-up": "help-me-set-up"}
 TPLS = {t["slug"]: db.loads(t["groups"], []) for t in catalog.templates()}
 ACCOUNT = ("/login", "/register", "/dashboard", "/account", "/forgot-password")
 previews = set()
@@ -144,7 +148,17 @@ for v in ("weddings", "baby-celebrations", "parties", "celebrations"):
 notice = (f'<div class="notice" style="max-width:520px"><i class="i i--mail" aria-hidden="true"></i><div><b>Email us</b><br>'
           f'<span class="mono" style="user-select:all">{EMAIL}</span><br>'
           f'<button class="btn btn--sm btn--secondary" type="button" data-copy="{EMAIL}" data-copied="Email address copied" style="margin-top:10px">Copy email address</button></div></div>')
-views["contact"] = re.sub(r'<form class="form box".*?</form>', notice, views["contact"], flags=re.S)
+if STANDALONE:
+    # Real forms on Netlify: journey.js posts them to Netlify Forms and shows the reference.
+    for vid, name in (("contact", "contact"), ("help-me-set-up", "setup-help")):
+        views[vid] = re.sub(r'<form class="form box" method="post" novalidate><input type="hidden" name="_csrf" value="[^"]*">',
+                            f'<form class="form box" novalidate data-no-busy data-static-form="{name}">', views[vid], count=1)
+        assert f'data-static-form="{name}"' in views[vid], vid
+else:
+    views["contact"] = re.sub(r'<form class="form box".*?</form>', notice, views["contact"], flags=re.S)
+    views["help-me-set-up"] = re.sub(r'<form class="form box".*?</form>',
+                                     notice.replace("<b>Email us</b>", "<b>Email us your date, occasion and how to reach you</b>"),
+                                     views["help-me-set-up"], flags=re.S)
 
 head_links = rewrite(re.search(r'(<link rel="preconnect".*?)<script>', home, re.S).group(1))
 theme_script = re.search(r"(<script>\(function\(\)\{try.*?</script>)", home, re.S).group(1)
@@ -166,10 +180,24 @@ if(J&&J.handles(id)){J.route(id);}
 var t=target.querySelector('h1');document.title=(t?t.textContent.trim()+' · ':'')+'Aurelia';
 setTimeout(function(){window.dispatchEvent(new Event('resize'));target.querySelectorAll('[data-reveal]').forEach(function(e){e.classList.add('is-visible');});},60);}
 window.addEventListener('hashchange',show);show();})();</script>"""
+def _netlify_form(name: str, fields: list, files: list = ()) -> str:
+    inputs = "".join(f'<textarea name="{f[1:]}"></textarea>' if f.startswith("~") else f'<input name="{f}">' for f in fields)
+    inputs += "".join(f'<input type="file" name="{f}">' for f in files)
+    return f'<form name="{name}" data-netlify="true" netlify-honeypot="website"><input name="website">{inputs}</form>'
+
+
+# Netlify reads these at upload time to set up the forms; journey.js submits them with fetch.
+netlify_forms = ('<div hidden aria-hidden="true">'
+                 + _netlify_form("booking", ["kind", "ref", "package", "amount", "name", "email", "phone", "event", "occasion", "date",
+                                             "guests", "~details", "~guest_list", "~draft"], ["hero", "logo", "background"])
+                 + _netlify_form("booking-photos", ["ref", "email", "batch"], [f"photo{n}" for n in range(1, 9)])
+                 + _netlify_form("contact", ["name", "email", "topic", "~message"])
+                 + _netlify_form("setup-help", ["name", "email", "phone", "reach", "occasion", "event_date", "package", "~message"])
+                 + "</div>") if STANDALONE else ""
 scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "eventrender.js", "journey.js"))
 index = (f'<title>Aurelia</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
          f'{rewrite(chrome_start)}<main id="main">{sections}</main>{rewrite(footer)}'
-         f'<div class="toasts" aria-live="polite"></div>{scripts}{router}')
+         f'<div class="toasts" aria-live="polite"></div>{netlify_forms}{scripts}{router}')
 index = index.replace("<body", "<div").replace("</body>", "")
 if STANDALONE:
     desc = ("Personalised event websites for South African weddings, baby celebrations and parties: "

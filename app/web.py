@@ -128,8 +128,11 @@ class Request:
         f = self.files.get(key)
         return f[0] if f else None
 
+    # Fields that always carry a value (hidden ids and drop-downs), so they don't make a row "filled in".
+    ROW_DEFAULTS = frozenset({"id", "kind", "function", "course"})
+
     def rows(self, prefix: str, fields: list[str]) -> list[dict]:
-        """Collect repeatable rows posted as prefix-<i>-<field>. Empty rows are dropped."""
+        """Collect repeatable rows posted as prefix-<i>-<field>. Rows with nothing typed in are dropped."""
         idx = set()
         pat = re.compile(rf"^{re.escape(prefix)}-(\d+)-")
         for k in self.form:
@@ -139,7 +142,7 @@ class Request:
         out = []
         for i in sorted(idx):
             row = {f: self.get(f"{prefix}-{i}-{f}") for f in fields}
-            if any(v for v in row.values()):
+            if any(v for k, v in row.items() if k not in self.ROW_DEFAULTS):
                 out.append(row)
         return out
 

@@ -5,6 +5,7 @@ from .. import auth, catalog, config, db
 from ..icons import i
 from ..services import email as mail
 from ..web import HTTPError, esc, redirect, router, url
+from . import forms
 from .forms import Form, csrf, errors_summary, field, honeypot, select
 from .layout import page
 
@@ -409,8 +410,78 @@ def faq(req):
 
 
 # --- contact & support ---------------------------------------------------------------------------
-TOPICS = [("general", "General question"), ("event", "Help with my event"), ("payment", "Payments and receipts"),
-          ("technical", "Something isn't working"), ("privacy", "Privacy or data request"), ("partnership", "Partnerships")]
+TOPICS = [("general", "General question"), ("event", "Help with my event"), ("setup_help", "Set up my event for me"),
+          ("payment", "Payments and receipts"), ("technical", "Something isn't working"), ("privacy", "Privacy or data request"),
+          ("partnership", "Partnerships")]
+REACH = [("whatsapp", "WhatsApp"), ("phone", "Phone call"), ("email", "Email")]
+
+
+@router.route("/help-me-set-up", methods=("GET", "POST"))
+def setup_help(req):
+    """Done-for-you set-up: a free request; the team replies with a quote."""
+    f = Form(req)
+    sent = None
+    user = req.user
+    if req.method == "POST":
+        if req.get("website"):
+            return redirect("/help-me-set-up")
+        if auth.rate_limited(f"setup-help:{req.ip}", 5, 3600):
+            f.error("message", "You've sent several requests already. Please wait a little before sending another.")
+        name = f.text("name", "Your name", required=True, max=120)
+        email_addr = f.email("email", required=True)
+        phone = f.text("phone", "Mobile", max=40)
+        reach = f.choice("reach", [k for k, _ in REACH], "contact options", default="email")
+        if reach in ("whatsapp", "phone") and not phone:
+            f.error("phone", "Add a mobile number so we can contact you on " + dict(REACH)[reach] + ".")
+        occasion = f.choice("occasion", [c["slug"] for c in catalog.categories()], "occasions", required=True)
+        if "occasion" in f.errors:
+            f.errors["occasion"] = "Choose what you're celebrating."
+        when = f.date("event_date", "Event date")
+        pkg = f.choice("package", ["", *[p["code"] for p in catalog.packages()]], "packages", default="")
+        message = f.text("message", "Anything else", max=3000)
+        if f.ok:
+            lines = [f"Occasion: {catalog.category_name(occasion)}", f"Date: {forms.fmt_date(when) if when else 'not set yet'}",
+                     f"Package: {catalog.package(pkg)['name'] if pkg else 'not sure yet'}", f"Mobile: {phone or '-'}",
+                     f"Contact by: {dict(REACH)[reach]}", "", message or "(no message)"]
+            sid = db.insert("support_requests", {"user_id": user["id"] if user else None, "event_id": None, "name": name,
+                                                 "email": email_addr, "topic": "setup_help", "message": "\n".join(lines), "priority": 1,
+                                                 "created_at": db.now(), "updated_at": db.now()})
+            sent = f"S-{sid:05d}"
+            mail.send(email_addr, "setup_help_received", {"first_name": mail.first_name(name), "reference": sent},
+                      user_id=user["id"] if user else None)
+    if sent:
+        form_html = (f'<div class="notice notice--success">{i("check")}<div><b>Thank you. Your reference is {esc(sent)}.</b>'
+                     f'<p class="small" style="margin-top:4px">We\'ve emailed you a copy. We\'ll contact you within one working day to go through '
+                     f'the details and send you a quote.</p></div></div>')
+    else:
+        d = f.data
+        occ = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
+        pk = [(p["code"], f'{p["name"]} ({catalog.money(p["price_cents"])})') for p in catalog.packages()]
+        form_html = f"""<form class="form box" method="post" novalidate>{csrf(req)}{honeypot()}{errors_summary(f.errors)}
+<div class="form-row form-row--2">{field("name", "Your name", d.get("name", user["name"] if user else ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
+{field("email", "Email", d.get("email", user["email"] if user else ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
+<div class="form-row form-row--2">{field("phone", "Mobile (optional)", d.get("phone", ""), type="tel", errors=f.errors, attrs={"autocomplete": "tel"})}
+{select("reach", "Best way to reach you", REACH, d.get("reach") or "whatsapp")}</div>
+<div class="form-row form-row--2">{select("occasion", "What are you celebrating?", occ, d.get("occasion") or req.arg("occasion"), required=True, blank="Choose one", errors=f.errors)}
+{field("event_date", "Date (if you know it)", d.get("event_date", ""), type="date", errors=f.errors)}</div>
+{select("package", "Package you're thinking of", pk, d.get("package") or req.arg("package") or "", blank="Not sure yet")}
+{field("message", "Anything we should know? (optional)", d.get("message", ""), type="textarea", errors=f.errors, attrs={"rows": 4, "placeholder": "Venue, number of guests, the look you like, or questions."})}
+<p class="tiny muted">We use these details only to help you with your event. See our <a class="text-link" href="/privacy">privacy notice</a>.</p>
+<div><button class="btn btn--primary" type="submit">Ask us to set it up {i("send")}</button></div></form>"""
+    steps = "".join(f'<li><span class="mono">{n}</span><div><b>{esc(t)}</b><p class="small muted" style="margin-top:4px">{esc(x)}</p></div></li>'
+                    for n, t, x in (("01", "Tell us about your event", "Send this short form. It takes a minute."),
+                                    ("02", "We contact you", "Within one working day, on WhatsApp, by phone or email, whichever you prefer."),
+                                    ("03", "Send us your details and photos", "Names, date, venue, wording and photos. Voice notes are fine."),
+                                    ("04", "We build it, you approve it", "You get a preview link to check. We change anything you like."),
+                                    ("05", "Pay and share", "Once you're happy, pay for your package and share your link.")))
+    body = page_hero('We\'ll set it up <span class="serif grad">for you</span>',
+                     "Short on time? Tell us about your event and our team builds your website for you. You check it, we change anything you like, and you pay only once you're happy.",
+                     [("Set-up help", "")]) + f"""<section class="section"><div class="container"><div class="split split--57" style="align-items:start">
+<div class="stack" style="--stack:18px"><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:16px">{steps}</ol>
+<div class="notice">{i("info")}<span>We send you a quote for the set-up with your package. Asking costs nothing and doesn't commit you.</span></div></div>
+<div>{form_html}</div></div></div></section>"""
+    return page(req, "We'll set it up for you", body, "/help-me-set-up",
+                description="Let the Aurelia team build your event website for you. Free request, quote within one working day.")
 
 
 @router.route("/contact", methods=("GET", "POST"))

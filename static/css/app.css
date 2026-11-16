@@ -878,3 +878,4 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 @media (max-width: 520px) { .wa-float span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .wa-float { padding: 0; width: 52px; justify-content: center; } }
 @media print { .wa-float { display: none; } }
 .price__gap { display: flex; gap: 8px; align-items: flex-start; margin: 0; } .price__gap .i { color: var(--warn); flex: none; margin-top: 2px; }
+.how-list li { display: flex; gap: 14px; align-items: flex-start; } .how-list .mono { flex: none; color: var(--color-accent-text); padding-top: 2px; }
