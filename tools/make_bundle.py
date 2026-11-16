@@ -403,7 +403,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 93 tests.
+- `tests/`: an in-process test client and 96 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 

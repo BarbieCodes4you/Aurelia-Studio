@@ -3,6 +3,24 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-16 (night): why digital, seating how-to, booking view, photo slots
+
+**Changes**
+- Home page: "Why send your invitations this way", just above "Finished event websites": printed
+  cards versus one link for 300 guests (printing at about R30 to R50 a card, Bridebook ZA 2025).
+- Seating step: "How you'll seat your guests" (replies come in → "Seat everyone automatically" →
+  drag or tap to adjust, print or download).
+- Full platform, event overview: "Your booking" card (package, amount and date paid, receipt,
+  website link and status, online until).
+- Photo slots (`app/stock.py`, `static/img/stock/`): weddings, traditional, baby, parties, other.
+  Used on the home page occasion tiles and as the main photo in the template samples; the line
+  drawings stay until photos are added.
+
+**Open**
+- Photos: Unsplash downloads are behind an anti-bot check from this session. Waiting on photos from
+  you (see conversation). Unsplash hosts were added to the Default environment's network allowlist.
+- 96 tests pass.
+
 ## 2026-11-16 (evening): smoother create-your-event, checkout on the site, Aurelia Studio
 
 **Decisions (from you)**

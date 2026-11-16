@@ -933,3 +933,4 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .cat-tile:hover .cat-tile__photo img { transform: scale(var(--zoom)); }
 .cat-tile__photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 14, 30, 0) 30%, rgba(20, 14, 30, .78) 100%); }
 .cat-tile:has(.cat-tile__photo) h3, .cat-tile:has(.cat-tile__photo) p, .cat-tile:has(.cat-tile__photo) .arrow-link { color: #fff; }
+.vs, .vs * { text-align: left; } .vs-row { justify-items: start; }

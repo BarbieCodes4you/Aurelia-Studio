@@ -30,7 +30,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 93 tests
+python3 -m unittest discover -s tests -t .     # 96 tests
 ```
 
 ## The customer journey
@@ -78,7 +78,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 93 tests
+  tests/                      in-process test client and 96 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,

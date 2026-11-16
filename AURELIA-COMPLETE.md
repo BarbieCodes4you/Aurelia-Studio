@@ -1,6 +1,6 @@
 # Aurelia Studio: complete project and hosting guide
 
-Generated 2026-11-16 from the working project. **73 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-16 from the working project. **74 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -365,7 +365,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 93 tests.
+- `tests/`: an in-process test client and 96 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 
@@ -562,6 +562,7 @@ is manual today, by design).
 - `app/services/reports.py`
 - `app/services/scheduler.py`
 - `app/services/storage.py`
+- `app/stock.py`
 - `app/suggestions.py`
 - `app/views/__init__.py`
 - `app/views/accounts.py`
@@ -833,12 +834,30 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=20b15f25e303fbd92075d4f026cf2b541e6368febc0098e7011ae2e628c17268 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=88710ca1d9751998fdbad8d7669d2bf1cb0432da1a49a76cc9c04b4d7f021e5c nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-16 (night): why digital, seating how-to, booking view, photo slots
+
+**Changes**
+- Home page: "Why send your invitations this way", just above "Finished event websites": printed
+  cards versus one link for 300 guests (printing at about R30 to R50 a card, Bridebook ZA 2025).
+- Seating step: "How you'll seat your guests" (replies come in → "Seat everyone automatically" →
+  drag or tap to adjust, print or download).
+- Full platform, event overview: "Your booking" card (package, amount and date paid, receipt,
+  website link and status, online until).
+- Photo slots (`app/stock.py`, `static/img/stock/`): weddings, traditional, baby, parties, other.
+  Used on the home page occasion tiles and as the main photo in the template samples; the line
+  drawings stay until photos are added.
+
+**Open**
+- Photos: Unsplash downloads are behind an anti-bot check from this session. Waiting on photos from
+  you (see conversation). Unsplash hosts were added to the Default environment's network allowlist.
+- 96 tests pass.
 
 ## 2026-11-16 (evening): smoother create-your-event, checkout on the site, Aurelia Studio
 
@@ -968,7 +987,7 @@ The 21 pain points from the journey review, fixed in both the hosted app and the
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=cc8d0b5789b1ddb0a6f2424b010a7d00d349ef813705a512fd147aa894b78e3f nl=1 -->
+<!-- FILE: README.md sha256=cdfffd56cf3e94185e5b67355b84779da4c06366d1ca67b791cee3d4a3e77f88 nl=1 -->
 ````markdown
 # Aurelia Studio — digital event experience platform
 
@@ -1002,7 +1021,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 93 tests
+python3 -m unittest discover -s tests -t .     # 96 tests
 ```
 
 ## The customer journey
@@ -1050,7 +1069,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 93 tests
+  tests/                      in-process test client and 96 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,
@@ -2586,7 +2605,7 @@ def create_layout_tables(ev, layout: dict, count: int) -> int:
 
 ### `app/eventsite/demo.py`
 
-<!-- FILE: app/eventsite/demo.py sha256=aed3f271c5ef6f0349f66a316d0c6b655a37f4aa445dbc1e22e226d2b3bcdf9a nl=1 -->
+<!-- FILE: app/eventsite/demo.py sha256=a2938b4a4d7f80cb74c172542a895876c4ecbed9a73ed7807c2fe21e9bee2341 nl=1 -->
 ```python
 """Sample events for the template gallery. All names and venues are fictional."""
 from __future__ import annotations
@@ -2697,7 +2716,7 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
     menus = [{"name": "Menu" if group != "weddings" else "Reception menu", "description": "", "items": items}] if items else []
     return {
         "_demo": True, "_design": design, "_group": group,
-        "_functions": functions, "_schedule": schedule, "_menus": menus, "_hero": "",
+        "_functions": functions, "_schedule": schedule, "_menus": menus, "_hero": _stock_hero(template_slug, group),
         "_gallery": [{"url": "", "caption": c} for c in ("", "", "", "", "", "")],
         "id": 0, "uid": "demo", "slug": f"sample-{template_slug}", "status": "published", "owner_id": 0,
         "template": template_slug, "category": s["category"], "name": s["name"], "hosts": s["hosts"],
@@ -2718,6 +2737,14 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
         "sections": {}, "report_prefs": {}, "selected_package": "signature", "paid_package": "signature",
         "hosting_until": None, "rsvp_open": 1, "published_at": None, "wizard_done": [],
     }
+
+
+def _stock_hero(slug: str, group: str) -> str:
+    from .. import stock
+    if slug == "heritage" and stock.url("traditional"):
+        return stock.url("traditional")
+    return stock.url(group)
+
 ```
 
 ### `app/eventsite/designs.py`
@@ -6592,6 +6619,42 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
     return True
 ```
 
+### `app/stock.py`
+
+<!-- FILE: app/stock.py sha256=addca32bbe2ea64ad3ddbf553944080b7f738748f42aa34ec8b5eaa58611d3d0 nl=1 -->
+```python
+"""Stock photos for the marketing pages and the template samples.
+
+Drop a photo into static/img/stock/ under one of these names and it is used automatically; until then
+the line drawings and colour washes stay. Keep each photo under about 250 KB (1600px wide, JPEG).
+Record where each photo came from and its licence in CREDITS below (Unsplash and Pexels photos are free
+for commercial use without attribution, but keeping the source makes them easy to check or replace).
+"""
+from __future__ import annotations
+
+from pathlib import Path
+
+DIR = Path(__file__).resolve().parent.parent / "static" / "img" / "stock"
+
+SLOTS = {
+    "weddings": "Couple at a South African wedding (home page tile, wedding template samples)",
+    "traditional": "Traditional or lobola celebration (traditional template samples)",
+    "baby": "Baby shower or new parents (home page tile, baby template samples)",
+    "parties": "Birthday or dinner party (home page tile, party template samples)",
+    "other": "Graduation, family gathering or corporate event (home page tile, other samples)",
+}
+
+CREDITS: dict = {}   # slot -> "Photographer, source link, licence"
+
+
+def url(slot: str) -> str:
+    """Web path of the photo for `slot`, or "" when none has been added yet."""
+    for ext in ("jpg", "jpeg", "webp", "png"):
+        if (DIR / f"{slot}.{ext}").is_file():
+            return f"/static/img/stock/{slot}.{ext}"
+    return ""
+```
+
 ### `app/suggestions.py`
 
 <!-- FILE: app/suggestions.py sha256=1f2a0c84290242fba16c7f7a709a1e2ba88e4cfd2c1d90879375fecf75a70ada nl=1 -->
@@ -8627,7 +8690,7 @@ def audit_log(req):
 
 ### `app/views/dashboard.py`
 
-<!-- FILE: app/views/dashboard.py sha256=1c59278e20aeff396cfc00647da489c3a315d9982933ded30f71cae976dd35fd nl=1 -->
+<!-- FILE: app/views/dashboard.py sha256=5080d31d440fbcb1bc99a4c167769133a61b34e0a8e354d5547cacf63e0fa938 nl=1 -->
 ```python
 """Organiser dashboard: event list, event overview, sharing (WhatsApp, QR), reports and settings."""
 from __future__ import annotations
@@ -8784,12 +8847,33 @@ def overview(req, uid):
     actions = (f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/setup/1">{i("edit")}Edit details</a>'
                f'<a class="btn btn--secondary btn--sm" href="{events.public_path(ev)}" target="_blank" rel="noopener">{i("eye")}View website</a>')
     head = page_head(ev["name"], esc(" · ".join(x for x in (catalog.category_name(ev["category"]), venue.get("name", "")) if x)), actions)
-    body = head + banner + next_html + kpis + f"""<div class="cols cols--2"><div class="stack"><div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
+    booking = _booking_box(ev, paid, live)
+    body = head + banner + next_html + kpis + f"""<div class="cols cols--2"><div class="stack">{booking}<div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
 <a class="arrow-link" href="{base(ev)}/rsvps"><span>All responses</span>{i("arrow")}</a></div>{recent_box}</div>{share}</div>
 <div class="box"><div class="box__head"><h2>Checklist</h2><span class="small muted">{done} of {len(checklist)}</span></div>
 <div class="progress" style="margin-bottom:12px"><span style="width:{round(100 * done / len(checklist))}%"></span></div>
 <ul class="list-plain list-rows">{check_html}</ul></div></div>"""
     return organiser_page(req, ev, "Overview", body, "")
+
+
+def _booking_box(ev, paid, live) -> str:
+    """The client's booking at a glance: package, payment, receipt, website link and how long it stays online."""
+    if not paid:
+        return ""
+    order = db.one("SELECT * FROM orders WHERE event_id = ? AND status = 'paid' ORDER BY paid_at DESC, id DESC LIMIT 1", (ev["id"],))
+    rows = [("Package", esc(paid["name"]))]
+    if order:
+        rows.append(("Paid", f'{catalog.money(order["amount_cents"])} on {esc(forms.fmt_date((order["paid_at"] or "")[:10]))}'
+                             f'{" (test payment)" if order["mode"] == "sandbox" else ""}'))
+        rows.append(("Reference", f'<span class="mono">{esc(order["invoice_no"] or order["uid"])}</span> · '
+                                  f'<a class="text-link" href="/dashboard/orders/{esc(order["uid"])}/receipt">Receipt</a>'))
+    pill = '<span class="pill pill--ok">Live</span>' if live else '<span class="pill pill--draft">Not live</span>'
+    rows.append(("Website", f'<a class="text-link" href="{esc(events.public_path(ev))}" target="_blank" rel="noopener">{esc(events.public_url(ev))}</a> {pill}'))
+    if ev.get("hosting_until"):
+        rows.append(("Online until", esc(forms.fmt_date(ev["hosting_until"]))))
+    dl = "".join(f"<dt>{k}</dt><dd>{v}</dd>" for k, v in rows)
+    return (f'<div class="box"><div class="box__head"><h2>Your booking</h2><a class="arrow-link" href="/dashboard/billing"><span>Billing</span>{i("arrow")}</a></div>'
+            f'<dl class="dl">{dl}</dl></div>')
 
 
 def _next_steps(ev, s, paid, live, days, tables) -> str:
@@ -11138,12 +11222,12 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=2760dd2a0e6bba04fbccef7a8166e021178bb0661762a5f8deea7a58829a801c nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=81b63d9a868f03e1811dc09c4278515bd739fbc6a26512ff80a3970968e08c0a nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
 
-from .. import auth, catalog, config, db
+from .. import auth, catalog, config, db, stock
 from ..icons import i
 from ..services import email as mail
 from ..web import HTTPError, esc, redirect, router, url
@@ -11188,7 +11272,9 @@ def category_art(group: str) -> str:
 def category_tiles() -> str:
     tiles = []
     for key, g in catalog.GROUPS.items():
-        tiles.append(f"""<a class="cat-tile" href="{g['path']}" data-reveal>{category_art(key)}
+        photo = stock.url(key)
+        art = (f'<div class="cat-tile__photo"><img src="{photo}" alt="" loading="lazy" decoding="async"></div>' if photo else category_art(key))
+        tiles.append(f"""<a class="cat-tile" href="{g['path']}" data-reveal>{art}
 <h3>{esc(g['name'])}</h3><p>{esc(g['blurb'])}</p><span class="arrow-link"><span>Explore {esc(g['name'].lower())}</span>{i("arrow")}</span></a>""")
     return f'<div class="grid grid--4" data-stagger>{"".join(tiles)}</div>'
 
@@ -11306,6 +11392,23 @@ FEATURES = [
 TESTIMONIALS: list = []
 
 
+def why_digital() -> str:
+    """Printed cards versus one link, for 300 guests. Printing estimate: R30 to R50 per printed invitation
+    in South Africa (Bridebook, 2025 guide), before envelopes, RSVP cards and delivery."""
+    low = min((p["price_cents"] for p in catalog.packages()), default=0)
+    rows = [("Cost", "About R9,000 to R15,000 to print 300 cards, before envelopes, RSVP cards and delivery",
+             f"From {catalog.money(low)} once-off, however many guests you invite"),
+            ("Sending", "Weeks of hand-delivering and posting", "On WhatsApp in minutes, to everyone"),
+            ("Changes", "A new venue or time means reprinting", "Change it once and every guest sees it"),
+            ("Replies", "Phone calls, messages and a spreadsheet", "RSVPs, meal choices and dietary needs arrive in one place"),
+            ("On the day", "Separate menus, programmes and seating lists to print", "Programme, menu, map and their table on their phone")]
+    body = "".join(f'<div class="vs-row"><span class="vs-label mono tiny">{esc(k)}</span><span class="vs-old">{i("close")}<span><span class="vs-tag">Printed: </span>{esc(a)}</span></span>'
+                   f'<span class="vs-new">{i("check")}<span><span class="vs-tag">{esc(config.BRAND_NAME)}: </span>{esc(b)}</span></span></div>' for k, a, b in rows)
+    return (f'<section class="section"><div class="container">{section_head("Why send your invitations this way", "Say you are inviting 300 people.")}'
+            f'<div class="vs box"><div class="vs-row vs-head"><span></span><b>Printed cards</b><b>One {esc(config.BRAND_NAME)} link</b></div>{body}</div>'
+            f'<p class="tiny muted" style="margin-top:10px">Printing estimate based on South African prices of about R30 to R50 per printed invitation.</p></div></section>')
+
+
 @router.get("/")
 def home(req):
     pastel_first = ["bloom", "confetti", "aurora", "cradle", "atelier", "linea"]
@@ -11332,6 +11435,8 @@ def home(req):
 
 <section class="section"><div class="container">{section_head("Made for every celebration", "Pick your occasion. Each one comes with templates and tools that fit it, from family delegations at a lobola to meal choices at a gala.")}
 {category_tiles()}</div></section>
+
+{why_digital()}
 
 <section class="section section--surface"><div class="container">
 {section_head("Finished event websites", "Real layouts, filled with sample content. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
@@ -12409,7 +12514,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=6cfbfbfce75fa13a893217c873f32ffe153e6f401629a4c115c81db2a86c5071 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=cae10389270462f896b8c6547a4694268cca51eb22f493cf00ac5e989f7302ab nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -13229,6 +13334,11 @@ def step_food(req, ev):
 
 
 # --- step 6: seating -----------------------------------------------------------------------------------
+SEATING_HOWTO = ('<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">How you\'ll seat your guests</h3>'
+                 '<ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:12px">'
+                 '<li><span class="mono">01</span><div><b>Guests reply on your website</b><p class="small muted" style="margin-top:4px">Their names, plus-ones and meal choices come into your dashboard.</p></div></li><li><span class="mono">02</span><div><b>Tap “Seat everyone automatically”</b><p class="small muted" style="margin-top:4px">In your dashboard\'s seating chart. Families and groups stay together at the tables you chose, and nobody is put at the top table.</p></div></li><li><span class="mono">03</span><div><b>Move anyone you like</b><p class="small muted" style="margin-top:4px">Drag a guest to another table, or tap a guest and then a table. Then print the plan or download it for your venue.</p></div></li>'
+                 '</ol></div>')
+
 TOP_CHOICES = {
     "weddings": ("Where will the couple sit?", [("sweetheart", "Sweetheart table", "Just the two of you, facing your guests."),
                                                 ("head", "Head table", "The couple with the bridal party, along one side, facing guests."),
@@ -13290,6 +13400,7 @@ def step_seating(req, ev):
 <div class="form-row form-row--2">{field("capacity", "Seats per table", layout.get("capacity") or 10, type="number", errors=f.errors, attrs={"min": 2, "max": 40})}
 {field("table_count", "Number of guest tables", len(guest_tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 120}, hint=f"About {suggested} for {est} guests." if est else "We'll adjust this once you know your numbers.")}</div>
 <div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview data-dance="{1 if group in ("weddings", "parties") else 0}"></div></div>
+{SEATING_HOWTO}
 <div class="field{' has-error' if 'plan_now' in f.errors else ''}">{check("plan_now", "Create these tables now", bool(req.get("plan_now")), hint="Optional. Otherwise we create them from this layout when you open the seating editor. You can rename and move tables there.")}</div>
 {field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}{SEATING_STEP_JS}"""
     return wizard_frame(req, ev, 6, inner)
@@ -14431,7 +14542,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `preview_site/journey.js`
 
-<!-- FILE: preview_site/journey.js sha256=e8c45658223afca40f4e2a81846c7fd73594eb3be7425c4603b8932fa012adc7 nl=1 -->
+<!-- FILE: preview_site/journey.js sha256=3ba6c164e4131464cab188e47f92155da849e35cf05ed4195909a76f25b19f3d nl=1 -->
 ```javascript
 /* Aurelia customer journey for the shareable site: choose occasion and template, the 10-step set-up,
    live preview, package choice and booking request. Runs entirely in the visitor's browser; drafts are
@@ -15321,6 +15432,8 @@ echo "Backed up to $DEST ($STAMP)"
       '<div class="form-row form-row--2">' + field("capacity", "Seats per table", lay.capacity, { type: "number", attrs: { min: 2, max: 40 } }) +
       field("table_count", "Number of guest tables", count, { type: "number", attrs: { min: 0, max: 120 }, hint: est ? "About " + suggestedTables(ev, lay.capacity) + " for " + est + " guests." : "We'll adjust this once you know your numbers." }) + "</div>" +
       '<div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview>' + planSvg(ev) + "</div></div>" +
+      '<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">How you\'ll seat your guests</h3><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:12px">' +
+      '<li><span class="mono">01</span><div><b>Guests reply on your website</b><p class="small muted" style="margin-top:4px">Their names, plus-ones and meal choices come into your dashboard.</p></div></li><li><span class="mono">02</span><div><b>Tap “Seat everyone automatically”</b><p class="small muted" style="margin-top:4px">In your dashboard\'s seating chart. Families and groups stay together at the tables you chose, and nobody is put at the top table.</p></div></li><li><span class="mono">03</span><div><b>Move anyone you like</b><p class="small muted" style="margin-top:4px">Drag a guest to another table, or tap a guest and then a table. Then print the plan or download it for your venue.</p></div></li></ol></div>' +
       field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } });
   }
   function planSvg(ev) {
@@ -15969,7 +16082,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=211d95b9450e1c4c1baa5d10ea9654b8055559c657b4969698d47ba30ff55612 nl=1 -->
+<!-- FILE: static/css/app.css sha256=156f1a70d9f8d230531f90827704d854634bae1fbb5be4038a2297beb9432bf3 nl=1 -->
 ```css
 /* Aurelia design system
    Built from docs/website-style-playbook.md (STS Holdings, Oct 2026): one gold accent used as a
@@ -16883,6 +16996,30 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .guest-chips button { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--color-muted); cursor: pointer; }
 .guest-chips button:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
 .guest-chips .i { width: 14px; height: 14px; }
+/* Printed cards versus one link */
+.vs { display: grid; gap: 0; padding: 6px 20px; }
+.vs-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--color-line); }
+.vs-row:last-child { border-bottom: 0; }
+.vs-head b { font-size: 1rem; }
+.vs-label { color: var(--color-muted); text-transform: uppercase; letter-spacing: .06em; padding-top: 3px; }
+.vs-old, .vs-new { display: flex; gap: 10px; align-items: flex-start; }
+.vs-old { color: var(--color-muted); }
+.vs-old .i { color: var(--color-muted); flex: none; margin-top: 3px; }
+.vs-new .i { color: var(--color-accent-text); flex: none; margin-top: 3px; }
+@media (max-width: 720px) {
+  .vs-row { grid-template-columns: 1fr; gap: 6px; }
+  .vs-head { display: none; }
+  .vs-old::after { content: ""; }
+}
+.vs-tag { display: none; font-weight: 600; }
+@media (max-width: 720px) { .vs-tag { display: inline; } }
+/* Occasion tiles with a photo: darken the lower half so the text stays readable */
+.cat-tile__photo { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.cat-tile__photo img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--t-slow) var(--ease-out); }
+.cat-tile:hover .cat-tile__photo img { transform: scale(var(--zoom)); }
+.cat-tile__photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 14, 30, 0) 30%, rgba(20, 14, 30, .78) 100%); }
+.cat-tile:has(.cat-tile__photo) h3, .cat-tile:has(.cat-tile__photo) p, .cat-tile:has(.cat-tile__photo) .arrow-link { color: #fff; }
+.vs, .vs * { text-align: left; } .vs-row { justify-items: start; }
 ```
 
 ### `static/css/eventsite.css`
@@ -18904,7 +19041,7 @@ class HostingRuleTest(unittest.TestCase):
 
 ### `tests/test_ease.py`
 
-<!-- FILE: tests/test_ease.py sha256=6ab535d4240fa6209bdfd6b5a73b76fd6898d88bedf3a09b3d127fab05488094 nl=1 -->
+<!-- FILE: tests/test_ease.py sha256=3ddbd229b0096f62d3515ee5b497b7be826aac0aea2cc01ce51d3301e025af85 nl=1 -->
 ```python
 """Tests for the ease-of-use round (2026-11): sign-in links, draft previews, pasting guests and menus,
 sample programmes, package gaps, the WhatsApp queue, next steps and the set-up help request."""
@@ -19050,6 +19187,26 @@ class EaseTests(unittest.TestCase):
         self.assertIn("Add your guest list", r.text)
         add_guest(self.ev, "Ann", status="pending", phone="082 111 2222")
         self.assertIn("Send your invitations", self.client.get(self.base).text)
+
+    def test_booking_box_on_overview(self):
+        self.assertNotIn("Your booking", self.client.get(self.base).text)
+        events.touch(self.ev["id"], paid_package="premium", status="published", hosting_until="2027-09-30")
+        db.insert("orders", {"uid": "ord123", "event_id": self.ev["id"], "user_id": self.owner["id"], "package_code": "premium",
+                             "amount_cents": 1299900, "description": "Premium Experience", "status": "paid", "mode": "sandbox", "gateway": "sandbox", "invoice_no": "INV-0001",
+                             "paid_at": "2026-11-16T10:00:00", "created_at": db.now(), "updated_at": db.now()})
+        t = self.client.get(self.base).text
+        self.assertIn("Your booking", t)
+        self.assertIn("R12,999", t)
+        self.assertIn("/dashboard/orders/ord123/receipt", t)
+        self.assertIn("Online until", t)
+
+    def test_home_explains_why_digital(self):
+        t = Client(self.app).get("/").text
+        self.assertIn("Why send your invitations this way", t)
+        self.assertLess(t.index("Why send your invitations this way"), t.index("Finished event websites"))
+
+    def test_seating_step_explains_placing_guests(self):
+        self.assertIn("Seat everyone automatically", self.client.get(self.base + "/setup/6").text)
 
     # --- set-up help ------------------------------------------------------------------------------------------
     def test_setup_help_request(self):
@@ -19974,7 +20131,7 @@ print(f"{OUT}: {len(views)} pages + journey, {len(previews)} template samples, l
 
 ### `tools/make_bundle.py`
 
-<!-- FILE: tools/make_bundle.py sha256=26527ae7ff1fa3d5594d10abf70950e338de4832ad54d597ca0251e99f6e8808 nl=1 -->
+<!-- FILE: tools/make_bundle.py sha256=f3e36d93afc36c5de6f42bc5f3d14f982fc58c63225ee756554cb213aff11b0e nl=1 -->
 ````python
 #!/usr/bin/env python3
 """Write AURELIA-COMPLETE.md: the whole project in one Markdown file.
@@ -20381,7 +20538,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 93 tests.
+- `tests/`: an in-process test client and 96 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 
