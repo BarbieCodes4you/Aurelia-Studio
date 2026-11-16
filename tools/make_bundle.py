@@ -87,11 +87,15 @@ every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
   pricing with full comparison, how it works, FAQ, contact/support form, privacy (POPIA), terms, refunds.
-- **Accounts:** register, log in/out, password reset, email confirmation, profile, data download,
-  account deletion.
+- **Accounts:** register with just a name and email (password optional), sign in with an emailed link
+  or a password, password reset, email confirmation, profile, data download, account deletion.
 - **10-step event set-up wizard:** event details, venue, design (live preview), guests, programme,
   food and drinks, seating, extras (dress code, registry, contacts, accommodation, gallery), review,
-  package and payment. Saved as a private draft at every step.
+  package and payment. Saved as a private draft at every step. Built to keep the client's work small:
+  package chosen up front with locked steps marked, steps 4 to 8 optional, ready-made wording and sample
+  programmes per occasion, guest lists and caterers' menus pasted in, seating left until RSVPs arrive,
+  a review checklist, a warning when a package wouldn't show something already filled in, and a
+  shareable draft preview link for family. "We'll set it up for you" request page.
 - **Event website generator:** 11 templates with different layouts (Atelier, Folio, Bloom, Heritage,
   Champagne, Linea, Confetti, Pulse, Aurora, Laureate, Cradle), each with palettes, font pairs,
   backgrounds, photos and custom wording. One public link per event, plus a personal link per guest.
@@ -328,8 +332,8 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - [ ] PayFast sandbox journey passes, then live credentials with `PAYFAST_SANDBOX=0`
 - [ ] Company address, VAT number and information officer set in `.env`
 - [ ] Legal pages (`/privacy`, `/terms`, `/refunds`) reviewed by a lawyer; edit them in `app/views/marketing.py`
-- [ ] Footer social links (currently `#`) set in `app/views/layout.py`
-- [ ] Demonstration testimonials on the home page replaced or removed (`TESTIMONIALS` in `app/views/marketing.py`)
+- [ ] Optional: `WHATSAPP_NUMBER` and `SOCIAL_*` links set in `.env` (hidden until set)
+- [ ] Real customer reviews added to `TESTIMONIALS` in `app/views/marketing.py` (the section stays hidden while empty)
 - [ ] Package prices, features and limits confirmed in `/admin/packages`
 - [ ] Nightly backups running and copied off the server
 
@@ -398,7 +402,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 70 tests.
+- `tests/`: an in-process test client and 89 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 

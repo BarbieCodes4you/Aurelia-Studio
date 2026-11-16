@@ -30,7 +30,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 70 tests
+python3 -m unittest discover -s tests -t .     # 89 tests
 ```
 
 ## The customer journey
@@ -78,7 +78,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 70 tests
+  tests/                      in-process test client and 89 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,
@@ -135,8 +135,8 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 - Brand name, domain, company address, VAT number, information officer (support email is invitesaurelia@gmail.com; no phone number is shown)
   (`.env`; placeholders are marked `[TBC]`).
 - Legal pages (`/privacy`, `/terms`, `/refunds`) are drafts marked for legal review.
-- Testimonials on the home page are labelled demonstration content.
-- Social links in the footer point to `#`.
+- Customer reviews: the home page section stays hidden until real reviews are added (`TESTIMONIALS`).
+- WhatsApp support number and social links: hidden until set (`WHATSAPP_NUMBER`, `SOCIAL_*` in `.env`).
 - Package limits (email allowance, hosting months, functions, admins, gallery photos) are proposals.
   Edit them at `/admin/packages`.
 - Custom domain support (Signature) is listed as a feature, but domain mapping needs hosting-level setup
@@ -154,16 +154,23 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 3. **Approved WhatsApp Business API** for automated invitations. Today WhatsApp is share-only, by design.
 4. **Custom PDF invitation designs** (Signature) and S3/R2 storage.
 
+## Go live now
+
+`GO-LIVE-GUIDE.md` covers putting the static site on Netlify (with bookings, contact messages and
+set-up requests arriving through Netlify Forms) and taking payment with PayFast.
+
 ## Shareable preview site (no server)
 
 `python3 tools/export_preview.py OUT_DIR` builds a static version of the site that runs anywhere,
 including a Claude Artifact link. It includes the full customer journey in the browser:
 occasion and template, all 10 set-up steps with photo uploads and a live preview
 (`preview_site/eventrender.js` is a JavaScript port of the Python renderer), "My events" saved in
-the visitor's browser, package choice and a booking request that the customer copies and emails
-to the support address. Paste a payment link per package into `preview_site/payment_links.json`
-(for example a PayFast payment link) and rebuild: the booking page then shows "Pay now". A static
-page can't send data to you on its own, so automatic bookings, accounts and RSVPs need the hosted app.
+the visitor's browser, links to continue on another device or show a draft to family, and package
+choice. On a `--standalone` build hosted on Netlify, the booking (with photos and guest list), the
+contact form and the set-up help form send themselves through Netlify Forms; anywhere else they fall
+back to "copy and email us". Put a PayFast link or a pasted PayFast "Pay Now" button per package in
+`preview_site/payment_links.json` and rebuild: the booking page then shows "Pay now". Accounts and
+RSVPs still need the hosted app.
 
 To host the static version on its own (Netlify, Cloudflare Pages, GitHub Pages), add `--standalone`:
 `python3 tools/export_preview.py dist/aurelia-site --standalone` writes `index.html` as a complete HTML

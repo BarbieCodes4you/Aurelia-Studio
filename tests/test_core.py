@@ -24,7 +24,7 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(self.c.get("/templates/does-not-exist").status, 404)
 
     def test_pricing_reads_packages_from_db(self):
-        db.run("UPDATE packages SET price_cents = 1_234_500 WHERE code = 'premium'")
+        db.run("UPDATE packages SET price_cents = 1234500 WHERE code = 'premium'")
         self.assertIn("R12,345", self.c.get("/pricing").text)
 
     def test_register_login_logout(self):

@@ -103,7 +103,7 @@ WORDING = {
     "graduation": [
         {"label": "Proud family", "welcome": "Celebrating a graduate",
          "invitation": "{hosts} invite you to celebrate a well-earned graduation.",
-         "rsvp_note": "Kindly reply by {deadline}.", "closing": "Thank you for supporting the journey."},
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "Thank you for every bit of support along the way."},
         {"label": "Celebration", "welcome": "The hard work is done",
          "invitation": "Join {hosts} for the ceremony and the celebration afterwards.",
          "rsvp_note": "Please reply by {deadline}.", "closing": "See you there."},

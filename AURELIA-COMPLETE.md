@@ -1,6 +1,6 @@
 # Aurelia: complete project and hosting guide
 
-Generated 2026-11-16 from the working project. **68 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-16 from the working project. **72 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -24,11 +24,15 @@ every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
   pricing with full comparison, how it works, FAQ, contact/support form, privacy (POPIA), terms, refunds.
-- **Accounts:** register, log in/out, password reset, email confirmation, profile, data download,
-  account deletion.
+- **Accounts:** register with just a name and email (password optional), sign in with an emailed link
+  or a password, password reset, email confirmation, profile, data download, account deletion.
 - **10-step event set-up wizard:** event details, venue, design (live preview), guests, programme,
   food and drinks, seating, extras (dress code, registry, contacts, accommodation, gallery), review,
-  package and payment. Saved as a private draft at every step.
+  package and payment. Saved as a private draft at every step. Built to keep the client's work small:
+  package chosen up front with locked steps marked, steps 4 to 8 optional, ready-made wording and sample
+  programmes per occasion, guest lists and caterers' menus pasted in, seating left until RSVPs arrive,
+  a review checklist, a warning when a package wouldn't show something already filled in, and a
+  shareable draft preview link for family. "We'll set it up for you" request page.
 - **Event website generator:** 11 templates with different layouts (Atelier, Folio, Bloom, Heritage,
   Champagne, Linea, Confetti, Pulse, Aurora, Laureate, Cradle), each with palettes, font pairs,
   backgrounds, photos and custom wording. One public link per event, plus a personal link per guest.
@@ -290,8 +294,8 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - [ ] PayFast sandbox journey passes, then live credentials with `PAYFAST_SANDBOX=0`
 - [ ] Company address, VAT number and information officer set in `.env`
 - [ ] Legal pages (`/privacy`, `/terms`, `/refunds`) reviewed by a lawyer; edit them in `app/views/marketing.py`
-- [ ] Footer social links (currently `#`) set in `app/views/layout.py`
-- [ ] Demonstration testimonials on the home page replaced or removed (`TESTIMONIALS` in `app/views/marketing.py`)
+- [ ] Optional: `WHATSAPP_NUMBER` and `SOCIAL_*` links set in `.env` (hidden until set)
+- [ ] Real customer reviews added to `TESTIMONIALS` in `app/views/marketing.py` (the section stays hidden while empty)
 - [ ] Package prices, features and limits confirmed in `/admin/packages`
 - [ ] Nightly backups running and copied off the server
 
@@ -360,7 +364,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 70 tests.
+- `tests/`: an in-process test client and 89 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 
@@ -394,6 +398,8 @@ is manual today, by design).
 | GET, POST | `/register` | accounts |
 | GET, POST | `/login` | accounts |
 | POST | `/logout` | accounts |
+| GET, POST | `/login/email` | accounts |
+| GET | `/login/link/<token>` | accounts |
 | GET, POST | `/forgot-password` | accounts |
 | GET, POST | `/reset-password/<token>` | accounts |
 | GET | `/verify/<token>` | accounts |
@@ -467,6 +473,7 @@ is manual today, by design).
 | POST | `/dashboard/events/<uid>/communications/final-report` | manage |
 | GET | `/dashboard` | dashboard |
 | GET | `/dashboard/events/<uid>` | dashboard |
+| GET, POST | `/dashboard/events/<uid>/share/whatsapp` | dashboard |
 | GET | `/dashboard/events/<uid>/share` | dashboard |
 | GET | `/dashboard/events/<uid>/share/qr.svg` | dashboard |
 | GET | `/dashboard/events/<uid>/share/qr.png` | dashboard |
@@ -492,6 +499,7 @@ is manual today, by design).
 | GET | `/pricing` | marketing |
 | GET | `/how-it-works` | marketing |
 | GET | `/faq` | marketing |
+| GET, POST | `/help-me-set-up` | marketing |
 | GET, POST | `/contact` | marketing |
 | GET | `/privacy` | marketing |
 | GET | `/terms` | marketing |
@@ -511,9 +519,11 @@ is manual today, by design).
 | POST | `/events/<slug:slug>/rsvp` | public_event |
 | GET, POST | `/events/<slug:slug>/u/<token>` | public_event |
 | GET | `/events/<slug:slug>/calendar.ics` | public_event |
+| GET | `/events/<slug:slug>/draft/<token>` | public_event |
 | GET | `/templates/<slug:slug>/preview` | public_event |
 | GET | `/dashboard/events/<uid>/preview` | public_event |
 | GET, POST | `/create` | wizard |
+| POST | `/dashboard/events/<uid>/plan-package` | wizard |
 | GET, POST | `/dashboard/events/<uid>/setup/<int:n>` | wizard |
 
 ## 12. Source files
@@ -522,6 +532,7 @@ is manual today, by design).
 - `.env.example`
 - `.gitignore`
 - `Dockerfile`
+- `GO-LIVE-GUIDE.md`
 - `PROJECT-LOG.md`
 - `README.md`
 - `run.py`
@@ -540,6 +551,7 @@ is manual today, by design).
 - `app/eventsite/themes.py`
 - `app/icons.py`
 - `app/migrations/001_init.sql`
+- `app/migrations/002_login_links.sql`
 - `app/notify.py`
 - `app/seed.py`
 - `app/services/__init__.py`
@@ -550,6 +562,7 @@ is manual today, by design).
 - `app/services/reports.py`
 - `app/services/scheduler.py`
 - `app/services/storage.py`
+- `app/suggestions.py`
 - `app/views/__init__.py`
 - `app/views/accounts.py`
 - `app/views/admin.py`
@@ -582,6 +595,7 @@ is manual today, by design).
 - `tests/helpers.py`
 - `tests/test_admin.py`
 - `tests/test_core.py`
+- `tests/test_ease.py`
 - `tests/test_eventsite.py`
 - `tests/test_manage.py`
 - `tools/export_preview.py`
@@ -602,7 +616,7 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=5307d18e9db59281be30c3c6c25ee01854c14bd6a31ffd4f2fb9cbdea1786193 nl=1 -->
+<!-- FILE: .env.example sha256=17b5b340cf134f47d3565221620e9717a076c9fb4745d03fcf67a6a42a7e80ca nl=1 -->
 ```
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
@@ -615,6 +629,10 @@ BRAND_NAME=Aurelia
 SUPPORT_EMAIL=invitesaurelia@gmail.com
 COMPANY_ADDRESS=Johannesburg, South Africa
 INFORMATION_OFFICER_EMAIL=          # POPIA information officer
+WHATSAPP_NUMBER=                    # support WhatsApp, e.g. 082 123 4567; shows a chat button on every page
+SOCIAL_INSTAGRAM=                   # full links; each shows in the footer only when set
+SOCIAL_FACEBOOK=
+SOCIAL_TIKTOK=
 VAT_NUMBER=                         # shown on tax invoices
 
 # Email: outbox (dev, writes files to data/outbox), resend, or smtp
@@ -683,14 +701,198 @@ EXPOSE 8040
 CMD ["python3", "run.py"]
 ```
 
+### `GO-LIVE-GUIDE.md`
+
+<!-- FILE: GO-LIVE-GUIDE.md sha256=a568af88fe0e30dd0dcacae736a7a14dab0c68fec2a251ef3a084ceeb3e56e68 nl=1 -->
+```markdown
+# Aurelia: go-live guide (Netlify + PayFast)
+
+This is for the version of the site that runs on Netlify today: the marketing pages, templates and the
+full "Create your event" journey. Bookings, contact messages and set-up requests arrive through Netlify
+Forms. Payments use PayFast. The full platform (accounts, RSVPs, dashboards) comes later; see
+`AURELIA-COMPLETE.md`, section 3.
+
+Menu names below can change slightly when Netlify or PayFast update their dashboards. If a name doesn't
+match, look for the closest one, or send me a screenshot.
+
+---
+
+## Part 1: put the site on Netlify
+
+1. Sign in at **app.netlify.com** (free; Google sign-in works).
+2. Unzip `aurelia-site-netlify.zip`. You get a folder called `aurelia-site`.
+3. Go to **app.netlify.com/drop** and drag the `aurelia-site` folder onto the page.
+4. Rename the site: **Site configuration → Change site name**, e.g. `aurelia-invites`. Your address becomes
+   `https://aurelia-invites.netlify.app`.
+
+### Switch on the forms (once)
+
+Netlify only collects form submissions when form detection is on.
+
+1. Open your site → **Forms** (left menu).
+2. If you see **Enable form detection**, click it.
+3. Upload the folder again (**Deploys** → drag the `aurelia-site` folder onto the page), so Netlify finds
+   the forms. Afterwards **Forms** lists four: `booking`, `booking-photos`, `contact` and `setup-help`.
+
+### Get an email for every booking (once)
+
+1. **Site configuration → Notifications → Emails and webhooks → Form submission notifications**.
+2. **Add notification → Email notification**, choose "Any form", and enter `invitesaurelia@gmail.com`.
+
+Each booking includes: reference (e.g. `AUR-7K2QD`), package and amount, the client's name, email and
+mobile, every detail they entered, their guest list, and their photos as attachments. Gallery photos come
+as separate `booking-photos` submissions with the same reference.
+
+**Limits:** Netlify's free plan caps form submissions and uploaded files per month. Check
+**Forms → Usage** after your first few bookings. If you get close, upgrade the Netlify plan.
+
+### Test it yourself
+
+Make a booking on your live site with your own email. You should see "Sent. We have your booking." and
+receive the notification email. Also send yourself a message from **Contact** and a request from
+**We'll set it up for you**.
+
+---
+
+## Part 2: PayFast
+
+### What you need
+
+- A PayFast account: **payfast.io → Sign up**. You can register as an individual (sole proprietor) or a
+  company. Opening an account is free; PayFast charges a fee per transaction.
+- Verification documents (FICA). PayFast shows the exact list for your account type during sign-up.
+  Typically: ID, proof of address (less than three months old) and a bank confirmation letter; companies
+  also need registration documents. Clear scans with matching names and addresses avoid delays.
+- Upload them in the dashboard (**Account → Verification documents**). PayFast says verification takes
+  about two business days once the documents are complete. You can't receive payments until then.
+
+### Option A (recommended): a "Pay now" button for each package
+
+The booking page then shows **Pay R12,999 securely**, and clients pay straight away.
+
+1. In the PayFast dashboard, find **Pay Now buttons** and click **Generate** (or Create).
+2. Make one button per package, with a fixed amount:
+
+   | Package | Item name | Amount |
+   |---|---|---|
+   | Essential | Aurelia Essential Experience | 8999.00 |
+   | Premium | Aurelia Premium Experience | 12999.00 |
+   | Signature | Aurelia Signature Experience | 17999.00 |
+
+3. If it asks for return or cancel pages, use your site address, e.g. `https://aurelia-invites.netlify.app/`.
+4. Click **Create button** and copy the code it shows. If PayFast also gives you a link for the button,
+   that works too.
+5. Send me the three codes or links in this chat, or paste each into `preview_site/payment_links.json`
+   (one per package). The button code and links contain only your public merchant ID.
+   **Never paste your merchant key or passphrase in a chat.**
+6. I rebuild the site, and you drag the new `aurelia-site` folder onto **Deploys** in Netlify. The address
+   stays the same.
+
+The site accepts only PayFast addresses, and keeps only the hidden payment fields from a pasted button.
+
+### Option B: a payment request per client (works today, no changes)
+
+Without buttons, the booking page tells the client you'll email a payment link. For each booking:
+
+1. In the PayFast dashboard, open **Request money / Payment request**.
+2. Enter the client's email (from the booking notification), the package amount, and the booking
+   reference (e.g. `AUR-7K2QD`) in the description.
+3. PayFast emails the client a secure link. You get an email when they pay.
+
+### Knowing who has paid
+
+PayFast emails you for every payment and lists it in the dashboard. Match the amount and the client's
+email (or the reference) to the booking email from Netlify, then build and send their event website.
+
+### Test first
+
+Make one real payment for a small amount (e.g. a R5 test button) and refund it from the dashboard, or
+use PayFast's sandbox (`sandbox.payfast.co.za`) to see the flow without real money.
+
+---
+
+## Part 3: later, on the full platform
+
+When the full app is hosted (accounts, RSVPs, dashboards), PayFast connects directly: payment is
+confirmed server-to-server and the website publishes itself. That needs your merchant ID, merchant key
+and passphrase in the server settings (`AURELIA-COMPLETE.md`, section 5). They go in the hosting
+settings, never in the code or a chat.
+
+---
+
+## Optional settings (full platform)
+
+| Setting | What it does |
+|---|---|
+| `WHATSAPP_NUMBER` | Shows a "Chat on WhatsApp" button on every page and in the footer |
+| `SOCIAL_INSTAGRAM`, `SOCIAL_FACEBOOK`, `SOCIAL_TIKTOK` | Footer icons, each shown only when set |
+
+For the Netlify site, send me the WhatsApp number or social links and I'll rebuild with them.
+```
+
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=af72c63007cdcd164e613c78d2f9800aca1f06cd1736ce3afeb73287b5675c72 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=6e94598a4dd95d8f4989f66c08e90d8ca5897e25ec53e75b7c8e556855236e32 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-16 (later): making it as easy as possible for the client
+
+The 21 pain points from the journey review, fixed in both the hosted app and the Netlify site unless noted.
+
+**Decisions (from you)**
+- Hosting: a site never goes offline before one month after the event date (package months still count
+  from publishing).
+- "We'll set it up for you": a free request; the team replies with a quote. No price on the site yet.
+- WhatsApp support button: built, hidden until a number is set (`WHATSAPP_NUMBER`).
+- Payments: PayFast.
+
+**Changes**
+- Booking on the Netlify site sends itself (details, guest list, photos) through Netlify Forms, shows
+  "Sent", and offers "Send my changes" after edits. Falls back to "copy and email" if sending fails.
+  Contact and set-up help forms send for real too.
+- "Pay now" per package from a PayFast link or a pasted PayFast "Pay Now" button (PayFast addresses only).
+- Continue on another device (link carries the draft; photos stay on the first device) and a shareable
+  preview link for family (no contact details or guest list). App: signed draft preview link.
+- Package chosen on the first screen, "Planning with" switcher on every step, locked steps marked,
+  and warnings on the review and package steps when a package wouldn't show something already filled in.
+- Quick path: steps 4 to 8 optional with "Skip for now" and "Save and go to review".
+- First screen: occasion, matching templates only (a matching one pre-selected), package. No name box;
+  the event name fills in from the names ("Lerato & Sipho's wedding").
+- Ready-made wording (2 per occasion), "Try another look", sample programme per occasion timed from the
+  start time, paste a caterer's menu, paste a guest list (Excel/Sheets/notes; duplicates skipped).
+  Guest list options folded under "More options".
+- Seating: "Set up my tables now" is optional; the seating editor seats everyone automatically, keeping
+  families and groups together, and reports anyone who doesn't fit.
+- Review step: checklist (needed vs nice to have) with links.
+- App sign-up: name and email on the create page, no password needed; sign-in links by email; password
+  optional on registration (migration `002_login_links.sql`).
+- App: WhatsApp invitation and reminder queue (one guest at a time, progress, skip, broadcast-list guide);
+  "Next steps" cards on the event overview; reminders on WhatsApp from the RSVPs page.
+- Trust: demo testimonials removed (section hidden until real reviews exist), social links and WhatsApp
+  shown only when set, "We'll set it up for you" page linked from home, create, pricing, package step and
+  footer.
+- Bug fixes found on the way: blank starter rows in Programme and Menu counted as items and blocked
+  saving (app and static); a contact form button stayed disabled after a validation error (static); a
+  test used SQL syntax older SQLite rejects.
+- `GO-LIVE-GUIDE.md`: Netlify (forms, email notifications) and PayFast (account, buttons, requests).
+
+**Checked**
+- 89 tests pass on Python 3.11 and 3.13.
+- Static site, in a browser against a stand-in for Netlify Forms: 25 checks covering the whole journey,
+  booking with photo and guest list received, continue and preview links on a second device, broken
+  link message, both forms, "Pay now" button. No script errors.
+- App: 110 page loads (marketing, sign-in, wizard steps, share, WhatsApp queue, seating, guests, RSVPs)
+  on desktop and phone, no errors, no sideways scrolling.
+
+**Open**
+- PayFast account and buttons (see `GO-LIVE-GUIDE.md`), then rebuild with them.
+- On Netlify: enable form detection and add an email notification (guide, part 1).
+- WhatsApp number and social links, when you have them.
+- Legal review, company details, real reviews (unchanged from before).
 
 ## 2026-11-16: first public hosting (static site on Netlify)
 
@@ -725,7 +927,7 @@ Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLE
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=4f974bcb633e2ab439fa8cc07be47ca03253b6d108c44ff1f36aa43ab090beda nl=1 -->
+<!-- FILE: README.md sha256=50b82f91c47fc211bdefd983bf5b2df8dd1eb6aed8683bee3aca245710ee0575 nl=1 -->
 ````markdown
 # Aurelia — digital event experience platform
 
@@ -759,7 +961,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 70 tests
+python3 -m unittest discover -s tests -t .     # 89 tests
 ```
 
 ## The customer journey
@@ -807,7 +1009,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 70 tests
+  tests/                      in-process test client and 89 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,
@@ -864,8 +1066,8 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 - Brand name, domain, company address, VAT number, information officer (support email is invitesaurelia@gmail.com; no phone number is shown)
   (`.env`; placeholders are marked `[TBC]`).
 - Legal pages (`/privacy`, `/terms`, `/refunds`) are drafts marked for legal review.
-- Testimonials on the home page are labelled demonstration content.
-- Social links in the footer point to `#`.
+- Customer reviews: the home page section stays hidden until real reviews are added (`TESTIMONIALS`).
+- WhatsApp support number and social links: hidden until set (`WHATSAPP_NUMBER`, `SOCIAL_*` in `.env`).
 - Package limits (email allowance, hosting months, functions, admins, gallery photos) are proposals.
   Edit them at `/admin/packages`.
 - Custom domain support (Signature) is listed as a feature, but domain mapping needs hosting-level setup
@@ -883,16 +1085,23 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 3. **Approved WhatsApp Business API** for automated invitations. Today WhatsApp is share-only, by design.
 4. **Custom PDF invitation designs** (Signature) and S3/R2 storage.
 
+## Go live now
+
+`GO-LIVE-GUIDE.md` covers putting the static site on Netlify (with bookings, contact messages and
+set-up requests arriving through Netlify Forms) and taking payment with PayFast.
+
 ## Shareable preview site (no server)
 
 `python3 tools/export_preview.py OUT_DIR` builds a static version of the site that runs anywhere,
 including a Claude Artifact link. It includes the full customer journey in the browser:
 occasion and template, all 10 set-up steps with photo uploads and a live preview
 (`preview_site/eventrender.js` is a JavaScript port of the Python renderer), "My events" saved in
-the visitor's browser, package choice and a booking request that the customer copies and emails
-to the support address. Paste a payment link per package into `preview_site/payment_links.json`
-(for example a PayFast payment link) and rebuild: the booking page then shows "Pay now". A static
-page can't send data to you on its own, so automatic bookings, accounts and RSVPs need the hosted app.
+the visitor's browser, links to continue on another device or show a draft to family, and package
+choice. On a `--standalone` build hosted on Netlify, the booking (with photos and guest list), the
+contact form and the set-up help form send themselves through Netlify Forms; anywhere else they fall
+back to "copy and email us". Put a PayFast link or a pasted PayFast "Pay Now" button per package in
+`preview_site/payment_links.json` and rebuild: the booking page then shows "Pay now". Accounts and
+RSVPs still need the hosted app.
 
 To host the static version on its own (Netlify, Cloudflare Pages, GitHub Pages), add `--standalone`:
 `python3 tools/export_preview.py dist/aurelia-site --standalone` writes `index.html` as a complete HTML
@@ -1672,7 +1881,7 @@ def limit(event, key: str, default: int = 0) -> int:
 
 ### `app/config.py`
 
-<!-- FILE: app/config.py sha256=d2c42df393bf776407098c0bf28d43d670fa0feb2f80894092685e171c42408e nl=1 -->
+<!-- FILE: app/config.py sha256=a8b29e347d9b7058f49c6978ef8b9d38d5e2a0871ad3571d46c8289580024258 nl=1 -->
 ```python
 """Runtime configuration.
 
@@ -1759,6 +1968,24 @@ BRAND_LINE = "One event. One platform. One link. Everything organised."
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "invitesaurelia@gmail.com")
 COMPANY_ADDRESS = env("COMPANY_ADDRESS", "Johannesburg, South Africa")  # [TBC]
 INFORMATION_OFFICER = env("INFORMATION_OFFICER_EMAIL", SUPPORT_EMAIL)   # POPIA contact
+# Support on WhatsApp: set a number (e.g. 082 123 4567) to show a chat button on every page. Empty hides it.
+WHATSAPP_NUMBER = env("WHATSAPP_NUMBER", "")
+# Footer social links: full web addresses. Each one shows only when it is set.
+SOCIAL_INSTAGRAM = env("SOCIAL_INSTAGRAM", "")
+SOCIAL_FACEBOOK = env("SOCIAL_FACEBOOK", "")
+SOCIAL_TIKTOK = env("SOCIAL_TIKTOK", "")
+
+
+def whatsapp_link(text: str = "") -> str:
+    """wa.me link to the support number (South African 0XX numbers become 27XX), or "" when none is set."""
+    import re
+    from urllib.parse import quote
+    d = re.sub(r"\D", "", WHATSAPP_NUMBER)
+    if d.startswith("0") and len(d) == 10:
+        d = "27" + d[1:]
+    if not d:
+        return ""
+    return f"https://wa.me/{d}" + (f"?text={quote(text)}" if text else "")
 CURRENCY = "ZAR"
 TIMEZONE = env("TIMEZONE", "Africa/Johannesburg")
 
@@ -1947,11 +2174,12 @@ def migrate() -> list[str]:
 
 ### `app/events.py`
 
-<!-- FILE: app/events.py sha256=be3914f769d020e337099e5a2f4c923986afeee1c9026fb93393fb3f64bab9b9 nl=1 -->
+<!-- FILE: app/events.py sha256=3bc9f100264700e2e4fa79e819f6a522df7e4e780ff619ec05b62d77ad39f103 nl=1 -->
 ```python
 """Event model helpers shared by the wizard, dashboard, event websites, admin and emails."""
 from __future__ import annotations
 
+import re
 import secrets
 from typing import Optional
 
@@ -2074,6 +2302,31 @@ def new_guest_token() -> str:
     return secrets.token_urlsafe(12)
 
 
+def add_pasted_guests(ev, people: list[dict]) -> int:
+    """Add guests from suggestions.parse_guest_list(). People already on the list (same name, or same
+    email or mobile) are skipped. Returns how many were added."""
+    have = db.q("SELECT first_name, last_name, email, phone FROM guests WHERE event_id = ?", (ev["id"],))
+    names = {f"{g['first_name']} {g['last_name']}".strip().lower() for g in have}
+    emails = {g["email"].lower() for g in have if g["email"]}
+    phones = {re.sub(r"\D", "", g["phone"]) for g in have if g["phone"]}
+    now, added = db.now(), 0
+    for p in people:
+        digits = re.sub(r"\D", "", p.get("phone", ""))
+        if p["name"].lower() in names or (p.get("email") and p["email"] in emails) or (digits and digits in phones):
+            continue
+        first, _, last = p["name"].partition(" ")
+        db.insert("guests", {"event_id": ev["id"], "token": new_guest_token(), "first_name": first[:60], "last_name": last[:80],
+                             "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "source": "import",
+                             "email_consent": 1, "created_at": now, "updated_at": now})
+        names.add(p["name"].lower())
+        if p.get("email"):
+            emails.add(p["email"])
+        if digits:
+            phones.add(digits)
+        added += 1
+    return added
+
+
 def is_live(ev) -> bool:
     """Guests can open the website."""
     return ev["status"] == "published" and bool(ev["paid_package"])
@@ -2176,6 +2429,78 @@ def email_quota(ev) -> tuple[int, int]:
     used = db.val("SELECT COUNT(*) FROM email_logs WHERE event_id = ? AND audience = 'guest' AND status = 'sent'",
                   (ev["id"],), 0)
     return used, allowed
+
+
+def package_gaps(ev, code: str) -> list[str]:
+    """What this event already has that package `code` would not show guests, in plain words.
+    Used on the review and package steps so nobody pays for less than they set up."""
+    feats, lim = catalog.package_features(code), catalog.package_limits(code)
+    gaps = []
+    n = db.val("SELECT COUNT(*) FROM schedule_items WHERE event_id = ?", (ev["id"],), 0)
+    if n and "programme" not in feats:
+        gaps.append(f"your programme ({n} item{'s' if n != 1 else ''})")
+    n = db.val("SELECT COUNT(*) FROM menu_items WHERE event_id = ?", (ev["id"],), 0)
+    if n and "menu" not in feats:
+        gaps.append(f"your menu ({n} dish{'es' if n != 1 else ''})")
+    if db.val("SELECT COUNT(*) FROM seating_tables WHERE event_id = ?", (ev["id"],), 0) and "seating" not in feats:
+        gaps.append("the seating chart")
+    n = db.val("SELECT COUNT(*) FROM uploads WHERE event_id = ? AND kind = 'gallery'", (ev["id"],), 0)
+    allowed = int(lim.get("gallery_photos", 0)) if "gallery" in feats else 0
+    if n > allowed:
+        gaps.append(f"your photo gallery ({n} photos)" if not allowed else f"{n - allowed} of your {n} gallery photos")
+    n = db.val("SELECT COUNT(*) FROM event_functions WHERE event_id = ?", (ev["id"],), 0)
+    allowed = int(lim.get("functions", 1)) if "multi_functions" in feats else 1
+    if n > allowed:
+        gaps.append(f"{n - allowed} of your {n} event functions")
+    design = ev["design"] if isinstance(ev["design"], dict) else db.loads(ev["design"], {})
+    if (design or {}).get("colors") and "advanced_design" not in feats:
+        gaps.append("your own colours")
+    return gaps
+
+
+DRAFT_COOKIE = "aurelia_draft"
+
+
+def draft_token(ev) -> str:
+    """Token for the shareable draft preview (/events/<slug>/draft/<token>). Tied to the event's uid
+    and creation time, so it stays the same for the event's life and works for nothing else."""
+    from . import auth
+    return auth.sign(f"{ev['uid']}~{ev['created_at']}", "draft-preview").rpartition(".")[2]
+
+
+def draft_url(ev) -> str:
+    return f"{config.BASE_URL}/events/{ev['slug']}/draft/{draft_token(ev)}"
+
+
+def draft_token_ok(ev, token: str) -> bool:
+    import hmac
+    return bool(token) and hmac.compare_digest(token, draft_token(ev))
+
+
+def hosting_end(ev, months: int, start=None) -> str:
+    """When the website goes offline: `months` after `start` (default today), but never before one month
+    after the event date, so a client who books early never loses the site before the day."""
+    from datetime import date, timedelta
+    start = start or date.today()
+    end = start + timedelta(days=int(months * 30.5))
+    if ev.get("event_date"):
+        try:
+            end = max(end, date.fromisoformat(ev["event_date"]) + timedelta(days=31))
+        except ValueError:
+            pass
+    return end.isoformat()
+
+
+def keep_online_past_event(ev) -> None:
+    """After the event date changes on a live site, push hosting_until out if it would end too soon."""
+    if ev.get("hosting_until") and ev.get("event_date"):
+        from datetime import date, timedelta
+        try:
+            floor = (date.fromisoformat(ev["event_date"]) + timedelta(days=31)).isoformat()
+        except ValueError:
+            return
+        if ev["hosting_until"] < floor:
+            touch(ev["id"], hosting_until=floor)
 ```
 
 ### `app/eventsite/__init__.py`
@@ -3998,9 +4323,30 @@ CREATE TABLE audit_log (
 );
 ```
 
+### `app/migrations/002_login_links.sql`
+
+<!-- FILE: app/migrations/002_login_links.sql sha256=8996008a06a10a146a722449f970e31475e0cbb1e65aad5739425d14096b6098 nl=1 -->
+```sql
+-- Sign-in links by email (no password needed): allow a third token kind, 'login'.
+-- SQLite can't change a CHECK constraint in place, so the table is rebuilt.
+CREATE TABLE user_tokens_new (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('verify','reset','login')),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
+  created_at TEXT NOT NULL
+);
+INSERT INTO user_tokens_new (id, user_id, kind, token_hash, expires_at, used_at, created_at)
+  SELECT id, user_id, kind, token_hash, expires_at, used_at, created_at FROM user_tokens;
+DROP TABLE user_tokens;
+ALTER TABLE user_tokens_new RENAME TO user_tokens;
+```
+
 ### `app/notify.py`
 
-<!-- FILE: app/notify.py sha256=66a2b42fd0e596e4600e7a7a78e9323f27b9e6852dd86ac0638b943be7e012de nl=1 -->
+<!-- FILE: app/notify.py sha256=f65509e2a0c9f4f1dbe2a007a56c11bdf845f2bf81e7a30e04048fea1b5f6ffe nl=1 -->
 ```python
 """Common email variables and organiser/guest notification helpers."""
 from __future__ import annotations
@@ -4116,7 +4462,6 @@ def rsvp_details_html(ev, g) -> str:
 
 def publish(ev, actor_id: Optional[int] = None, send_emails: bool = True) -> tuple[bool, str]:
     """Make the event website public. Requires a verified payment and an unsuspended event."""
-    from datetime import date, timedelta
     ev = events.by_id(ev["id"])
     if not ev["paid_package"]:
         return False, "Publishing needs a confirmed payment."
@@ -4128,7 +4473,7 @@ def publish(ev, actor_id: Optional[int] = None, send_emails: bool = True) -> tup
         fields["published_at"] = db.now()
     if not ev["hosting_until"]:
         months = catalog.limit(ev, "hosting_months", 6)
-        fields["hosting_until"] = (date.today() + timedelta(days=int(months * 30.5))).isoformat()
+        fields["hosting_until"] = events.hosting_end(ev, months)
     events.touch(ev["id"], **fields)
     db.insert("audit_log", {"actor_id": actor_id, "action": "event.publish", "target": ev["uid"], "meta": "{}",
                             "created_at": db.now()})
@@ -4379,7 +4724,7 @@ def run() -> None:
 
 ### `app/services/email.py`
 
-<!-- FILE: app/services/email.py sha256=4a579aa4acaa858f227907e2542869dddb354ec3530a78a161ee778f42ca72ee nl=1 -->
+<!-- FILE: app/services/email.py sha256=e29315dba097db8982b979086ab6b72422cf8bbdb523793fde02577301bd0761 nl=1 -->
 ```python
 """Email delivery behind a provider interface, with editable templates and a delivery log.
 
@@ -4418,6 +4763,12 @@ DEFAULT_TEMPLATES = {
     "verify_email": ("organiser", "Email verification",
                      "Confirm your email address",
                      "Hi {{first_name}},\n\nPlease confirm this is your email address so we can send you RSVP updates and reports.\n\n[button: Confirm my email | {{verify_url}}]\n\nThis link expires in 48 hours. If you didn't create an account, you can ignore this email."),
+    "login_link": ("organiser", "Sign-in link",
+                   "Your {{brand}} sign-in link",
+                   "Hi {{first_name}},\n\nUse this link to sign in and carry on with your event. You don't need a password.\n\n[button: Sign in | {{login_url}}]\n\nThe link works once and expires in 2 hours. If you didn't ask for it, you can ignore this email."),
+    "setup_help_received": ("organiser", "Set-up help request received",
+                            "We'll set up your event website",
+                            "Hi {{first_name}},\n\nThank you for asking us to set up your event website. We'll contact you within one working day to go through the details and send you a quote.\n\nIt helps to have these ready: your date and venue, the names to show on the website, and any photos you'd like to use. Reply to this email or send them to {{support_email}}.\n\nYour reference: {{reference}}"),
     "password_reset": ("organiser", "Password reset",
                        "Reset your {{brand}} password",
                        "Hi {{first_name}},\n\nSomeone asked to reset the password for this account. If it was you, choose a new password here:\n\n[button: Choose a new password | {{reset_url}}]\n\nThe link works once and expires in one hour. If it wasn't you, ignore this email: your password stays the same."),
@@ -6165,6 +6516,313 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
     return True
 ```
 
+### `app/suggestions.py`
+
+<!-- FILE: app/suggestions.py sha256=1ea001b39db8648d9d79b018b1e55bc986bc67f9724b370df64b9c42168deb1a nl=1 -->
+```python
+"""Ready-made content that saves the client typing: invitation wording and sample programmes per
+occasion, plus parsers for a pasted guest list and a pasted caterer's menu.
+
+The same data is exported to the static site (tools/export_preview.py -> data.js), and
+preview_site/journey.js has JavaScript versions of the two parsers. Keep them in step.
+
+Wording uses {hosts} and {deadline}; fill them with fill_wording() before showing them in a form.
+Programme offsets are minutes from the event's start time.
+"""
+from __future__ import annotations
+
+import re
+
+WORDING = {
+    "white-wedding": [
+        {"label": "Classic", "welcome": "Together with their families",
+         "invitation": "{hosts} request the pleasure of your company at the celebration of their marriage.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "We look forward to celebrating with you."},
+        {"label": "Warm and simple", "welcome": "We're getting married!",
+         "invitation": "We'd love you to be there as we say \"I do\" and celebrate with the people who mean the most to us.",
+         "rsvp_note": "Please let us know by {deadline} if you can make it.", "closing": "With love, {hosts}"},
+    ],
+    "traditional-wedding": [
+        {"label": "Two families", "welcome": "Two families, one celebration",
+         "invitation": "The families of {hosts} invite you to join them as they celebrate this union in the tradition of their families.",
+         "rsvp_note": "Kindly confirm your attendance by {deadline}.", "closing": "Your presence will be an honour to both families."},
+        {"label": "Joyful", "welcome": "Come celebrate with us",
+         "invitation": "Bring your singing voice and your dancing shoes. {hosts} are getting married, and the whole family is coming together.",
+         "rsvp_note": "Please reply by {deadline} so the families can plan.", "closing": "Thank you for celebrating with us."},
+    ],
+    "lobola": [
+        {"label": "Formal", "welcome": "Lobola negotiations and celebration",
+         "invitation": "The families of {hosts} invite you to join them for the lobola negotiations and the celebration that follows.",
+         "rsvp_note": "Kindly confirm by {deadline} and tell us which family you are coming with.", "closing": "We look forward to welcoming you."},
+        {"label": "Celebration", "welcome": "The families are meeting",
+         "invitation": "Join us as two families come together for {hosts}. The negotiations are for the delegations; the celebration afterwards is for everyone.",
+         "rsvp_note": "Please reply by {deadline}.", "closing": "Come hungry and ready to celebrate."},
+    ],
+    "engagement": [
+        {"label": "Announcement", "welcome": "We're engaged!",
+         "invitation": "{hosts} are engaged, and we'd love to celebrate the news with you.",
+         "rsvp_note": "Let us know by {deadline} if you can join us.", "closing": "See you there."},
+        {"label": "Relaxed", "welcome": "Raise a glass with us",
+         "invitation": "Join {hosts} for drinks, good food and a toast to the next chapter.",
+         "rsvp_note": "Please reply by {deadline}.", "closing": "With love."},
+    ],
+    "multi-day-wedding": [
+        {"label": "Weekend", "welcome": "A weekend of celebration",
+         "invitation": "{hosts} invite you to spend the weekend with them, from the welcome dinner to the farewell brunch. Every part of the weekend is on this page.",
+         "rsvp_note": "Please reply by {deadline} and tell us which parts of the weekend you'll join.", "closing": "We can't wait to spend the weekend with you."},
+        {"label": "Classic", "welcome": "Together with their families",
+         "invitation": "{hosts} request the pleasure of your company at the celebration of their marriage. Details for each day are below.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "With love and gratitude."},
+    ],
+    "baby-shower": [
+        {"label": "Classic", "welcome": "A little one is on the way",
+         "invitation": "Please join us for a baby shower in honour of {hosts}.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "Gift ideas are on the registry, but your company is the best gift."},
+        {"label": "Playful", "welcome": "Oh baby!",
+         "invitation": "Come and shower {hosts} with love before the baby arrives. There will be cake, games and lots of laughter.",
+         "rsvp_note": "Let us know by {deadline} so we have enough cake.", "closing": "See you there!"},
+    ],
+    "gender-reveal": [
+        {"label": "Guessing game", "welcome": "Boy or girl?",
+         "invitation": "{hosts} are finding out, and they want you there when they do.",
+         "rsvp_note": "Reply by {deadline}, and leave your guess in your RSVP.", "closing": "Pink or blue, we can't wait to celebrate with you."},
+        {"label": "Simple", "welcome": "The big reveal",
+         "invitation": "Join {hosts} for the moment we find out if it's a boy or a girl.",
+         "rsvp_note": "Please reply by {deadline}.", "closing": "Bring your best guess."},
+    ],
+    "welcome-baby": [
+        {"label": "Meet the baby", "welcome": "Meet our little one",
+         "invitation": "{hosts} would love you to come and meet the newest member of the family.",
+         "rsvp_note": "Please let us know by {deadline} if you can come.", "closing": "With love and gratitude."},
+        {"label": "Welcome home", "welcome": "Welcome to the world",
+         "invitation": "Our family has grown. Join {hosts} to celebrate and welcome our baby home.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "Thank you for loving us."},
+    ],
+    "birthday": [
+        {"label": "Party", "welcome": "Let's celebrate",
+         "invitation": "You're invited to celebrate {hosts}.",
+         "rsvp_note": "Reply by {deadline} so we save you a seat.", "closing": "See you there."},
+        {"label": "Surprise", "welcome": "It's a surprise!",
+         "invitation": "We're throwing a surprise party: {hosts}. Please keep it a secret!",
+         "rsvp_note": "Please reply by {deadline}, and don't tell anyone.", "closing": "Arrive on time so you don't spoil the surprise."},
+    ],
+    "anniversary": [
+        {"label": "Classic", "welcome": "Celebrating the years together",
+         "invitation": "Please join us to celebrate {hosts}.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "Thank you for being part of our story."},
+        {"label": "Relaxed", "welcome": "Still celebrating",
+         "invitation": "Join us for an evening of good food, old stories and a toast to {hosts}.",
+         "rsvp_note": "Let us know by {deadline}.", "closing": "With love."},
+    ],
+    "private-celebration": [
+        {"label": "Simple", "welcome": "You're invited",
+         "invitation": "{hosts} would love you to join them.",
+         "rsvp_note": "Please reply by {deadline}.", "closing": "We look forward to seeing you."},
+        {"label": "Dinner", "welcome": "An evening together",
+         "invitation": "Join {hosts} for an evening of good food and great company.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "See you there."},
+    ],
+    "graduation": [
+        {"label": "Proud family", "welcome": "Celebrating a graduate",
+         "invitation": "{hosts} invite you to celebrate a well-earned graduation.",
+         "rsvp_note": "Kindly reply by {deadline}.", "closing": "Thank you for every bit of support along the way."},
+        {"label": "Celebration", "welcome": "The hard work is done",
+         "invitation": "Join {hosts} for the ceremony and the celebration afterwards.",
+         "rsvp_note": "Please reply by {deadline}.", "closing": "See you there."},
+    ],
+    "corporate": [
+        {"label": "Formal", "welcome": "You're invited",
+         "invitation": "{hosts} invite you to join us. The agenda, venue and catering details are below.",
+         "rsvp_note": "Please confirm your attendance by {deadline}.", "closing": "We look forward to seeing you."},
+        {"label": "Relaxed", "welcome": "Join us",
+         "invitation": "Join {hosts} for an afternoon of ideas, conversation and good food.",
+         "rsvp_note": "Kindly confirm by {deadline} and tell us about any dietary needs.", "closing": "Thank you."},
+    ],
+    "family-celebration": [
+        {"label": "Reunion", "welcome": "Bringing the family together",
+         "invitation": "{hosts} invite you to join the family for a day of catching up, remembering and celebrating together.",
+         "rsvp_note": "Please reply by {deadline} so we can plan food and seating.", "closing": "We hope to see everyone there."},
+        {"label": "Unveiling", "welcome": "In loving memory",
+         "invitation": "{hosts} invite you to join them for the unveiling of the tombstone, followed by a meal together.",
+         "rsvp_note": "Kindly let us know by {deadline} if you will attend.", "closing": "Thank you for standing with our family."},
+    ],
+}
+
+# (minutes from start, title, kind, detail)
+PROGRAMMES = {
+    "wedding": [(-30, "Guests arrive", "other", "Find your seat for the ceremony"), (0, "Ceremony", "ceremony", ""),
+                (45, "Photos and welcome drinks", "activity", "Canapés on the lawn while the couple has photos"),
+                (120, "Guests seated for the reception", "reception", ""), (135, "Entrance of the couple", "entertainment", ""),
+                (150, "Starters", "meal", ""), (180, "Speeches", "speech", ""), (210, "Main course", "meal", ""),
+                (255, "First dance", "entertainment", ""), (270, "Cake and dessert", "meal", ""),
+                (285, "Dance floor opens", "entertainment", "")],
+    "traditional-wedding": [(0, "Arrival of the families", "other", ""), (30, "Welcome and introductions", "speech", ""),
+                            (60, "Traditional ceremony", "ceremony", ""), (120, "Exchange of gifts", "ceremony", ""),
+                            (150, "Meal", "meal", ""), (210, "Entertainment and dancing", "entertainment", ""),
+                            (300, "Closing and thanks", "speech", "")],
+    "lobola": [(0, "Arrival of the delegation", "other", "The visiting family arrives and waits to be welcomed"),
+               (30, "Welcome and introductions", "speech", ""), (60, "Negotiations", "ceremony", "Family delegations only"),
+               (180, "Agreement and announcement", "speech", ""), (210, "Celebration and meal", "meal", "Everyone is welcome"),
+               (300, "Thanks and farewell", "speech", "")],
+    "engagement": [(0, "Arrival and drinks", "other", ""), (45, "Welcome", "speech", ""), (60, "A toast to the couple", "speech", ""),
+                   (90, "Food is served", "meal", ""), (150, "Music and dancing", "entertainment", "")],
+    "baby-shower": [(0, "Guests arrive", "other", ""), (30, "Welcome", "speech", ""), (45, "Games", "activity", ""),
+                    (90, "Food and cake", "meal", ""), (120, "Opening the gifts", "activity", ""), (165, "Thank you and goodbyes", "speech", "")],
+    "gender-reveal": [(0, "Arrival and snacks", "other", ""), (30, "Place your guess", "activity", ""), (60, "Food", "meal", ""),
+                      (90, "The reveal", "entertainment", ""), (105, "Cake and celebration", "meal", "")],
+    "welcome-baby": [(0, "Arrival", "other", ""), (30, "Welcome and blessing", "ceremony", ""), (60, "Meet the baby", "activity", ""),
+                     (75, "Food and drinks", "meal", ""), (150, "Thank you", "speech", "")],
+    "birthday": [(0, "Arrival and drinks", "other", ""), (45, "Food is served", "meal", ""), (105, "Speeches and a toast", "speech", ""),
+                 (120, "Cake", "meal", ""), (135, "Dance floor opens", "entertainment", "")],
+    "anniversary": [(0, "Arrival and drinks", "other", ""), (30, "Guests seated", "reception", ""), (45, "Welcome", "speech", ""),
+                    (60, "Dinner", "meal", ""), (120, "Toasts and stories", "speech", ""), (150, "Cake and dessert", "meal", ""),
+                    (165, "Dancing", "entertainment", "")],
+    "private-celebration": [(0, "Arrival and drinks", "other", ""), (45, "Welcome", "speech", ""), (60, "Dinner", "meal", ""),
+                            (150, "Coffee and dessert", "meal", "")],
+    "graduation": [(0, "Graduation ceremony", "ceremony", ""), (150, "Family photos", "activity", ""),
+                   (210, "Celebration lunch", "meal", ""), (270, "Speeches and a toast", "speech", ""), (300, "After-party", "entertainment", "")],
+    "corporate": [(0, "Registration and coffee", "other", ""), (30, "Welcome and opening", "speech", ""), (45, "Keynote", "speech", ""),
+                  (105, "Break", "meal", ""), (120, "Panel discussion", "speech", ""), (180, "Lunch", "meal", ""),
+                  (240, "Workshops", "activity", ""), (330, "Closing remarks", "speech", ""), (345, "Networking drinks", "reception", "")],
+    "family-celebration": [(0, "Arrival", "other", ""), (30, "Welcome and prayer", "ceremony", ""), (60, "Main programme", "ceremony", ""),
+                           (120, "Meal", "meal", ""), (180, "Family photo", "activity", ""), (210, "Thanks and closing", "speech", "")],
+}
+PROGRAMME_FOR = {"white-wedding": "wedding", "multi-day-wedding": "wedding"}
+DEFAULT_START = {"weddings": "14:00", "baby": "11:00", "parties": "18:00", "other": "10:00"}
+
+
+# How the automatic event name reads: "<names>'s <noun>". Occasions not listed use the names as typed
+# (party and corporate names are usually typed in full, e.g. "Kagiso's 40th").
+NAME_NOUN = {"white-wedding": "wedding", "traditional-wedding": "wedding", "multi-day-wedding": "wedding",
+             "lobola": "lobola celebration", "engagement": "engagement party", "baby-shower": "baby shower",
+             "gender-reveal": "gender reveal", "welcome-baby": "baby welcome", "graduation": "graduation celebration"}
+
+
+def auto_event_name(category: str, hosts: str) -> str:
+    hosts = (hosts or "").strip()
+    noun = NAME_NOUN.get(category)
+    if not hosts or not noun:
+        return hosts
+    return f"{hosts}' {noun}" if hosts.endswith("s") and not hosts.endswith("'s") else f"{hosts}'s {noun}"
+
+
+def wording_options(category: str) -> list[dict]:
+    return WORDING.get(category) or WORDING["private-celebration"]
+
+
+def fill_wording(text: str, hosts: str, deadline: str) -> str:
+    """Put the names and RSVP date into a suggestion. Without a deadline, drop "by {deadline}"."""
+    text = text.replace("{hosts}", hosts or "the hosts")
+    if deadline:
+        return text.replace("{deadline}", deadline)
+    return re.sub(r"\s*by \{deadline\}", "", text).replace("{deadline}", "")
+
+
+def programme_key(category: str) -> str:
+    key = PROGRAMME_FOR.get(category, category)
+    return key if key in PROGRAMMES else "private-celebration"
+
+
+def sample_programme(category: str, start: str = "", group: str = "") -> list[dict]:
+    """Programme items with real clock times, counted from the start time (or a sensible default)."""
+    start = start if re.match(r"^\d{2}:\d{2}$", start or "") else DEFAULT_START.get(group, "12:00")
+    base = int(start[:2]) * 60 + int(start[3:])
+    out = []
+    for offset, title, kind, detail in PROGRAMMES[programme_key(category)]:
+        t = (base + offset) % (24 * 60)
+        out.append({"item_time": f"{t // 60:02d}:{t % 60:02d}", "title": title, "kind": kind, "description": detail})
+    return out
+
+
+# --- pasted guest list ---------------------------------------------------------------------------------
+_EMAIL = re.compile(r"[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}")
+_PHONE = re.compile(r"\+?\d[\d ()-]{6,}\d")
+_HEADER_WORDS = {"name", "names", "full name", "guest", "guests", "guest name", "first name", "surname", "last name",
+                 "phone", "mobile", "cell", "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"}
+
+
+def parse_guest_list(text: str, limit: int = 2000) -> list[dict]:
+    """One guest per line, in any order: name, mobile, email (commas, tabs or semicolons between).
+    Copying rows from Excel or Google Sheets works too. A header row is skipped."""
+    out, seen = [], set()
+    for raw in (text or "").splitlines():
+        line = raw.strip().strip(",;\t")
+        if not line:
+            continue
+        email = _EMAIL.search(line)
+        rest = line.replace(email.group(0), " ") if email else line
+        phone = _PHONE.search(rest)
+        rest = rest.replace(phone.group(0), " ") if phone else rest
+        cells = [c.strip().lower() for c in re.split(r"[,;\t|]+", line) if c.strip()]
+        if cells and all(c in _HEADER_WORDS for c in cells):
+            continue
+        name = re.sub(r"\s+", " ", re.sub(r"[,;\t|]+", " ", rest)).strip(" -")
+        if not name:
+            continue
+        key = (name.lower(), email.group(0).lower() if email else "")
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"name": name[:120], "phone": phone.group(0).strip() if phone else "",
+                    "email": email.group(0).lower() if email else ""})
+        if len(out) >= limit:
+            break
+    return out
+
+
+# --- pasted menu -----------------------------------------------------------------------------------------
+_COURSE_WORDS = {
+    "Canapés": ("canapé", "canape", "canapés", "canapes", "snacks", "hors d'oeuvres", "on arrival"),
+    "Starter": ("starter", "starters", "entrée", "entree", "entrées", "appetiser", "appetisers", "appetizer", "appetizers", "first course"),
+    "Main": ("main", "mains", "main course", "main courses", "buffet", "main meal"),
+    "Dessert": ("dessert", "desserts", "pudding", "sweet", "sweets"),
+    "Late-night": ("late-night", "late night", "late night snack", "midnight snack"),
+    "Drinks": ("drinks", "beverages", "bar"),
+}
+
+
+def _course_of(word: str) -> str:
+    w = word.strip().strip(":").strip().lower()
+    for course, words in _COURSE_WORDS.items():
+        if w in words:
+            return course
+    return ""
+
+
+def parse_menu(text: str, limit: int = 60) -> list[dict]:
+    """Turn a caterer's menu into dishes. A line that is only a course name ("Starters") sets the course
+    for the lines below it; "Main: Lamb shank - rosemary jus" sets it inline. Text after " - ", " – " or
+    " with " in brackets becomes the description."""
+    items, course = [], "Main"
+    for raw in (text or "").splitlines():
+        line = raw.strip().lstrip("•*-·– ").strip()
+        if not line:
+            continue
+        c = _course_of(line)
+        if c:
+            course = c
+            continue
+        m = re.match(r"^([^:]{2,30}):\s*(.+)$", line)
+        this_course = course
+        if m and _course_of(m.group(1)):
+            this_course, line = _course_of(m.group(1)), m.group(2).strip()
+            course = this_course
+        name, desc = line, ""
+        for sep in (" - ", " – ", " — ", " | "):
+            if sep in line:
+                name, desc = (s.strip() for s in line.split(sep, 1))
+                break
+        else:
+            b = re.match(r"^(.+?)\s*\((.+)\)$", line)
+            if b:
+                name, desc = b.group(1).strip(), b.group(2).strip()
+        if name:
+            items.append({"course": this_course, "name": name[:120], "description": desc[:240], "tags": [], "selectable": False})
+        if len(items) >= limit:
+            break
+    return items
+```
+
 ### `app/views/__init__.py`
 
 <!-- FILE: app/views/__init__.py sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 nl=0 -->
@@ -6173,7 +6831,7 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
 
 ### `app/views/accounts.py`
 
-<!-- FILE: app/views/accounts.py sha256=2b3149949997ee16371b51298cf92f16f0e27c21cfc861dbd47bb3587f133809 nl=1 -->
+<!-- FILE: app/views/accounts.py sha256=cd7707e80f54d4eabe8487d6bd1b5d02e3dcfd6b5bb7feba5ca4dfb509531f6f nl=1 -->
 ```python
 """Registration, login, logout, password reset, email verification and the account page."""
 from __future__ import annotations
@@ -6213,6 +6871,13 @@ def login_session(resp: Response, req, user_id: int) -> Response:
     return resp
 
 
+def send_login_link(user, nxt: str = "/dashboard") -> None:
+    token = auth.issue_token(user["id"], "login", 2)
+    mail.send(user["email"], "login_link", {"first_name": mail.first_name(user["name"]),
+                                            "login_url": f"{config.BASE_URL}{url('/login/link/' + token, next=nxt)}"},
+              user_id=user["id"])
+
+
 def send_verification(user) -> None:
     token = auth.issue_token(user["id"], "verify", 48)
     mail.send(user["email"], "verify_email", {"first_name": mail.first_name(user["name"]),
@@ -6235,9 +6900,7 @@ def register(req):
         name = f.text("name", "Your name", required=True, max=120, min=2)
         email = f.email("email", required=True)
         pw = req.get("password")
-        if not pw:
-            f.error("password", "Choose a password.")
-        else:
+        if pw:
             for p in auth.password_problems(pw, email):
                 f.error("password", p)
                 break
@@ -6248,7 +6911,7 @@ def register(req):
         if email and not f.errors.get("email") and db.one("SELECT 1 FROM users WHERE email = ?", (email,)):
             f.error("email", "An account with this email already exists. Log in or reset your password.")
         if f.ok:
-            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw),
+            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw) if pw else "",
                                       "role": "customer", "marketing_consent": 1 if req.get("marketing") else 0,
                                       "created_at": db.now()})
             user = db.one("SELECT * FROM users WHERE id = ?", (uid,))
@@ -6263,8 +6926,10 @@ def register(req):
 {errors_summary(f.errors)}
 {field("name", "Your name", d.get("name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("email", "Email", d.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}
-{field("password", "Password", "", type="password", required=True, errors=f.errors, hint="At least 10 characters, with upper- and lower-case letters and a number.", attrs={"autocomplete": "new-password"})}
-{field("password_confirm", "Confirm password", "", type="password", required=True, errors=f.errors, attrs={"autocomplete": "new-password"})}
+<details class="box" style="padding:14px 16px"{" open" if ("password" in f.errors or "password_confirm" in f.errors) else ""}><summary class="small" style="cursor:pointer">Set a password (optional)</summary>
+<p class="hint" style="margin:8px 0 12px">Without one, we email you a sign-in link whenever you need it.</p>
+{field("password", "Password", "", type="password", errors=f.errors, hint="At least 10 characters, with upper- and lower-case letters and a number.", attrs={"autocomplete": "new-password"})}
+{field("password_confirm", "Confirm password", "", type="password", errors=f.errors, attrs={"autocomplete": "new-password"})}</details>
 <div class="field{' has-error' if 'terms' in f.errors else ''}">{forms.check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(d.get("terms")))}</div>
 {forms.check("marketing", "Send me occasional tips and new templates (optional).", bool(req.get("marketing")))}
 <button class="btn btn--primary btn--lg btn--block" type="submit">Create account {i("arrow", "i--arrow")}</button></form>"""
@@ -6286,7 +6951,9 @@ def login(req):
             f.error("email", "Too many attempts. Wait 15 minutes or reset your password.")
         elif f.ok:
             user = db.one("SELECT * FROM users WHERE email = ?", (email,))
-            if user and auth.verify_password(pw, user["password_hash"]):
+            if user and not user["password_hash"]:
+                f.error("password", "This account has no password yet. Use “Email me a sign-in link” below, or set one with “Forgot your password?”.")
+            elif user and auth.verify_password(pw, user["password_hash"]):
                 if user["status"] != "active":
                     f.error("email", "This account is suspended. Contact support for help.")
                 else:
@@ -6299,7 +6966,8 @@ def login(req):
 {field("email", "Email", f.data.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email", "autofocus": True})}
 {field("password", "Password", "", type="password", required=True, errors=f.errors, attrs={"autocomplete": "current-password"})}
 <div class="row row--between"><a class="text-link small" href="/forgot-password">Forgot your password?</a></div>
-<button class="btn btn--primary btn--lg btn--block" type="submit">Log in {i("arrow", "i--arrow")}</button></form>"""
+<button class="btn btn--primary btn--lg btn--block" type="submit">Log in {i("arrow", "i--arrow")}</button></form>
+<a class="btn btn--secondary btn--block" style="margin-top:12px" href="{url('/login/email', next=nxt)}">{i("mail")} Email me a sign-in link</a>"""
     return auth_layout(req, "Log in", inner, AUTH_QUOTES[1])
 
 
@@ -6309,6 +6977,48 @@ def logout(req):
     resp = redirect("/")
     resp.set_cookie(auth.SESSION_COOKIE, "", max_age=0)
     return resp
+
+
+# --- sign-in links by email --------------------------------------------------------------------
+@router.route("/login/email", methods=("GET", "POST"))
+def login_email(req):
+    nxt = safe_next(req.arg("next") or req.get("next"), "/dashboard")
+    if req.user:
+        return redirect(nxt)
+    f = Form(req)
+    if req.method == "POST":
+        email = f.email("email", required=True)
+        if f.ok:
+            user = db.one("SELECT * FROM users WHERE email = ?", (email,))
+            if (user and user["status"] == "active" and not auth.rate_limited(f"login-link:{email}", 5, 3600)
+                    and not auth.rate_limited(f"login-link-ip:{req.ip}", 20, 3600)):
+                send_login_link(user, nxt)
+            back = esc(url("/login", next=nxt))
+            inner = (f'<h1>Check your email</h1><p class="lead" style="margin:10px 0 24px;font-size:1rem">If there\'s an account for '
+                     f'<b>{esc(email)}</b>, we\'ve sent a sign-in link. It works once and expires in 2 hours. Check your spam folder if it '
+                     f'doesn\'t arrive in a few minutes.</p><a class="btn btn--secondary" href="{back}">Back to log in</a>')
+            return auth_layout(req, "Check your email", inner)
+    inner = f"""<h1>Sign in with a link</h1><p class="lead" style="margin:10px 0 28px;font-size:1rem">Enter your email and we'll send you a link that signs you straight in. No password needed.</p>
+<form class="form" method="post" novalidate>{csrf(req)}<input type="hidden" name="next" value="{esc(nxt)}">{errors_summary(f.errors)}
+{field("email", "Email", f.data.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email", "autofocus": True})}
+<button class="btn btn--primary btn--lg btn--block" type="submit">Send my sign-in link</button></form>
+<p class="small muted" style="margin-top:18px"><a class="text-link" href="{url('/login', next=nxt)}">Log in with a password instead</a></p>"""
+    return auth_layout(req, "Sign in with a link", inner)
+
+
+@router.get("/login/link/<token>")
+def login_link(req, token):
+    nxt = safe_next(req.arg("next"), "/dashboard")
+    user_id = auth.consume_token(token, "login")
+    user = db.one("SELECT * FROM users WHERE id = ?", (user_id,)) if user_id else None
+    if not user or user["status"] != "active":
+        inner = ('<h1>This link has expired</h1><p class="lead" style="margin:10px 0 24px;font-size:1rem">Sign-in links work once '
+                 f'and last 2 hours. Ask for a new one.</p><a class="btn btn--primary" href="{url("/login/email", next=nxt)}">Send a new link</a>')
+        return auth_layout(req, "Link expired", inner)
+    db.run("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?", (db.now(), user["id"]))
+    auth.audit(user["id"], "user.login_link", user["email"])
+    req.flash("success", f"Welcome back, {mail.first_name(user['name'])}.")
+    return login_session(redirect(nxt), req, user["id"])
 
 
 # --- password reset ---------------------------------------------------------------------------
@@ -7726,7 +8436,7 @@ def audit_log(req):
 
 ### `app/views/dashboard.py`
 
-<!-- FILE: app/views/dashboard.py sha256=b65773f76c39ddc80ea26897432616a992581cf7bd4f6f7f8ca8fc66d501068f nl=1 -->
+<!-- FILE: app/views/dashboard.py sha256=a554e99e726fc5fab51bb15c8934d838358eca88b2475213a68efdbb37335352 nl=1 -->
 ```python
 """Organiser dashboard: event list, event overview, sharing (WhatsApp, QR), reports and settings."""
 from __future__ import annotations
@@ -7741,7 +8451,7 @@ from ..services.storage import storage
 from ..web import HTTPError, Response, download, esc, redirect, router
 from . import forms
 from .forms import Form, csrf
-from .manage import base, go, has, load, status_pill
+from .manage import base, go, guest_whatsapp, has, load, status_pill, wa_digits
 from .shell import account_page, locked_panel, organiser_page, page_head
 
 
@@ -7845,6 +8555,7 @@ def overview(req, uid):
 <div class="kpi"><span>RSVP completion</span><b>{s["completion"]}%</b><div class="progress" style="margin-top:10px"><span style="width:{s["completion"]}%"></span></div></div></div>"""
 
     tables = events.tables(ev["id"])
+    next_html = _next_steps(ev, s, paid, live, days, tables)
     checklist = [
         ("Event details and date", bool(ev.get("event_date") and ev.get("name")), f"{base(ev)}/setup/1"),
         ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/2"),
@@ -7882,12 +8593,46 @@ def overview(req, uid):
     actions = (f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/setup/1">{i("edit")}Edit details</a>'
                f'<a class="btn btn--secondary btn--sm" href="{events.public_path(ev)}" target="_blank" rel="noopener">{i("eye")}View website</a>')
     head = page_head(ev["name"], esc(" · ".join(x for x in (catalog.category_name(ev["category"]), venue.get("name", "")) if x)), actions)
-    body = head + banner + kpis + f"""<div class="cols cols--2"><div class="stack"><div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
+    body = head + banner + next_html + kpis + f"""<div class="cols cols--2"><div class="stack"><div class="box"><div class="box__head"><h2>Recent RSVPs</h2>
 <a class="arrow-link" href="{base(ev)}/rsvps"><span>All responses</span>{i("arrow")}</a></div>{recent_box}</div>{share}</div>
 <div class="box"><div class="box__head"><h2>Checklist</h2><span class="small muted">{done} of {len(checklist)}</span></div>
 <div class="progress" style="margin-bottom:12px"><span style="width:{round(100 * done / len(checklist))}%"></span></div>
 <ul class="list-plain list-rows">{check_html}</ul></div></div>"""
     return organiser_page(req, ev, "Overview", body, "")
+
+
+def _next_steps(ev, s, paid, live, days, tables) -> str:
+    """The next three things to do, in order, so the organiser never has to work out what's next."""
+    venue = ev.get("venue") or {}
+    not_sent = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined'", (ev["id"],), 0)
+    steps = []   # (title, why, link, button)
+    if not (ev.get("hosts") and ev.get("event_date")):
+        steps.append(("Add your names and date", "Guests see these first.", f"{base(ev)}/setup/1", "Add details"))
+    if not (venue.get("name") and venue.get("address")):
+        steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/2", "Add venue"))
+    if not paid:
+        pass                                    # the "Ready to share it?" banner above already asks for this
+    elif not live and ev["status"] != "suspended":
+        steps.append(("Publish your website", "It's paid for. Publish it so guests can open your link.", f"{base(ev)}/settings", "Publish"))
+    if live and has(ev, "guest_management") and s["invited"] == 0:
+        steps.append(("Add your guest list", "Paste names or import a spreadsheet. Each guest gets a personal RSVP link.", f"{base(ev)}/guests/import", "Add guests"))
+    if live and has(ev, "personal_invites") and not_sent:
+        steps.append(("Send your invitations", f"{not_sent} guest{'s' if not_sent != 1 else ''} haven't been sent their invitation yet. Send them on WhatsApp, one tap each.",
+                      f"{base(ev)}/share/whatsapp", "Start sending"))
+    elif live and not has(ev, "personal_invites") and s["invited"] == 0:
+        steps.append(("Share your link", "Send it on WhatsApp, by email or as a QR code. Guests reply on the website.", f"{base(ev)}/share", "Share"))
+    if live and s["pending"] and s["invited"] - not_sent > 0 and (days is None or days >= 0):
+        steps.append(("Remind guests who haven't replied", f"{s['pending']} still to reply.", f"{base(ev)}/share/whatsapp?mode=remind", "Send reminders"))
+    if has(ev, "seating") and s["attending"] and s["unseated_parties"]:
+        steps.append(("Seat your guests", f"{s['unseated_parties']} confirmed part{'y' if s['unseated_parties'] == 1 else 'ies'} without a table. Seat everyone automatically, then fine-tune.",
+                      f"{base(ev)}/seating", "Open seating"))
+    if days is not None and days < 0 and has(ev, "reports"):
+        steps.append(("Download your final report", "Attendance, meals and seating in one file to keep.", f"{base(ev)}/reports", "Reports"))
+    if not steps:
+        return ""
+    cards = "".join(f'<a class="next-step" href="{href}"><span class="mono tiny">NEXT {n}</span><b>{esc(t)}</b><span class="small muted">{esc(w)}</span>'
+                    f'<span class="arrow-link small"><span>{esc(btn)}</span>{i("arrow")}</span></a>' for n, (t, w, href, btn) in enumerate(steps[:3], 1))
+    return f'<div class="next-steps" style="margin-bottom:22px">{cards}</div>'
 
 
 # =============================================================================================
@@ -7900,6 +8645,94 @@ def _invite_message(ev) -> str:
             f"is on our event page: {events.public_url(ev)}")
 
 
+def _reminder_message(ev, g) -> str:
+    gs = ev.get("guest_settings") or {}
+    by = f" by {forms.fmt_date(gs['rsvp_deadline'], long=False)}" if gs.get("rsvp_deadline") else ""
+    return (f"Hi {g['first_name']}, a quick reminder to let us know{by} if you can make it to {ev['name']}. "
+            f"It takes a minute: {events.invite_url(ev, g)}")
+
+
+def _broadcast_box(ev, with_queue: bool = True) -> str:
+    msg = _invite_message(ev)
+    return f"""<div class="box"><div class="box__head"><h2>Send to many people at once</h2></div>
+<p class="small muted">Use a WhatsApp broadcast list: everyone gets the message privately, as if you'd sent it to them alone.</p>
+<ol class="small" style="margin:10px 0 12px;padding-left:20px;display:grid;gap:6px"><li>In WhatsApp, open <b>Broadcast lists</b> (Android: ⋮ › New broadcast; iPhone: Chats › Lists or Broadcast lists).</li>
+<li>Add your guests, up to 256 per list.</li><li>Paste this message and send.</li></ol>
+<textarea class="textarea" id="broadcast-msg" rows="4" readonly aria-label="Message for a broadcast list">{esc(msg)}</textarea>
+<div class="row" style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-copy-target="#broadcast-msg" data-copied="Message copied">{i("copy")}Copy message</button></div>
+<p class="tiny muted" style="margin-top:10px">Only people who have your number saved in their phone receive broadcasts. For everyone else, {"send one by one, or " if with_queue else ""}post the message in a group chat.</p></div>"""
+
+
+@router.route("/dashboard/events/<uid>/share/whatsapp", methods=("GET", "POST"))
+def whatsapp_queue(req, uid):
+    """Send personal invitations (or reminders) on WhatsApp one guest at a time: one tap to open
+    WhatsApp with the message ready, one tap for the next guest. Nothing is sent automatically."""
+    ev = load(req, uid)
+    mode = "remind" if (req.arg("mode") or req.get("mode")) == "remind" else "invite"
+    skip = [int(x) for x in (req.arg("skip") or req.get("skip") or "").split(",") if x.isdigit()][:500]
+    title = "Remind guests on WhatsApp" if mode == "remind" else "Send invitations on WhatsApp"
+    if not has(ev, "personal_invites"):
+        body = page_head(title, "Personal links for each guest are part of Premium. You can still share your one link with everyone.") + _broadcast_box(ev, with_queue=False)
+        return organiser_page(req, ev, title, body, "/share")
+    today = db.now()[:10]
+    if req.method == "POST":
+        g = db.one("SELECT * FROM guests WHERE id = ? AND event_id = ?", (req.get("guest_id"), ev["id"]))
+        if g and req.get("action") == "sent":
+            if mode == "invite":
+                db.run("UPDATE guests SET invited_at = COALESCE(invited_at, ?), updated_at = ? WHERE id = ?", (db.now(), db.now(), g["id"]))
+            else:
+                db.run("INSERT OR IGNORE INTO sent_markers (event_id, marker, created_at) VALUES (?, ?, ?)",
+                       (ev["id"], f"wa-remind:{g['id']}:{today}", db.now()))
+        elif g:
+            skip.append(g["id"])
+        q = {"mode": mode if mode == "remind" else "", "skip": ",".join(map(str, skip))}
+        return redirect(f"{base(ev)}/share/whatsapp" + ("?" + "&".join(f"{k}={v}" for k, v in q.items() if v) if any(q.values()) else ""))
+    if mode == "invite":
+        todo = db.q("""SELECT * FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined' AND phone != ''
+                       ORDER BY is_vip DESC, last_name COLLATE NOCASE, first_name COLLATE NOCASE""", (ev["id"],))
+        done = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NOT NULL AND phone != ''", (ev["id"],), 0)
+    else:
+        todo = db.q("""SELECT g.* FROM guests g WHERE g.event_id = ? AND g.status = 'pending' AND g.phone != '' AND g.invited_at IS NOT NULL
+                       AND NOT EXISTS (SELECT 1 FROM sent_markers m WHERE m.event_id = g.event_id AND m.marker = 'wa-remind:' || g.id || ':' || ?)
+                       ORDER BY g.last_name COLLATE NOCASE, g.first_name COLLATE NOCASE""", (ev["id"], today))
+        done = db.val("SELECT COUNT(*) FROM sent_markers WHERE event_id = ? AND marker LIKE ?", (ev["id"], f"wa-remind:%:{today}"), 0)
+    queue = [g for g in todo if g["id"] not in skip and wa_digits(g["phone"])]
+    skipped = [g for g in todo if g["id"] in skip]
+    no_phone = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND phone = '' AND status != 'declined'", (ev["id"],), 0)
+    total = done + len(queue) + len(skipped)
+    tabs_html = (f'<nav class="tabs" aria-label="Section" style="margin-bottom:18px"><a href="{base(ev)}/share/whatsapp"{" aria-current=page" if mode == "invite" else ""}>Invitations</a>'
+                 f'<a href="{base(ev)}/share/whatsapp?mode=remind"{" aria-current=page" if mode == "remind" else ""}>Reminders</a></nav>')
+    if queue:
+        g = queue[0]
+        msg = guest_whatsapp(ev, g) if mode == "invite" else f"https://wa.me/{wa_digits(g['phone'])}?text={quote(_reminder_message(ev, g))}"
+        text = (f"Hi {g['first_name']}, you're invited to {ev['name']}. Your personal invitation and RSVP link: {events.invite_url(ev, g)}"
+                if mode == "invite" else _reminder_message(ev, g))
+        form = lambda action, label, cls: (f'<form method="post">{csrf(req)}<input type="hidden" name="mode" value="{mode}"><input type="hidden" name="skip" value="{",".join(map(str, skip))}">'
+                                           f'<input type="hidden" name="guest_id" value="{g["id"]}"><input type="hidden" name="action" value="{action}">'
+                                           f'<button class="btn {cls}" type="submit"{" data-next-guest" if action == "sent" else ""}>{label}</button></form>')
+        card = f"""<div class="box wa-queue"><div class="row row--between"><span class="mono small">{done + 1} of {total}</span><span class="small muted">{len(queue) - 1} after this one</span></div>
+<div class="progress"><span style="width:{round(100 * done / total) if total else 0}%"></span></div>
+<div><h2 style="font-size:1.375rem">{esc(events.guest_name(g))}{' <span class="pill pill--gold pill--plain">VIP</span>' if g["is_vip"] else ""}</h2><p class="mono small muted">{esc(g["phone"])}</p></div>
+<div class="notice">{i("chat")}<span class="small" style="white-space:pre-wrap">{esc(text)}</span></div>
+<div class="btn-row"><a class="btn btn--primary btn--lg" href="{esc(msg)}" target="_blank" rel="noopener" data-open-wa>{i("chat")}Open WhatsApp</a>
+{form("sent", "Sent, next guest " + i("arrow", "i--arrow"), "btn--secondary btn--lg")}{form("skip", "Skip for now", "btn--ghost")}</div>
+<p class="tiny muted">WhatsApp opens with the message ready. Press send there, come back and tap “Sent, next guest”.</p></div>"""
+    else:
+        msg_done = ("Everyone with a mobile number has their invitation." if mode == "invite" else "Everyone who hasn't replied has had a reminder today.")
+        card = (f'<div class="box"><div class="empty"><span class="icon-tile icon-tile--soft">{i("check")}</span><h2 style="font-size:1.25rem">{msg_done}</h2>'
+                + (f'<p>You skipped {len(skipped)}. <a class="text-link" href="{base(ev)}/share/whatsapp{"?mode=remind" if mode == "remind" else ""}">Go through them again</a>.</p>' if skipped else "")
+                + f'<a class="btn btn--secondary" href="{base(ev)}/rsvps">See RSVPs</a></div></div>')
+    extra = ""
+    if no_phone:
+        extra = (f'<div class="notice" style="margin-top:14px">{i("info")}<span>{no_phone} guest{"s have" if no_phone != 1 else " has"} no mobile number. '
+                 f'<a class="text-link" href="{base(ev)}/guests">Add numbers</a> or <a class="text-link" href="{base(ev)}/communications">email them instead</a>.</span></div>')
+    js = """<script>(function(){var a=document.querySelector('[data-open-wa]'),n=document.querySelector('[data-next-guest]');if(a&&n)a.addEventListener('click',function(){setTimeout(function(){n.classList.remove('btn--secondary');n.classList.add('btn--primary');n.focus();},400);});})();</script>"""
+    intro = ("One guest at a time, each with their own RSVP link. Two taps per guest." if mode == "invite"
+             else "Guests who were invited but haven't replied yet, each with their own RSVP link.")
+    body = page_head(title, intro) + tabs_html + f'<div class="cols cols--2"><div>{card}{extra}</div>{_broadcast_box(ev)}</div>' + js
+    return organiser_page(req, ev, title, body, "/share")
+
+
 @router.get("/dashboard/events/<uid>/share")
 def share(req, uid):
     ev = load(req, uid)
@@ -7910,8 +8743,8 @@ def share(req, uid):
     note = "" if live else (f'<div class="notice notice--warn" style="margin-bottom:18px">{i("info")}<div>Your link is reserved, '
                             f'but guests will only see the website once it is paid for and published. '
                             f'<a class="text-link" href="{base(ev)}/setup/10">Publish now</a></div></div>')
-    personal = (f'<p class="small muted" style="margin-top:12px">Each guest also has a personal link that opens their own RSVP. '
-                f'Find them on the <a class="text-link" href="{base(ev)}/guests">Guests</a> page.</p>') if has(ev, "personal_invites") else ""
+    personal = (f'<div class="notice" style="margin-top:12px">{i("chat")}<div><span>Each guest also has a personal link that opens their own RSVP.</span>'
+                f'<div style="margin-top:10px"><a class="btn btn--secondary btn--sm" href="{base(ev)}/share/whatsapp">Send personal invitations on WhatsApp</a></div></div></div>') if has(ev, "personal_invites") else ""
     sub_js = json.dumps("Invitation: " + ev["name"]).replace("<", "\\u003c")
     body = page_head("Share your event", "One link for everything. Paste it anywhere: WhatsApp, email, SMS or social media.") + note + f"""
 <div class="cols cols--2"><div class="stack">
@@ -8477,7 +9310,7 @@ def slugify(text: str, max_len: int = 60) -> str:
 
 ### `app/views/layout.py`
 
-<!-- FILE: app/views/layout.py sha256=01dbaa89959d8acd06de92cd7c7d16c8941e5444602df6cea0cf9bb33de1098f nl=1 -->
+<!-- FILE: app/views/layout.py sha256=8c0c82c009ccc238fb88d9c1da3ea15ff4983c3573e679ac4783d3a21fc25238 nl=1 -->
 ```python
 """Page shells: the marketing site (header, drawer, footer), the app shell (dashboard and admin),
 toasts, and the error page."""
@@ -8574,17 +9407,21 @@ def header(req, current: str = "") -> str:
 
 def footer() -> str:
     year = __import__("datetime").date.today().year
+    wa = config.whatsapp_link()
     social = "".join(
-        f'<a href="{href}" aria-label="{label} (link to be confirmed)">{i(icon)}</a>'
-        for label, href, icon in [("Instagram", "#", "image"), ("Facebook", "#", "users"), ("WhatsApp", "#", "chat")])
+        f'<a href="{esc(href)}" target="_blank" rel="noopener" aria-label="{label}">{i(icon)}</a>'
+        for label, href, icon in [("Instagram", config.SOCIAL_INSTAGRAM, "image"), ("Facebook", config.SOCIAL_FACEBOOK, "users"),
+                                  ("TikTok", config.SOCIAL_TIKTOK, "music"), ("WhatsApp", wa, "chat")] if href)
+    chat = (f'<a class="wa-float" href="{esc(config.whatsapp_link("Hi " + config.BRAND_NAME + ", I have a question about my event."))}" target="_blank" rel="noopener">'
+            f'{i("chat")}<span>Chat on WhatsApp</span></a>') if wa else ""
     return f"""<footer class="site-footer on-dark"><div class="container">
 <div class="footer-grid"><div class="stack" style="--stack:14px">{brand()}<p class="muted" style="max-width:38ch">{esc(config.BRAND_TAGLINE)} {esc(config.BRAND_LINE)}</p>
 <p class="small muted">{esc(config.COMPANY_ADDRESS)}<br><a class="text-link" href="mailto:{esc(config.SUPPORT_EMAIL)}">{esc(config.SUPPORT_EMAIL)}</a></p></div>
 <div><h3>Events</h3><ul><li><a href="/weddings">Weddings</a></li><li><a href="/baby-celebrations">Baby celebrations</a></li><li><a href="/parties">Parties</a></li><li><a href="/celebrations">Other events</a></li></ul></div>
-<div><h3>Platform</h3><ul><li><a href="/templates">Templates</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/faq">FAQ</a></li></ul></div>
+<div><h3>Platform</h3><ul><li><a href="/templates">Templates</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/help-me-set-up">We'll set it up for you</a></li><li><a href="/faq">FAQ</a></li></ul></div>
 <div><h3>Company</h3><ul><li><a href="/contact">Contact &amp; support</a></li><li><a href="/privacy">Privacy (POPIA)</a></li><li><a href="/terms">Terms of service</a></li><li><a href="/refunds">Refund policy</a></li></ul></div></div>
 <div class="footer-bottom"><span>© {year} {esc(config.BRAND_NAME)}. Prices in South African Rand, VAT inclusive.</span><div class="socials">{social}</div></div>
-<div class="wordmark-giant" aria-hidden="true"><span>A</span>urelia</div></div></footer>"""
+<div class="wordmark-giant" aria-hidden="true"><span>A</span>urelia</div></div></footer>{chat}"""
 
 
 def page(req, title: str, body: str, current: str = "", description: str = "", body_class: str = "site",
@@ -8649,7 +9486,7 @@ def error_page(req, status: int, message: str) -> str:
 
 ### `app/views/manage.py`
 
-<!-- FILE: app/views/manage.py sha256=653a9bc8a09aff3ca7be96cc95b3eaded1fb104ef84a3a30236d1b4d6ae9f690 nl=1 -->
+<!-- FILE: app/views/manage.py sha256=f0facc6453de81825395f37ffdc1dbc1468a254b3a42204bb2ff03b3e8418e7d nl=1 -->
 ```python
 """Organiser tools: guests (with CSV import), RSVPs, seating editor, menu, programme, communications."""
 from __future__ import annotations
@@ -9261,6 +10098,8 @@ def rsvps(req, uid):
     actions = ""
     if has(ev, "reminders") and s["pending"]:
         actions += f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/communications?template=guest_reminder&amp;audience=pending">{i("bell")}Remind pending guests</a>'
+    if has(ev, "personal_invites") and s["pending"]:
+        actions += f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/share/whatsapp?mode=remind">{i("chat")}Remind on WhatsApp</a>'
     if has(ev, "reports"):
         actions += f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/reports/rsvp.csv">{i("download")}Export CSV</a>'
     trs = []
@@ -9371,6 +10210,8 @@ def seating(req, uid):
 <span class="small">tables of</span><input class="input input--sm" name="capacity" type="number" min="1" max="40" value="10" style="width:80px" aria-label="Seats per table">
 <button class="btn btn--secondary btn--sm" type="submit">Create</button></form></details>
 <div data-table-editor hidden style="margin-top:14px;padding-top:14px;border-top:1px solid var(--color-line)"></div>
+<hr><button class="btn btn--primary btn--sm btn--block" type="button" data-autoseat>{i("wand")}Seat everyone automatically</button>
+<p class="tiny muted" style="margin:6px 0 0">Keeps families and groups together. Guests you've already placed stay where they are.</p>
 <hr><div class="row row--between"><h2 style="font-size:1rem">Not seated</h2><label class="switch small"><input type="checkbox" data-include-pending><span>Include pending</span></label></div>
 <p class="small muted" style="margin:4px 0 10px">Drag a guest onto a table, or tap a guest then tap a table.</p>
 <div data-pool aria-live="polite"></div></aside>
@@ -9475,9 +10316,70 @@ def seating_api(req, uid, action):
                       ON CONFLICT(guest_id) DO UPDATE SET table_id = excluded.table_id, assigned_at = excluded.assigned_at""",
                    (g["id"], t["id"], ev["id"], db.now()))
             _check_seating_complete(ev)
+    elif action == "autoseat":
+        message, warning = _auto_seat(ev, bool(body.get("include_pending")), count)
+        _check_seating_complete(ev)
+        return json_response({"ok": True, "warning": warning, "message": message, "state": seating_state(ev)})
     else:
         raise HTTPError(404)
     return json_response({"ok": True, "warning": warning, "state": seating_state(ev)})
+
+
+def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
+    """Seat every unseated party, keeping each family or group together where it fits. Groups go
+    largest first, VIPs first within a group, each to the table that leaves the least space over."""
+    statuses = ("attending", "pending") if include_pending else ("attending",)
+    marks = ",".join("?" * len(statuses))
+    guests = db.q(f"""SELECT g.* FROM guests g LEFT JOIN seat_assignments a ON a.guest_id = g.id
+                      WHERE g.event_id = ? AND a.guest_id IS NULL AND g.status IN ({marks})""", (ev["id"], *statuses))
+    if not guests:
+        return "Everyone who's coming already has a seat.", ""
+    people = sum(events.party_size(g) for g in guests)
+    created = 0
+    if table_count == 0:
+        need = min(60, -(-people // 10))
+        with db.transaction():
+            for k in range(need):
+                x, y = _auto_pos(k)
+                db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": 10, "shape": "round",
+                                             "pos_x": x, "pos_y": y, "sort": k})
+        created = need
+    tables = events.tables(ev["id"])
+    free = {t["id"]: t["capacity"] - t["seated"] for t in tables}
+    groups: dict[str, list] = {}
+    for g in guests:
+        groups.setdefault((g["family_group"] or g["side"] or g["category"] or "").strip().lower() or f"~{g['id']}", []).append(g)
+    ordered = sorted(groups.values(), key=lambda grp: -sum(events.party_size(g) for g in grp))
+    seated, left_out, now = 0, [], db.now()
+    with db.transaction():
+        for grp in ordered:
+            grp.sort(key=lambda g: (not g["is_vip"], g["last_name"].lower(), g["first_name"].lower()))
+            size = sum(events.party_size(g) for g in grp)
+            fits = [tid for tid, room in free.items() if room >= size]
+            if fits:                                # the whole group at one table
+                tid = min(fits, key=lambda t: free[t] - size)
+                free[tid] -= size
+                plan = [(g, tid) for g in grp]
+            else:                                   # too big for any table: party by party, roomiest table first
+                plan = []
+                for g in grp:
+                    room = [t for t, r in free.items() if r >= events.party_size(g)]
+                    if not room:
+                        left_out.append(g)
+                        continue
+                    tid = max(room, key=lambda t: free[t])
+                    free[tid] -= events.party_size(g)
+                    plan.append((g, tid))
+            for g, tid in plan:
+                db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, ?, ?, ?)",
+                       (g["id"], tid, ev["id"], now))
+                seated += 1
+    message = f"Seated {seated} part{'y' if seated == 1 else 'ies'}" + (f" and created {created} tables of 10" if created else "") + ". Drag anyone to fine-tune."
+    warning = ""
+    if left_out:
+        n = sum(events.party_size(g) for g in left_out)
+        warning = f"{len(left_out)} part{'y' if len(left_out) == 1 else 'ies'} ({n} people) didn't fit. Add a table or raise a table's capacity, then seat again."
+    return message, warning
 
 
 @router.get("/dashboard/events/<uid>/seating/print")
@@ -10044,7 +10946,7 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=d5d05f667e8cddcbd4b57227000ea4998e3b4e0b355ba7f6879ebc21771415ba nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=835fe1d36f325445e7722eaccfca1d4087c5222e0556662d4d5c119460411973 nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
@@ -10053,6 +10955,7 @@ from .. import auth, catalog, config, db
 from ..icons import i
 from ..services import email as mail
 from ..web import HTTPError, esc, redirect, router, url
+from . import forms
 from .forms import Form, csrf, errors_summary, field, honeypot, select
 from .layout import page
 
@@ -10147,7 +11050,7 @@ FAQ = [
     ("Can I send invitations on WhatsApp?",
      "Yes. Share your event link or each guest's personal link straight into WhatsApp from your dashboard, copy a ready-made invitation message, or download a QR code for printed signage."),
     ("What happens after the event?",
-     "Your website stays online for your hosting period (6 to 18 months depending on package), so guests can revisit the gallery. You can download every report before it closes."),
+     "Your website stays online for your hosting period (6 to 18 months depending on package, counted from publishing), and never goes offline before a month after your event, so guests can revisit the gallery. You can download every report before it closes."),
     ("Can I upgrade later?",
      "Yes. Upgrade from your dashboard and pay only the difference between packages. Your content carries over."),
     ("What if I need help?",
@@ -10207,11 +11110,8 @@ FEATURES = [
     ("file", "Reports in one click", "Guest list, RSVPs, seating, dietary and final reports as PDF or Excel-ready CSV."),
 ]
 
-TESTIMONIALS = [
-    ("We sent one link on WhatsApp and the RSVPs simply arrived. Seating took an evening, not a week.", "Demonstration quote · white wedding, Pretoria"),
-    ("Both families had their own guest lists for the traditional ceremony and the reception. It kept everyone calm.", "Demonstration quote · traditional wedding, Durban"),
-    ("The baby shower page looked like a boutique invitation, and the registry link saved so many questions.", "Demonstration quote · baby shower, Cape Town"),
-]
+# Real customer reviews only: (quote, "Name · occasion, city"). The section is hidden while this is empty.
+TESTIMONIALS: list = []
 
 
 @router.get("/")
@@ -10223,6 +11123,11 @@ def home(req):
                     for ic, t, d in FEATURES)
     quotes = "".join(f'<figure class="card quote" data-reveal><blockquote>“{esc(q)}”</blockquote><figcaption>{esc(c)}</figcaption></figure>'
                      for q, c in TESTIMONIALS)
+    reviews = (f'<section class="section"><div class="container">{section_head("What hosts say", "From hosts who used " + esc(config.BRAND_NAME) + " for their events.")}'
+               f'<div class="grid grid--3" data-stagger>{quotes}</div></div></section>') if TESTIMONIALS else ""
+    reviews += f"""<section class="section"><div class="container"><div class="cta-panel"><div><h2 style="font-size:1.6rem">Short on time? We'll set it up for you.</h2>
+<p>Send us your details on WhatsApp or by email and our team builds your website. You check it, we change anything you like, and you pay once you're happy.</p></div>
+<div class="btn-row"><a class="btn btn--primary btn--lg" href="/help-me-set-up">Ask us to set it up</a></div></div></div></section>"""
     body = f"""
 <section class="hero"><div class="grid-texture"></div><div class="hero__haze"></div>
 <div class="container hero-grid"><div class="hero-enter">
@@ -10263,8 +11168,7 @@ def home(req):
 {section_head("Affordable luxury, priced once", "No per-guest charges, no per-invitation fees. One payment covers your website, your guests and your tools.", '<a class="arrow-link" href="/pricing"><span>Compare every feature</span>' + i("arrow") + '</a>', "split")}
 {price_cards()}</div></section>
 
-<section class="section"><div class="container">{section_head("What hosts will tell you", '<span class="demo-flag">Demonstration content</span> These quotes illustrate the experience. Real customer reviews will replace them after launch.')}
-<div class="grid grid--3" data-stagger>{quotes}</div></div></section>
+{reviews}
 
 <section class="section section--surface"><div class="container container--narrow">{section_head("Questions, answered")}{faq_list(FAQ[:6])}
 <p style="margin-top:24px"><a class="arrow-link" href="/faq"><span>More questions</span>{i("arrow")}</a></p></div></section>
@@ -10408,13 +11312,14 @@ def pricing(req):
         ("Unlimited link sharing", "Share your event link with as many people as you like, on any channel. It is not unlimited email: each package includes the guest email allowance shown above."),
         ("Pay once", "One payment per event. No subscriptions, no per-guest or per-invitation charges. Prices include 15% VAT."),
         ("Upgrade any time", "Move to a bigger package from your dashboard and pay only the difference."),
-        ("Hosting period", "Your website stays online for the months shown, starting when it is published. Extensions are available."),
+        ("Hosting period", "Your website stays online for the months shown, counted from when it is published, and never goes offline before a month after your event. Extensions are available."),
     ]
     note_html = "".join(f'<div class="box"><h3 style="font-size:1rem">{esc(t)}</h3><p class="muted small" style="margin-top:8px">{esc(d)}</p></div>' for t, d in notes)
     body = page_hero('Simple pricing, <span class="serif grad">paid once</span>',
                      "Every package includes your personalised event website, a premium template and unlimited link sharing. Choose the tools you need.",
                      [("Pricing", "")]) + f"""
-<section class="section"><div class="container">{price_cards()}</div></section>
+<section class="section"><div class="container">{price_cards()}
+<div class="notice" style="margin-top:22px">{i("wand")}<span>Short on time? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>. Tell us about your event and we'll send you a quote.</span></div></div></section>
 <section class="section section--surface"><div class="container">{section_head("Compare every feature")}
 <div class="table-wrap table-wrap--sticky"><table class="compare"><thead><tr><th scope="col">Feature</th>{head}</tr></thead><tbody>{"".join(rows)}</tbody></table></div></div></section>
 <section class="section"><div class="container">{section_head("Good to know")}<div class="grid grid--4">{note_html}</div></div></section>
@@ -10457,8 +11362,78 @@ def faq(req):
 
 
 # --- contact & support ---------------------------------------------------------------------------
-TOPICS = [("general", "General question"), ("event", "Help with my event"), ("payment", "Payments and receipts"),
-          ("technical", "Something isn't working"), ("privacy", "Privacy or data request"), ("partnership", "Partnerships")]
+TOPICS = [("general", "General question"), ("event", "Help with my event"), ("setup_help", "Set up my event for me"),
+          ("payment", "Payments and receipts"), ("technical", "Something isn't working"), ("privacy", "Privacy or data request"),
+          ("partnership", "Partnerships")]
+REACH = [("whatsapp", "WhatsApp"), ("phone", "Phone call"), ("email", "Email")]
+
+
+@router.route("/help-me-set-up", methods=("GET", "POST"))
+def setup_help(req):
+    """Done-for-you set-up: a free request; the team replies with a quote."""
+    f = Form(req)
+    sent = None
+    user = req.user
+    if req.method == "POST":
+        if req.get("website"):
+            return redirect("/help-me-set-up")
+        if auth.rate_limited(f"setup-help:{req.ip}", 5, 3600):
+            f.error("message", "You've sent several requests already. Please wait a little before sending another.")
+        name = f.text("name", "Your name", required=True, max=120)
+        email_addr = f.email("email", required=True)
+        phone = f.text("phone", "Mobile", max=40)
+        reach = f.choice("reach", [k for k, _ in REACH], "contact options", default="email")
+        if reach in ("whatsapp", "phone") and not phone:
+            f.error("phone", "Add a mobile number so we can contact you on " + dict(REACH)[reach] + ".")
+        occasion = f.choice("occasion", [c["slug"] for c in catalog.categories()], "occasions", required=True)
+        if "occasion" in f.errors:
+            f.errors["occasion"] = "Choose what you're celebrating."
+        when = f.date("event_date", "Event date")
+        pkg = f.choice("package", ["", *[p["code"] for p in catalog.packages()]], "packages", default="")
+        message = f.text("message", "Anything else", max=3000)
+        if f.ok:
+            lines = [f"Occasion: {catalog.category_name(occasion)}", f"Date: {forms.fmt_date(when) if when else 'not set yet'}",
+                     f"Package: {catalog.package(pkg)['name'] if pkg else 'not sure yet'}", f"Mobile: {phone or '-'}",
+                     f"Contact by: {dict(REACH)[reach]}", "", message or "(no message)"]
+            sid = db.insert("support_requests", {"user_id": user["id"] if user else None, "event_id": None, "name": name,
+                                                 "email": email_addr, "topic": "setup_help", "message": "\n".join(lines), "priority": 1,
+                                                 "created_at": db.now(), "updated_at": db.now()})
+            sent = f"S-{sid:05d}"
+            mail.send(email_addr, "setup_help_received", {"first_name": mail.first_name(name), "reference": sent},
+                      user_id=user["id"] if user else None)
+    if sent:
+        form_html = (f'<div class="notice notice--success">{i("check")}<div><b>Thank you. Your reference is {esc(sent)}.</b>'
+                     f'<p class="small" style="margin-top:4px">We\'ve emailed you a copy. We\'ll contact you within one working day to go through '
+                     f'the details and send you a quote.</p></div></div>')
+    else:
+        d = f.data
+        occ = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
+        pk = [(p["code"], f'{p["name"]} ({catalog.money(p["price_cents"])})') for p in catalog.packages()]
+        form_html = f"""<form class="form box" method="post" novalidate>{csrf(req)}{honeypot()}{errors_summary(f.errors)}
+<div class="form-row form-row--2">{field("name", "Your name", d.get("name", user["name"] if user else ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
+{field("email", "Email", d.get("email", user["email"] if user else ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
+<div class="form-row form-row--2">{field("phone", "Mobile (optional)", d.get("phone", ""), type="tel", errors=f.errors, attrs={"autocomplete": "tel"})}
+{select("reach", "Best way to reach you", REACH, d.get("reach") or "whatsapp")}</div>
+<div class="form-row form-row--2">{select("occasion", "What are you celebrating?", occ, d.get("occasion") or req.arg("occasion"), required=True, blank="Choose one", errors=f.errors)}
+{field("event_date", "Date (if you know it)", d.get("event_date", ""), type="date", errors=f.errors)}</div>
+{select("package", "Package you're thinking of", pk, d.get("package") or req.arg("package") or "", blank="Not sure yet")}
+{field("message", "Anything we should know? (optional)", d.get("message", ""), type="textarea", errors=f.errors, attrs={"rows": 4, "placeholder": "Venue, number of guests, the look you like, or questions."})}
+<p class="tiny muted">We use these details only to help you with your event. See our <a class="text-link" href="/privacy">privacy notice</a>.</p>
+<div><button class="btn btn--primary" type="submit">Ask us to set it up {i("send")}</button></div></form>"""
+    steps = "".join(f'<li><span class="mono">{n}</span><div><b>{esc(t)}</b><p class="small muted" style="margin-top:4px">{esc(x)}</p></div></li>'
+                    for n, t, x in (("01", "Tell us about your event", "Send this short form. It takes a minute."),
+                                    ("02", "We contact you", "Within one working day, on WhatsApp, by phone or email, whichever you prefer."),
+                                    ("03", "Send us your details and photos", "Names, date, venue, wording and photos. Voice notes are fine."),
+                                    ("04", "We build it, you approve it", "You get a preview link to check. We change anything you like."),
+                                    ("05", "Pay and share", "Once you're happy, pay for your package and share your link.")))
+    body = page_hero('We\'ll set it up <span class="serif grad">for you</span>',
+                     "Short on time? Tell us about your event and our team builds your website for you. You check it, we change anything you like, and you pay only once you're happy.",
+                     [("Set-up help", "")]) + f"""<section class="section"><div class="container"><div class="split split--57" style="align-items:start">
+<div class="stack" style="--stack:18px"><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:16px">{steps}</ol>
+<div class="notice">{i("info")}<span>We send you a quote for the set-up with your package. Asking costs nothing and doesn't commit you.</span></div></div>
+<div>{form_html}</div></div></div></section>"""
+    return page(req, "We'll set it up for you", body, "/help-me-set-up",
+                description="Let the Aurelia team build your event website for you. Free request, quote within one working day.")
 
 
 @router.route("/contact", methods=("GET", "POST"))
@@ -10514,6 +11489,7 @@ def contact(req):
     body = page_hero('Contact and <span class="serif grad">support</span>', "Questions before you start, help with your event, or a privacy request. We're here.",
                      [("Contact", "")]) + f"""<section class="section"><div class="container"><div class="split split--57" style="align-items:start">
 <div class="stack" style="--stack:18px"><div class="notice">{i("mail")}<div><b>Email</b><br><a class="text-link" href="mailto:{esc(config.SUPPORT_EMAIL)}">{esc(config.SUPPORT_EMAIL)}</a></div></div>
+{f'<div class="notice">{i("chat")}<div><b>WhatsApp</b><br><a class="text-link" href="{esc(config.whatsapp_link())}" target="_blank" rel="noopener">{esc(config.WHATSAPP_NUMBER)}</a></div></div>' if config.WHATSAPP_NUMBER else ""}
 <div class="notice">{i("shield")}<div><b>Information officer (POPIA)</b><br><a class="text-link" href="mailto:{esc(config.INFORMATION_OFFICER)}">{esc(config.INFORMATION_OFFICER)}</a></div></div></div>
 <div>{form_html}</div></div></div></section>"""
     return page(req, "Contact", body, "/contact")
@@ -10554,7 +11530,7 @@ def terms(req):
 <h2>Your account</h2><p>Keep your password safe. You are responsible for activity on your account and for the content you publish, including photos you upload, which must be yours to use.</p>
 <h2>Guests and communication</h2><p>You confirm you have a lawful basis to add each guest's details and to email them about your event. Don't use the platform for marketing, spam or anything unlawful. We may suspend events that break these terms.</p>
 <h2>Payments</h2><p>Prices are in South African Rand and include VAT. Your website is published only once our payment gateway confirms payment. Upgrades are charged as the difference between packages.</p>
-<h2>Hosting period</h2><p>Your event website stays online for the hosting period of your package from the date it is first published. We'll remind you before it ends.</p>
+<h2>Hosting period</h2><p>Your event website stays online for the hosting period of your package from the date it is first published. Whenever you book, it never goes offline before one month after your event date, including if you move the date. We'll remind you before it ends.</p>
 <h2>Email allowance</h2><p>Unlimited link sharing means you can share your link as often as you like. Emails sent through the platform are limited to your package's allowance.</p>
 <h2>Liability</h2><p>We work hard to keep the service available, but we can't guarantee it will be uninterrupted. To the extent the law allows, our liability is limited to the amount you paid for the event concerned. Nothing in these terms limits your rights under the Consumer Protection Act.</p>
 <h2>Changes</h2><p>We'll tell you about material changes to these terms by email before they take effect.</p>""")
@@ -10572,7 +11548,7 @@ def refunds(req):
 
 ### `app/views/media.py`
 
-<!-- FILE: app/views/media.py sha256=115c7c0e4e6062ae2c80d4d9ed644d33950e22baac3d646cbd80df4693616aca nl=1 -->
+<!-- FILE: app/views/media.py sha256=3a731ed238b285077a70bc29fb988b860584314b789dc34a1db50e5a02709635 nl=1 -->
 ```python
 """Serve uploaded images with access control: the event must be live, or the viewer must manage it."""
 from __future__ import annotations
@@ -10589,7 +11565,9 @@ def media(req, key):
         raise HTTPError(404)
     ev = events.by_id(row["event_id"])
     from .public_event import is_available
-    if ev is None or not (is_available(ev) or auth.can_manage_event(req.user, ev)):
+    draft_id, _, draft_tok = req.cookies.get(events.DRAFT_COOKIE, "").partition(".")
+    shared_draft = ev is not None and draft_id == str(ev["id"]) and events.draft_token_ok(ev, draft_tok)
+    if ev is None or not (is_available(ev) or auth.can_manage_event(req.user, ev) or shared_draft):
         raise HTTPError(404)
     data = storage.get(key)
     if data is None:
@@ -10805,7 +11783,7 @@ def receipt(req, order_uid):
 
 ### `app/views/public_event.py`
 
-<!-- FILE: app/views/public_event.py sha256=740cf80a76228110c80f75404703622d1260f06ea8c485909f627f2b92f6e512 nl=1 -->
+<!-- FILE: app/views/public_event.py sha256=6d8208e0ed4872dd3c87143f78d4fb07c46ca24b0fba1697699e5c5a4835f925 nl=1 -->
 ```python
 """Guest-facing event websites: public page, personal invitations, RSVP, unsubscribe, calendar,
 plus the organiser preview and the template-gallery sample render."""
@@ -11082,6 +12060,20 @@ def calendar(req, slug):
 
 
 # --- previews --------------------------------------------------------------------------------------
+@router.get("/events/<slug:slug>/draft/<token>")
+def draft_preview(req, slug, token):
+    """Read-only draft the organiser shares with family before paying. RSVPs are switched off."""
+    ev = events.by_slug(slug)
+    if ev is None or ev["status"] in ("suspended", "archived") or not events.draft_token_ok(ev, token):
+        raise HTTPError(404)
+    r = Response(R.render(ev, "preview", None, req, notice="Shared draft from " + (ev["hosts"] or "the hosts")))
+    r.header("Cache-Control", "no-store")
+    r.header("X-Robots-Tag", "noindex, nofollow")
+    r.set_cookie(events.DRAFT_COOKIE, f"{ev['id']}.{token}", max_age=3 * 3600, path="/media/")
+    return r
+
+
+
 @router.get("/templates/<slug:slug>/preview")
 def template_preview(req, slug):
     t = catalog.template(slug)
@@ -11225,7 +12217,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=e8ad972240821d8bcb18e12bbfb043a2fb811252d0781c58495d9b5042e104c6 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=cb5fdd28b8d4e2bbbc955ba9aa10389bee1557f24d7c885effd2c7e9a1317201 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -11234,7 +12226,9 @@ anything; the event stays a private draft until a verified payment (step 10).
 """
 from __future__ import annotations
 
-from .. import auth, catalog, config, db, events
+import json
+
+from .. import auth, catalog, config, db, events, suggestions
 from ..eventsite import themes
 from ..icons import i
 from ..services import storage
@@ -11276,6 +12270,25 @@ def feature_note(ev, feature: str, what: str) -> str:
 
 
 # --- /create -----------------------------------------------------------------------------------
+def _package_picker(selected: str) -> str:
+    opts = []
+    for p in catalog.packages():
+        opts.append(f'<label class="choice"><input type="radio" name="package" value="{esc(p["code"])}"{" checked" if p["code"] == selected else ""}>'
+                    f'<span>{esc(p["name"])} · {catalog.money(p["price_cents"])}<small>{esc(p["tagline"])}</small></span></label>')
+    return (f'<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">{"".join(opts)}</div>'
+            '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, '
+            'so you don\'t fill in anything your package won\'t show. <a class="text-link" href="/pricing" target="_blank" rel="noopener">Compare packages</a></p>')
+
+
+CREATE_JS = """<script>(function(){var f=document.querySelector('[data-create]');if(!f)return;var grid=f.querySelector('[data-tpl-grid]'),more=f.querySelector('[data-show-all]'),all=false;
+function sync(auto){var c=f.querySelector('input[name=category]:checked');var g=c?c.getAttribute('data-group'):'';var first=null,shown=0;
+grid.querySelectorAll('.choice').forEach(function(l){var ok=!g||l.getAttribute('data-groups').split(' ').indexOf(g)>-1;l.hidden=!(ok||all);if(ok){shown++;if(!first)first=l;}});
+if(more){more.hidden=!g||all;more.textContent='Show all '+grid.querySelectorAll('.choice').length+' templates';}
+var picked=grid.querySelector('input[name=template]:checked');if(auto&&first&&(!picked||picked.closest('.choice').hidden)){first.querySelector('input').checked=true;}}
+f.addEventListener('change',function(e){if(e.target.name==='category')sync(true);});
+if(more)more.addEventListener('click',function(){all=true;sync(false);});sync(false);})();</script>"""
+
+
 @router.route("/create", methods=("GET", "POST"))
 def create(req):
     src = req.form if req.method == "POST" else req.query
@@ -11289,24 +12302,64 @@ def create(req):
     tpl = catalog.template(tpl_slug) if tpl_slug else None
     if tpl and not group:
         group = (db.loads(tpl["groups"], []) or ["weddings"])[0]
+    pkg = get("package") if catalog.package(get("package")) else "premium"
     f = Form(req)
+    check_email = ""
     if req.method == "POST":
-        name = f.text("name", "Event name", required=True, max=120)
         if not cat or not cat["active"]:
             f.error("category", "Choose the type of event.")
         if not tpl or not tpl["active"]:
             f.error("template", "Choose a template. You can change it later.")
-        if f.ok:
-            if not req.user:
-                req.flash("info", "Create a free account to save your event. You'll pick up exactly where you left off.")
-                return redirect(url("/register", next=url("/create", category=cat_slug, template=tpl_slug, name=name)))
-            ev = events.create(req.user["id"], cat["slug"], tpl["slug"], name)
-            pkg = get("package")
-            if catalog.package(pkg):
-                events.touch(ev["id"], selected_package=pkg)
-            auth.audit(req.user["id"], "event.create", ev["uid"], template=tpl["slug"])
+        user = req.user
+        if not user:
+            if req.get("website"):                    # honeypot: bots fill every field
+                return redirect("/")
+            cname = f.text("contact_name", "Your name", required=True, max=120)
+            cemail = f.email("contact_email", required=True)
+            if not f.flag("terms"):
+                f.error("terms", "Please accept the terms and privacy notice to continue.")
+            if f.ok and auth.rate_limited(f"create-account:{req.ip}", 10, 3600):
+                f.error("contact_email", "Too many new accounts from this connection. Try again in an hour.")
+            if f.ok:
+                existing = db.one("SELECT * FROM users WHERE email = ?", (cemail,))
+                back = url("/create", category=cat_slug, template=tpl_slug, package=pkg, go="1")
+                if existing:
+                    from .accounts import send_login_link
+                    if existing["status"] == "active" and not auth.rate_limited(f"login-link:{cemail}", 5, 3600):
+                        send_login_link(existing, back)
+                    check_email = cemail
+                else:
+                    from ..services import email as mail
+                    uid_ = db.insert("users", {"email": cemail, "name": cname, "password_hash": "", "role": "customer",
+                                               "marketing_consent": 0, "created_at": db.now()})
+                    user = db.one("SELECT * FROM users WHERE id = ?", (uid_,))
+                    mail.send(cemail, "welcome", {"first_name": mail.first_name(cname)}, user_id=uid_)
+                    from .accounts import send_verification
+                    send_verification(user)
+                    auth.audit(uid_, "user.register", cemail, via="create")
+        if f.ok and user and not check_email:
+            ev = events.create(user["id"], cat["slug"], tpl["slug"], cat["name"])
+            events.touch(ev["id"], selected_package=pkg)
+            auth.audit(user["id"], "event.create", ev["uid"], template=tpl["slug"])
             req.flash("success", "Your event is saved as a private draft. Let's add the details.")
-            return redirect(step_url(ev, 1))
+            resp = redirect(step_url(ev, 1))
+            if not req.user:
+                from .accounts import login_session
+                resp = login_session(resp, req, user["id"])
+            return resp
+    elif req.user and get("go") == "1" and cat and tpl:
+        # back from an emailed sign-in link: create the event the visitor had chosen
+        ev = events.create(req.user["id"], cat["slug"], tpl["slug"], cat["name"])
+        events.touch(ev["id"], selected_package=pkg)
+        auth.audit(req.user["id"], "event.create", ev["uid"], template=tpl["slug"])
+        req.flash("success", "You're signed in and your event is saved as a private draft. Let's add the details.")
+        return redirect(step_url(ev, 1))
+    if check_email:
+        body = f"""<section class="section" style="padding-top:calc(var(--header-h) + 48px)"><div class="container container--narrow"><div class="glass glass--strong panel" style="display:grid;gap:14px">
+<span class="icon-tile icon-tile--soft">{i("mail")}</span><h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">You already have an account</h1>
+<p class="lead" style="font-size:1.0625rem">We've emailed a sign-in link to <b>{esc(check_email)}</b>. Open it on this device and you'll come straight back here with your choices kept. The link expires in 2 hours.</p>
+<p class="small muted">Rather use your password? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg, go='1')))}">Log in</a>.</p></div></div></section>"""
+        return page(req, "Check your email", body, "/create", noindex=True)
     # occasion picker
     cats_html = []
     for gkey, g in catalog.GROUPS.items():
@@ -11323,34 +12376,52 @@ def create(req):
             f'<label class="choice" data-groups="{esc(" ".join(db.loads(t["groups"], [])))}"><input type="radio" name="template" value="{esc(t["slug"])}"{" checked" if t["slug"] == tpl_slug else ""} required>'
             f'<span><span class="row row--between" style="gap:8px"><b>{esc(t["name"])}</b><span class="palette-swatches">{sw}</span></span><small>{esc(t["direction"])}</small>'
             f'<a class="text-link tiny" href="/templates/{esc(t["slug"])}" target="_blank" rel="noopener" style="position:relative;z-index:2">Preview</a></span></label>')
+    about = ""
+    if not req.user:
+        about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. About you</h2>
+<p class="muted small" style="margin-bottom:16px">So your draft is saved and you can come back to it on any device. No password needed: we email you a sign-in link whenever you want one. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
+<div class="form-row form-row--2">{field("contact_name", "Your name", f.data.get("contact_name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
+{field("contact_email", "Your email", f.data.get("contact_email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
+<div class="field{' has-error' if 'terms' in f.errors else ''}" data-field="terms">{check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(req.get("terms")))}</div>
+{forms.honeypot()}</div>"""
     body = f"""<section class="page-hero"><div class="grid-texture"></div><div class="container">
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>
-<h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion and a starting template. Nothing is published or charged until you choose a package at the end.</p></div></section>
-<section class="section"><div class="container"><form class="form" method="post" novalidate data-create>{csrf(req)}<input type="hidden" name="package" value="{esc(get('package'))}">
+<h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Nothing is published or charged until you're ready.</p>
+<p class="small" style="margin-top:14px">Rather have us do it? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>.</p></div></section>
+<section class="section"><div class="container"><form class="form" method="post" novalidate data-create>{csrf(req)}
 {errors_summary(f.errors)}
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>{"".join(cats_html)}</div>
-<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">Templates that suit your occasion are shown first. Switch any time in the design step.</p>
-<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div></div>
-<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Name it</h2>
-{field("name", "Event name", f.data.get("name") or get("name"), required=True, errors=f.errors, hint="Just for you, e.g. “Our wedding” or “Amahle's baby shower”. Guests see the names you add next.")}</div>
-<div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">{"Start setting up" if req.user else "Continue"} {i("arrow", "i--arrow")}</button>
-{"" if req.user else '<span class="small muted">You will create a free account next, so your progress is saved.</span>'}</div></form></div></section>
-<script>(function(){{var f=document.querySelector('[data-create]');if(!f)return;function sync(){{var c=f.querySelector('input[name=category]:checked');var g=c?c.getAttribute('data-group'):'';
-f.querySelectorAll('[data-tpl-grid] .choice').forEach(function(l){{var ok=!g||l.getAttribute('data-groups').split(' ').indexOf(g)>-1;l.style.order=ok?0:1;l.style.opacity=ok?1:.55;}});}}
-f.addEventListener('change',sync);sync();}})();</script>"""
+<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step.</p>
+<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
+<button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>
+<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>{_package_picker(pkg)}</div>
+{about}
+<div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up {i("arrow", "i--arrow")}</button></div></form></div></section>
+{CREATE_JS}"""
     return page(req, "Create your event", body, "/create", noindex=True)
 
 
 # --- wizard shell -----------------------------------------------------------------------------
+OPTIONAL_STEPS = {4, 5, 6, 7, 8}
+STEP_FEATURE = {5: "programme", 6: "menu", 7: "seating"}
+
+
 def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctype: str = "") -> str:
     done = set(ev["wizard_done"] or [])
+
+    def badge(s):
+        if s in STEP_FEATURE and not catalog.has_feature(ev, STEP_FEATURE[s]):
+            return f'<span class="stepper__tag" title="Not in your planned package">{i("lock")}</span>'
+        return '<span class="stepper__tag">optional</span>' if s in OPTIONAL_STEPS else ""
     stepper = "".join(
         f'<li><a href="{step_url(ev, s)}" class="{"is-done" if s in done else ""}"{" aria-current=step" if s == n else ""} data-step-link>'
-        f'<span class="n">{"✓" if s in done and s != n else s}</span>{esc(label)}</a></li>' for s, label, _ in STEPS)
+        f'<span class="n">{"✓" if s in done and s != n else s}</span>{esc(label)}{badge(s)}</a></li>' for s, label, _ in STEPS)
     pct = round(100 * len(done & set(range(1, 11))) / 10)
     title, icon = STEPS[n - 1][1], STEPS[n - 1][2]
+    skip = (f'<a class="btn btn--ghost" href="{step_url(ev, n + 1)}" data-step-link>Skip for now</a>' if n in OPTIONAL_STEPS else "")
+    to_review = (f'<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' if 3 <= n <= 7 else "")
     nav = f"""<div class="wizard-actions">{f'<a class="btn btn--ghost" href="{step_url(ev, n - 1)}">{i("arrow-left")} Back</a>' if n > 1 else '<span></span>'}
-<div class="btn-row"><button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button>
+<div class="btn-row">{to_review}{skip}<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button>
 <button class="btn btn--primary" type="submit" name="nav" value="next">Save and continue {i("arrow", "i--arrow")}</button></div></div>"""
     if n == 10:   # step 10 holds its own checkout form; forms can't be nested
         form = inner
@@ -11366,28 +12437,63 @@ def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctyp
         content = f'<div class="wizard-split"><div class="glass wizard-card glass--strong">{_card_head(n, title, icon)}{form}</div>{preview}</div>'
     else:
         content = f'<div class="glass glass--strong wizard-card">{_card_head(n, title, icon)}{form}</div>'
+    plan = ""
+    if not ev["paid_package"]:
+        opts = "".join(f'<option value="{esc(p["code"])}"{" selected" if p["code"] == catalog.planning_package(ev) else ""}>{esc(p["name"])} · {catalog.money(p["price_cents"])}</option>'
+                       for p in catalog.packages())
+        plan = (f'<form class="plan-package" method="post" action="/dashboard/events/{ev["uid"]}/plan-package" data-plan-package>{csrf(req)}'
+                f'<input type="hidden" name="back" value="{n}"><label class="tiny muted" for="plan-pkg">Planning with</label>'
+                f'<select class="select select--sm" id="plan-pkg" name="package">{opts}</select>'
+                f'<button class="btn btn--ghost btn--sm" type="submit" data-plan-submit>Change</button></form>')
     body = f"""<div class="page-head"><div><h1>Set up {esc(ev['name'])}</h1><p>Private draft. Saved as you go; nothing is shared until you publish.</p></div>
-<a class="btn btn--secondary btn--sm" href="/dashboard/events/{ev['uid']}/preview" target="_blank" rel="noopener">{i("eye")} Full preview</a></div>
+<div class="btn-row">{plan}<a class="btn btn--secondary btn--sm" href="/dashboard/events/{ev['uid']}/preview" target="_blank" rel="noopener">{i("eye")} Full preview</a></div></div>
 <div class="wizard-progress"><span>{pct}% complete</span><div class="progress"><span style="width:{pct}%"></span></div><span class="mono">Step {n} of 10</span></div>
 <div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">{stepper}</ol></nav><div>{content}</div></div>"""
     return organiser_page(req, ev, f"Set-up step {n}", body, f"/setup/{n}", extra_scripts=WIZARD_JS)
 
 
+@router.post("/dashboard/events/<uid>/plan-package")
+def plan_package(req, uid):
+    ev = events.parse(auth.event_for(req, uid))
+    code = req.get("package")
+    back = req.get("back")
+    n = int(back) if back.isdigit() and 1 <= int(back) <= 10 else 1
+    if catalog.package(code) and not ev["paid_package"]:
+        events.touch(ev["id"], selected_package=code)
+        req.flash("success", f"Now planning with {catalog.package(code)['name']}. You can change this until you pay.")
+    return redirect(step_url(ev, n))
+
+
 def _card_head(n, title, icon):
     intros = {
         1: "The essentials guests see first.", 2: "Where it's happening and how to get there.",
-        3: "Make the template yours. Changes show in the preview as you go.", 4: "Who's invited and how replies work. You can add the guest list itself later.",
+        3: "Make the template yours. Changes show in the preview as you go.", 4: "Your guest list and how replies work.",
         5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-        7: "Start your seating plan. You'll drag guests onto tables once RSVPs arrive.", 8: "Dress code, gifts, contacts, accommodation and photos.",
+        7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.",
         9: "Check everything before you choose a package.", 10: "Choose a package. Your website goes live once payment is confirmed.",
     }
+    opt = ('<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time, before or after your website is live.</p>'
+           if n in OPTIONAL_STEPS else "")
     return (f'<div class="row" style="gap:14px;margin-bottom:6px"><span class="icon-tile icon-tile--soft">{i(icon)}</span>'
-            f'<div><span class="tiny muted mono">STEP {n}</span><h2>{esc(title)}</h2></div></div><p class="lead">{intros[n]}</p><hr>')
+            f'<div><span class="tiny muted mono">STEP {n}</span><h2>{esc(title)}</h2></div></div><p class="lead">{intros[n]}</p>{opt}<hr>')
 
 
-WIZARD_JS = """<script>(function(){var f=document.querySelector('[data-wizard-form]');if(!f)return;var dirty=false;
-f.addEventListener('input',function(){dirty=true;});f.addEventListener('submit',function(){dirty=false;});
+WIZARD_JS = """<script>(function(){
+var plan=document.querySelector('[data-plan-package]');if(plan){var b=plan.querySelector('[data-plan-submit]');if(b)b.hidden=true;plan.querySelector('select').addEventListener('change',function(){plan.submit();});}
+var f=document.querySelector('[data-wizard-form]');if(!f)return;var dirty=false;
+function fire(el){el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
+f.addEventListener('input',function(e){dirty=true;if(e.target.name==='name')e.target.setAttribute('data-autoname','0');
+if(e.target.name==='hosts'||e.target.name==='category'){var n=f.querySelector('[data-autoname="1"]');if(n){var h=f.querySelector('[name=hosts]').value.trim(),c=f.querySelector('[name=category]');
+var nn=JSON.parse(n.getAttribute('data-nouns')||'{}')[c?c.value:''];n.value=!h||!nn?h:h+(/s$/.test(h)&&!/'s$/.test(h)?"' ":"'s ")+nn;}}});
+f.addEventListener('change',function(e){if(e.target.name==='category')f.dispatchEvent(new Event('input'));});
+f.addEventListener('submit',function(){dirty=false;});
 document.querySelectorAll('[data-step-link]').forEach(function(a){a.addEventListener('click',function(e){if(dirty&&!confirm('You have unsaved changes on this step. Leave without saving?'))e.preventDefault();});});
+f.addEventListener('click',function(e){var t=e.target.closest('[data-fill],[data-surprise],[data-confirm]');if(!t)return;
+if(t.hasAttribute('data-confirm')&&!confirm(t.getAttribute('data-confirm'))){e.preventDefault();return;}
+if(t.hasAttribute('data-fill')){var v=JSON.parse(t.getAttribute('data-fill'));Object.keys(v).forEach(function(k){var el=f.querySelector('[name="'+k+'"]');if(el){el.value=v[k];fire(el);}});
+if(window.Aurelia&&Aurelia.toast)Aurelia.toast(t.getAttribute('data-done')||'Added. Edit it as you like.');}
+if(t.hasAttribute('data-surprise')){var pals=f.querySelectorAll('input[name=palette]');if(pals.length){var p=pals[Math.floor(Math.random()*pals.length)];p.checked=true;fire(p);}
+['font_pair','background'].forEach(function(k){var s=f.querySelector('select[name='+k+']');if(s&&s.options.length){s.selectedIndex=Math.floor(Math.random()*Math.min(s.options.length,k==='font_pair'?4:s.options.length));fire(s);}});}});
 var live=document.querySelector('[data-live-preview]');if(!live||!f.hasAttribute('data-autosave'))return;var t=0;
 f.addEventListener('change',function(e){if(e.target.type==='file')return;clearTimeout(t);t=setTimeout(function(){var fd=new FormData(f);fd.set('nav','autosave');
 ['hero','logo','background'].forEach(function(k){fd.delete(k);});
@@ -11418,6 +12524,8 @@ def finish_step(req, ev, n: int, f: Form):
             return json_response({"ok": True})
         if req.get("nav") == "next":
             return redirect(step_url(ev, n + 1))
+        if req.get("nav") == "review":
+            return redirect(step_url(ev, 9))
         req.flash("success", "Saved.")
         return redirect(step_url(ev, n))
     return None
@@ -11428,9 +12536,10 @@ def step1(req, ev):
     f = Form(req)
     g = group_of(ev)
     if req.method == "POST":
-        name = f.text("name", "Event name", required=True, max=120)
+        name = f.text("name", "Event name", max=120)
         cat = f.choice("category", [c["slug"] for c in catalog.categories()], "event types", required=True)
         hosts = f.text("hosts", HOST_LABEL.get(g, ("Hosts",))[0], required=True, max=120)
+        name = name or suggestions.auto_event_name(cat or ev["category"], hosts) or catalog.category_name(cat or ev["category"])
         desc = f.text("description", "Description", max=1500)
         d = f.date("event_date", "Event date", required=True, future=not ev["paid_package"])
         st = f.time("start_time", "Start time")
@@ -11442,16 +12551,20 @@ def step1(req, ev):
                          start_time=st, end_time=et)
             if not ev["published_at"] and hosts and ev["slug"].startswith(forms.slugify(ev["name"], 50)):
                 events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
+            events.keep_online_past_event(events.by_id(ev["id"]))
         r = finish_step(req, events.by_id(ev["id"]), 1, f)
         if r:
             return r
     d = {**ev, **f.data}
     label, ph = HOST_LABEL.get(g, ("Hosts", ""))
     cats = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
+    auto = "1" if (not d.get("name") or d.get("name") in (d.get("hosts"), catalog.category_name(d.get("category")),
+                                                           suggestions.auto_event_name(d.get("category"), d.get("hosts")))) else "0"
+    nouns = esc(json.dumps(suggestions.NAME_NOUN))
     inner = f"""{errors_summary(f.errors)}
-<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), required=True, errors=f.errors, hint="For your dashboard and emails.")}
+{field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph, "autofocus": not d.get("hosts")}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
+<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), errors=f.errors, attrs={"data-autoname": auto, "data-nouns": nouns}, hint="Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above.")}
 {select("category", "Type of event", cats, d.get("category"), required=True, errors=f.errors)}</div>
-{field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
 {field("description", "A short welcome or description", d.get("description"), type="textarea", errors=f.errors, hint="Optional. One or two sentences guests read first.")}
 <div class="form-row form-row--3">{field("event_date", "Date", d.get("event_date"), type="date", required=True, errors=f.errors)}
 {field("start_time", "Starts", d.get("start_time"), type="time", errors=f.errors)}{field("end_time", "Ends", d.get("end_time"), type="time", errors=f.errors)}</div>
@@ -11576,16 +12689,25 @@ def step3(req, ev):
                 f'<span>{"Replace" if ups else "Upload"} {esc(label.lower())}</span><span class="hint">{esc(hint)}</span><span class="tiny" data-files></span>'
                 f'<input type="file" name="{kind}" accept="image/jpeg,image/png,image/webp,image/gif"></label></div>')
 
+    deadline = forms.fmt_date((ev["guest_settings"] or {}).get("rsvp_deadline")) if (ev["guest_settings"] or {}).get("rsvp_deadline") else ""
+    cards = []
+    for opt in suggestions.wording_options(ev["category"]):
+        filled = {k: suggestions.fill_wording(opt[k], ev["hosts"] or "", deadline) for k in ("welcome", "invitation", "rsvp_note", "closing")}
+        payload = esc(json.dumps({"w_" + k: v for k, v in filled.items()}))
+        cards.append(f'<div class="suggest-card"><b>{esc(opt["label"])}</b><p>{esc(filled["welcome"])}</p><p>{esc(filled["invitation"])}</p>'
+                     f'<button class="btn btn--secondary btn--sm" type="button" data-fill="{payload}" data-done="Wording added. Edit it as you like.">Use this wording</button></div>')
     inner = f"""{errors_summary(f.errors)}
 <fieldset><legend>Template</legend><div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">{"".join(tpl_opts)}</div>
 <p class="hint" style="margin-top:8px">Switching template resets colours and fonts to that template's defaults. Your content stays.</p></fieldset>
-<fieldset><legend>Colour palette</legend><div class="choice-grid">{pal_opts}</div></fieldset>
+<fieldset><legend>Colour palette</legend><div class="choice-grid">{pal_opts}</div>
+<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">{i("sparkle")} Try another look</button></fieldset>
 <div class="box" style="padding:16px">{check("custom_colors", "Use my own colours" + ("" if adv else " <span class='pill pill--gold pill--plain'>Premium</span>"), custom, attrs={"data-reveals": "#custom-colors", "disabled": not adv})}
 <div id="custom-colors" class="form-row form-row--4" style="margin-top:12px"{"" if custom else " hidden"}>{color_fields}</div></div>
 <div class="form-row form-row--2">{select("font_pair", "Typography", fonts, res["font_pair"])}{select("background", "Background", bgs, res["background"])}</div>
 <div class="form-row form-row--3">{thumb("hero", "Main photo", "Landscape, at least 1600px wide.")}{thumb("background", "Background image", "Used when Background is set to your photo.")}{thumb("logo", "Logo or crest", "PNG with transparency works best.")}</div>
 {field("monogram", "Monogram or initials", (ev["design"] or {}).get("monogram", ""), errors=f.errors, attrs={"maxlength": 12, "placeholder": "L & S"}, hint="Shown where the template uses a monogram, if you don't upload a logo.")}
-<fieldset><legend>Your wording</legend><div class="form-row">
+<fieldset><legend>Your wording</legend><p class="hint" style="margin-bottom:12px">Pick ready-made wording for your occasion, then change anything you like. Leave a box empty to use the template's own wording.</p>
+<div class="suggest-grid">{"".join(cards)}</div><div class="form-row">
 {field("w_welcome", "Welcome line", w.get("welcome", ""), attrs={"placeholder": "Together with their families"})}
 {field("w_invitation", "Invitation wording", w.get("invitation", ""), type="textarea", attrs={"rows": 4, "placeholder": "Request the pleasure of your company as they celebrate their marriage."})}
 <div class="form-row form-row--2">{field("w_rsvp_note", "RSVP note", w.get("rsvp_note", ""), attrs={"placeholder": "Kindly reply by 1 February."})}
@@ -11616,8 +12738,14 @@ def step4(req, ev):
         gs["rsvp_deadline"] = f.date("rsvp_deadline", "RSVP deadline")
         if gs["rsvp_deadline"] and ev["event_date"] and gs["rsvp_deadline"] > ev["event_date"]:
             f.error("rsvp_deadline", "The RSVP deadline should be on or before the event date.")
+        pasted = suggestions.parse_guest_list(req.get("guest_paste"))
+        if pasted and not catalog.has_feature(ev, "guest_management"):
+            f.error("guest_paste", "Adding a guest list is part of the Premium package. Change the package you're planning with, or let guests reply through your one link.")
         if f.ok:
             events.save_json(ev["id"], "guest_settings", gs)
+            if pasted:
+                added = events.add_pasted_guests(ev, pasted)
+                req.flash("success", f"Added {added} guest{'s' if added != 1 else ''} to your list." + (f" {len(pasted) - added} were already on it." if added < len(pasted) else ""))
         r = finish_step(req, ev, 4, f)
         if r:
             return r
@@ -11630,9 +12758,21 @@ def step4(req, ev):
     sides = gs.get("sides") or (["Bride's family", "Groom's family"] if "family_sides" in feats else ["", ""])
     sides = (sides + ["", ""])[:2]
     gcat_note = feature_note(ev, "guest_categories", "Using several guest categories")
+    have = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0)
+    if catalog.has_feature(ev, "guest_management"):
+        listed = (f'<p class="small" style="margin-bottom:10px"><b>{have} guest{"s" if have != 1 else ""}</b> on your list. '
+                  f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/guests">Open the guest list</a> to edit them, mark VIPs or add families.</p>') if have else ""
+        paste = f"""<fieldset><legend>Your guest list</legend>{listed}
+{field("guest_paste", "Paste names (optional)", req.get("guest_paste") if f.errors else "", type="textarea", errors=f.errors, attrs={"rows": 6, "placeholder": "Thandi Mokoena, 082 123 4567" + chr(10) + "Sipho Dlamini, sipho@example.com" + chr(10) + "Gogo Nomsa"}, hint="One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. Each guest gets a personal RSVP link.")}</fieldset>"""
+    else:
+        paste = (f'<div class="notice">{i("users")}<span>With Essential, guests reply through your one link and appear in your dashboard as they do. '
+                 f'Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>')
+    more_open = " open" if (f.errors.keys() - {"guest_paste"}) else ""
     inner = f"""{errors_summary(f.errors)}
 <div class="form-row form-row--2">{field("estimated", "Estimated number of guests", gs.get("estimated") or "", type="number", errors=f.errors, attrs={"min": 0})}
 {field("rsvp_deadline", "RSVP deadline", gs.get("rsvp_deadline", ""), type="date", errors=f.errors, hint="Replies close at the end of this day.")}</div>
+{paste}
+<details class="box" style="padding:14px 16px"{more_open}><summary style="cursor:pointer;font-weight:500">More options: plus-ones, children, families and guest groups</summary><div style="display:grid;gap:18px;margin-top:16px">
 <fieldset><legend>Guest categories</legend>{gcat_note}<div class="choice-grid">{cat_checks}</div>
 {field("categories_other", "Other categories", other, hint="Comma-separated, e.g. Book club, Soccer team")}</fieldset>
 <fieldset><legend>Families</legend><div class="form-row form-row--2">{field("side_a", "First family or side", sides[0], attrs={"placeholder": "Bride's family"})}
@@ -11644,7 +12784,7 @@ def step4(req, ev):
 {field("plus_ones_default", "Plus-ones allowed by default", gs.get("plus_ones_default", 0), type="number", attrs={"min": 0, "max": 10}, errors=f.errors)}</fieldset>
 <fieldset><legend>Children</legend>{check("children_allowed", "Children are welcome", bool(gs.get("children_allowed")), attrs={"data-reveals": "#kids"})}
 <div id="kids"{"" if gs.get("children_allowed") else " hidden"}>{field("max_children", "Children per invitation (maximum)", gs.get("max_children", 0), type="number", attrs={"min": 0, "max": 10}, errors=f.errors)}</div></fieldset>
-<div class="notice">{i("info")}<span>Add your actual guest list (or import a spreadsheet) from <b>Guests</b> in the menu after set-up. Each guest gets a personal RSVP link.</span></div>"""
+</div></details>"""
     return wizard_frame(req, ev, 4, inner)
 
 
@@ -11672,6 +12812,15 @@ def _sel(name, options, value, label):
 def step5(req, ev):
     f = Form(req)
     max_funcs = catalog.limit(ev, "functions", 1) if catalog.has_feature(ev, "multi_functions") else 1
+    if req.method == "POST" and req.get("nav") == "sample":
+        items = suggestions.sample_programme(ev["category"], ev["start_time"] or "", group_of(ev))
+        with db.transaction():
+            db.run("DELETE FROM schedule_items WHERE event_id = ?", (ev["id"],))
+            for n, it in enumerate(items):
+                db.insert("schedule_items", {"event_id": ev["id"], "function_id": None, "item_time": it["item_time"], "title": it["title"],
+                                             "description": it["description"], "kind": it["kind"], "sort": n})
+        req.flash("success", "Sample programme added. Change the times and titles to match your day.")
+        return redirect(step_url(ev, 5))
     if req.method == "POST":
         frows = req.rows("fn", ["id", "name", "date", "start", "end", "venue", "address", "map"])
         if len(frows) > max_funcs:
@@ -11739,6 +12888,8 @@ def step5(req, ev):
 <fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">{"Traditional and multi-day events often have several parts, each with its own venue. " if multi else ""}Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows {max_funcs}.</p>
 {_repeat("fn", "repeat(4,minmax(0,1fr))", fn_rows, frow("__i__"), "Add a function", max_funcs)}</fieldset>
 <fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>
+<div class="notice" style="margin-bottom:14px">{i("wand")}<div><span>Start from a typical {esc(catalog.category_name(ev["category"]).lower())} programme{" timed from " + esc(ev["start_time"]) if ev["start_time"] else ""}, then adjust it.</span>
+<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="submit" name="nav" value="sample" formnovalidate{' data-confirm="This replaces the programme items below with a sample. Continue?"' if sched else ""}>Use a sample programme</button></div></div></div>
 {_repeat("si", "", s_rows, srow("__i__"), "Add an item")}</fieldset>"""
     return wizard_frame(req, ev, 5, inner)
 
@@ -11752,6 +12903,9 @@ def step6(req, ev):
         for r in rows:
             if not r["name"]:
                 f.error("menu", "Each menu item needs a name.")
+        pasted = suggestions.parse_menu(req.get("menu_paste"))
+        rows += [{"id": "", "course": it["course"], "name": it["name"], "description": it["description"], "tags": "", "selectable": ""}
+                 for it in pasted]
         info["dietary_options"] = [d for d in req.getlist("dietary_options") if d in events.DIETARY_OPTIONS]
         info["drinks"] = f.text("drinks", "Drinks", max=1500)
         info["catering_notes"] = f.text("catering_notes", "Catering notes", max=1500)
@@ -11781,6 +12935,10 @@ def step6(req, ev):
                     marks = ",".join("?" * len(keep)) or "NULL"
                     db.run(f"DELETE FROM menu_items WHERE menu_id = ? AND id NOT IN ({marks})", [mid, *keep])
                 events.save_json(ev["id"], "info", info)
+            if pasted:
+                req.flash("success", f"Added {len(pasted)} dish{'es' if len(pasted) != 1 else ''} from your pasted menu. Check the courses below.")
+                if req.get("nav") == "next":
+                    return redirect(step_url(ev, 6))
         r = finish_step(req, ev, 6, f)
         if r:
             return r
@@ -11805,7 +12963,9 @@ def step6(req, ev):
     inner = f"""{errors_summary(f.errors)}{feature_note(ev, "menu", "The digital menu")}
 {field("menu_name", "Menu name", menu["name"] if menu else "Reception menu")}
 <fieldset><legend>Menu</legend><p class="hint" style="margin-bottom:12px">Tick “Guests choose” on main-course options to ask for a meal choice in the RSVP. Add more menus (e.g. kids' menu) from <b>Menu</b> in the dashboard.</p>
-{_repeat("mi", "", rows, mrow("__i__"), "Add a dish")}</fieldset>
+{_repeat("mi", "", rows, mrow("__i__"), "Add a dish")}
+<details style="margin-top:14px"{" open" if not items else ""}><summary class="small" style="cursor:pointer;font-weight:500">Have the menu from your caterer? Paste it here</summary>
+{field("menu_paste", "Paste the menu", "", type="textarea", attrs={"rows": 7, "placeholder": "Starters" + chr(10) + "Butternut soup with toasted seeds" + chr(10) + "Main: Lamb shank - rosemary jus" + chr(10) + "Dessert: Malva pudding"}, hint="One dish per line. A line with only a course name (Starters, Mains, Dessert) applies to the dishes below it. Text after a dash becomes the description. We add the dishes when you save.")}</details></fieldset>
 <fieldset><legend>Dietary requirements guests can tell you about</legend>{feature_note(ev, "dietary", "Collecting dietary requirements")}<div class="choice-grid">{diet_html}</div>
 <p class="hint" style="margin-top:8px">Guests can always add allergies in their own words.</p></fieldset>
 <div class="form-row form-row--2">{field("drinks", "Drinks", info.get("drinks", ""), type="textarea", attrs={"rows": 3, "placeholder": "Welcome bubbles, open bar until 23:00, mocktails for kids"})}
@@ -11825,9 +12985,12 @@ def step7(req, ev):
         names = [n.strip()[:40] for n in req.get("table_names").splitlines() if n.strip()]
         info["seating_notes"] = f.text("seating_notes", "Special seating requirements", max=1500)
         apply_cap = f.flag("apply_capacity")
-        if count < len([t for t in existing if t["parties"]]):
+        plan_now = f.flag("plan_now")
+        if plan_now and count < len([t for t in existing if t["parties"]]):
             f.error("table_count", "Some tables already have guests. Move them before removing tables.")
-        if f.ok:
+        if f.ok and not plan_now:
+            events.save_json(ev["id"], "info", info)
+        elif f.ok:
             with db.transaction():
                 cur = events.tables(ev["id"])
                 # remove empty tables from the end until we reach the target
@@ -11859,14 +13022,18 @@ def step7(req, ev):
     est = (ev["guest_settings"] or {}).get("estimated") or 0
     suggested = max(1, -(-est // 10)) if est else 10
     cap = tables[0]["capacity"] if tables else 10
+    now = bool(tables) or bool(f.errors) or bool(req.get("plan_now"))
     inner = f"""{errors_summary(f.errors)}{feature_note(ev, "seating", "The seating chart")}
+<div class="notice">{i("seat")}<span>Most hosts plan seating once replies are in. Then the <a class="text-link" href="/dashboard/events/{ev['uid']}/seating">seating editor</a> can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>
+{check("plan_now", "Set up my tables now", now, attrs={"data-reveals": "#tables-now"})}
+<div id="tables-now" style="display:grid;gap:18px"{"" if now else " hidden"}>
 <div class="form-row form-row--3">{field("table_count", "Number of tables", len(tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 200}, hint=f"About {suggested} for {est} guests at 10 a table." if est else "")}
 {field("capacity", "Seats per table", cap, type="number", errors=f.errors, attrs={"min": 1, "max": 40})}
 {select("shape", "Table shape", [("round", "Round"), ("long", "Long / banquet")], tables[0]["shape"] if tables else "round")}</div>
 {check("apply_capacity", "Apply seats and shape to existing tables too", not tables)}
 {field("table_names", "Table names (optional)", chr(10).join(t["name"] for t in tables), type="textarea", attrs={"rows": 5, "placeholder": "Head table" + chr(10) + "Protea" + chr(10) + "Baobab"}, hint="One per line, in order. Leave blank for Table 1, Table 2 and so on.")}
-{field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}
-<div class="notice">{i("seat")}<span>{len(tables)} table{"s" if len(tables) != 1 else ""} set up. Once guests reply, open <a class="text-link" href="/dashboard/events/{ev['uid']}/seating">the seating editor</a> to drag them onto tables.</span></div>"""
+<p class="small muted">{len(tables)} table{"s" if len(tables) != 1 else ""} set up so far.</p></div>
+{field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}"""
     return wizard_frame(req, ev, 7, inner)
 
 
@@ -11948,6 +13115,15 @@ def step8(req, ev):
     return wizard_frame(req, ev, 8, inner, enctype="multipart/form-data")
 
 
+def _join(parts: list) -> str:
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " or " + parts[-1]
+
+
+def _q(text: str) -> str:
+    from urllib.parse import quote
+    return quote(text)
+
+
 # --- step 9: review --------------------------------------------------------------------------------------
 def step9(req, ev):
     if req.method == "POST":
@@ -11961,11 +13137,42 @@ def step9(req, ev):
     items = db.val("SELECT COUNT(*) FROM menu_items WHERE event_id = ?", (ev["id"],), 0)
     tables = events.tables(ev["id"])
     t_row = catalog.template(ev["template"])
-    checks = [
-        (bool(ev["event_date"]), "Event date", 1), (bool(venue.get("name") and venue.get("address")), "Venue and address", 2),
-        (bool(gs.get("rsvp_deadline")), "RSVP deadline", 4), (bool(sched) or not catalog.has_feature(ev, "programme"), "Programme", 5),
+    n_guests = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0)
+    wording = (ev["design"] or {}).get("wording") or {}
+    has_photo = bool(events.uploads(ev["id"], "hero"))
+    needed = [  # (done, label, step, needed before paying)
+        (bool(ev["hosts"] and ev["event_date"]), "Names and date", 1, True),
+        (bool(venue.get("name") and venue.get("address")), "Venue and address", 2, True),
     ]
-    missing = [c for c in checks if not c[0]]
+    nice = [
+        (has_photo, "A main photo", 3), (any(wording.values()), "Your own wording (or keep the template's)", 3),
+        (bool(gs.get("rsvp_deadline")), "An RSVP deadline", 4),
+    ]
+    if catalog.has_feature(ev, "guest_management"):
+        nice.append((bool(n_guests), "Your guest list (you can add it after paying too)", 4))
+    if catalog.has_feature(ev, "programme"):
+        nice.append((bool(sched), "The programme", 5))
+    if catalog.has_feature(ev, "menu"):
+        nice.append((bool(items), "The menu", 6))
+    nice.append((bool(info.get("dress_code") or info.get("contacts")), "Dress code or contact people", 8))
+
+    def li(done, label, n, must=False):
+        icon_ = i("check") if done else i("alert" if must else "plus")
+        text = esc(label) if done else f'<a class="text-link" href="{step_url(ev, n)}">{esc(label)}</a>'
+        return f'<li class="{"is-done" if done else ""}">{icon_}<span>{text}{"" if done or not must else " <b>(needed)</b>"}</span></li>'
+    gaps = events.package_gaps(ev, catalog.planning_package(ev))
+    gap_note = ""
+    if gaps:
+        gap_note = (f'<div class="notice notice--warn">{i("lock")}<span>Your planned package, {esc(catalog.package(catalog.planning_package(ev))["name"])}, '
+                    f'won\'t show {esc(_join(gaps))}. Choose a package that includes them in the next step, or remove them.</span></div>')
+    checklist = (f'<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3>'
+                 f'<ul class="checklist">{"".join(li(d, l, n, True) for d, l, n, _ in needed)}{"".join(li(d, l, n) for d, l, n in nice)}</ul>'
+                 f'<p class="tiny muted">Only the first two are needed. Everything else can be added after your website is live.</p></div>')
+    share = (f'<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>'
+             f'<p class="small muted">Send this link to your partner or family. They see your website as it is now, with RSVPs switched off. It never appears in search engines.</p>'
+             f'<div class="row" style="gap:8px;flex-wrap:wrap"><input class="input input--sm mono" style="flex:1;min-width:0" readonly value="{esc(events.draft_url(ev))}" aria-label="Draft preview link">'
+             f'<button class="btn btn--secondary btn--sm" type="button" data-copy="{esc(events.draft_url(ev))}" data-copied="Draft link copied">{i("copy")} Copy link</button>'
+             f'<a class="btn btn--ghost btn--sm" href="https://wa.me/?text={esc(_q("Have a look at our event website draft: " + events.draft_url(ev)))}" target="_blank" rel="noopener">{i("chat")} WhatsApp</a></div></div>')
 
     def sec(n, title, rows):
         dl = "".join(f"<dt>{esc(k)}</dt><dd>{v if v else '<span class=muted>Not added</span>'}</dd>" for k, v in rows)
@@ -11987,11 +13194,7 @@ def step9(req, ev):
         sec(8, "Extras", [("Dress code", esc(info.get("dress_code"))), ("Registry", str(len(info.get("registry", []))) if info.get("registry") else ""),
                           ("Contacts", str(len(info.get("contacts", []))) if info.get("contacts") else "")]),
     ])
-    miss = ""
-    if missing:
-        miss = ('<div class="notice notice--warn">' + i("alert") + '<div><b>Worth adding before you publish:</b><ul style="margin:6px 0 0;padding-left:18px">'
-                + "".join(f'<li><a class="text-link" href="{step_url(ev, n)}">{esc(t)}</a></li>' for _, t, n in missing) + "</ul></div></div>")
-    inner = f"""{miss}
+    inner = f"""{gap_note}{checklist}{share}
 <div class="notice">{i("link")}<span>Your website address will be <b class="mono">{esc(events.public_url(ev))}</b>. Change it in Settings.</span></div>
 <div class="preview-frame" data-preview data-device="desktop" style="margin:18px 0"><div class="preview-frame__bar"><span class="preview-frame__url">/events/{esc(ev['slug'])}</span>
 <div class="seg"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>
@@ -12016,6 +13219,8 @@ def step10(req, ev):
         items = "".join(f'<li>{i("check")}<span>{esc(b)}</span></li>' for b in bullets)
         lim = "".join(f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, 0)) or "—"}</b></div>' for k, label in catalog.LIMIT_LABELS.items())
         selected = (ev["selected_package"] == p["code"]) and not is_paid
+        p_gaps = [] if is_paid else events.package_gaps(ev, p["code"])
+        gap_html = (f'<p class="small price__gap">{i("lock")} Won\'t show {esc(_join(p_gaps))}.</p>' if p_gaps else "")
         if is_paid:
             action = '<span class="pill pill--paid">Your current package</span>'
         else:
@@ -12023,7 +13228,7 @@ def step10(req, ev):
             action = (f'<button class="btn {"btn--primary" if p["highlight"] or selected else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}">{label}</button>')
         cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div><ul>{items}</ul><div class="price__limits">{lim}</div>{action}</article>""")
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div><ul>{items}</ul><div class="price__limits">{lim}</div>{gap_html}{action}</article>""")
     sandbox = ""
     from ..services import payments
     if payments.gateway().mode == "sandbox":
@@ -12039,7 +13244,8 @@ def step10(req, ev):
 <form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}
 <div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">{"".join(cards)}</div>
 <label class="check"><input type="checkbox" name="accept" value="1" required><span>I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and <a class="text-link" href="/refunds" target="_blank">refund policy</a>. My website is published only after the payment gateway confirms payment.</span></label>
-<p class="tiny muted">Secure payment by card or instant EFT. Prices include 15% VAT. You'll get a receipt by email.</p></form>"""
+<p class="tiny muted">Secure payment by card or instant EFT. Prices include 15% VAT. You'll get a receipt by email.</p></form>
+<p class="small muted" style="margin-top:14px">Questions before you pay, or rather have us finish the set-up? <a class="text-link" href="/help-me-set-up">Ask us to help</a>.</p>"""
     return wizard_frame(req, ev, 10, inner)
 
 
@@ -12048,7 +13254,7 @@ STEP_HANDLERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5, 6: step6, 7: 
 
 ### `app/web.py`
 
-<!-- FILE: app/web.py sha256=f0a298531effba474cdfef1dd37f4b56ce6166e74a26df5d6bb1c0881d62b6d8 nl=1 -->
+<!-- FILE: app/web.py sha256=6376a75818c02b177956b2414b71bccb282438b275f432bcde903772242a55e8 nl=1 -->
 ```python
 """A small WSGI-free web layer on the standard library.
 
@@ -12180,8 +13386,11 @@ class Request:
         f = self.files.get(key)
         return f[0] if f else None
 
+    # Fields that always carry a value (hidden ids and drop-downs), so they don't make a row "filled in".
+    ROW_DEFAULTS = frozenset({"id", "kind", "function", "course"})
+
     def rows(self, prefix: str, fields: list[str]) -> list[dict]:
-        """Collect repeatable rows posted as prefix-<i>-<field>. Empty rows are dropped."""
+        """Collect repeatable rows posted as prefix-<i>-<field>. Rows with nothing typed in are dropped."""
         idx = set()
         pat = re.compile(rf"^{re.escape(prefix)}-(\d+)-")
         for k in self.form:
@@ -12191,7 +13400,7 @@ class Request:
         out = []
         for i in sorted(idx):
             row = {f: self.get(f"{prefix}-{i}-{f}") for f in fields}
-            if any(v for v in row.values()):
+            if any(v for k, v in row.items() if k not in self.ROW_DEFAULTS):
                 out.append(row)
         return out
 
@@ -12974,7 +14183,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `preview_site/journey.js`
 
-<!-- FILE: preview_site/journey.js sha256=cdb40068a14fd828446a8333722766f109703a28211e05aad2448994e25c96cc nl=1 -->
+<!-- FILE: preview_site/journey.js sha256=c4f6fbc4c7114f9f78e4bf10cda3302825061d55eae259e5174f1cc4c6d977e3 nl=1 -->
 ```javascript
 /* Aurelia customer journey for the shareable site: choose occasion and template, the 10-step set-up,
    live preview, package choice and booking request. Runs entirely in the visitor's browser; drafts are
@@ -13035,6 +14244,164 @@ echo "Backed up to $DEST ($STAMP)"
   function limit(ev, key) { var p = pkg(ev.selected_package || "premium"); return p ? (p.limits[key] || 0) : 0; }
   function icon(n) { return '<i class="i i--' + n + '" aria-hidden="true"></i>'; }
   function todayIso() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+  function plural(n, one, many) { return n + " " + (n === 1 ? one : (many || one + "s")); }
+  function joinOr(parts) { return parts.length === 1 ? parts[0] : parts.slice(0, -1).join(", ") + " or " + parts[parts.length - 1]; }
+
+  // --- ready-made content and parsers (mirror app/suggestions.py) ---------------------------------
+  var SUG = D.suggest || { wording: {}, programmes: {}, programme_for: {}, default_start: {} };
+  function autoName(category, hosts) {
+    var h = (hosts || "").trim(), noun = (SUG.name_noun || {})[category];
+    if (!h || !noun) return h;
+    return h + (/s$/.test(h) && !/'s$/.test(h) ? "' " : "'s ") + noun;
+  }
+  function wordingOptions(ev) { return SUG.wording[ev.category] || SUG.wording["private-celebration"] || []; }
+  function fillWording(text, hosts, deadline) {
+    text = text.split("{hosts}").join(hosts || "the hosts");
+    return deadline ? text.split("{deadline}").join(deadline) : text.replace(/\s*by \{deadline\}/g, "").split("{deadline}").join("");
+  }
+  function sampleProgramme(ev) {
+    var key = SUG.programme_for[ev.category] || ev.category;
+    if (!SUG.programmes[key]) key = "private-celebration";
+    var start = /^\d{2}:\d{2}$/.test(ev.start_time || "") ? ev.start_time : (SUG.default_start[groupOf(ev)] || "12:00");
+    var base = +start.slice(0, 2) * 60 + +start.slice(3);
+    return (SUG.programmes[key] || []).map(function (x) {
+      var t = ((base + x[0]) % 1440 + 1440) % 1440;
+      return { item_time: ("0" + Math.floor(t / 60)).slice(-2) + ":" + ("0" + t % 60).slice(-2), title: x[1], kind: x[2], description: x[3], function_id: "" };
+    });
+  }
+  var HEADER_WORDS = ["name", "names", "full name", "guest", "guests", "guest name", "first name", "surname", "last name", "phone", "mobile", "cell",
+    "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"];
+  function parseGuests(text) {
+    var out = [], seen = {};
+    (text || "").split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim().replace(/^[,;\t]+|[,;\t]+$/g, "");
+      if (!line) return;
+      var cells = line.split(/[,;\t|]+/).map(function (c) { return c.trim().toLowerCase(); }).filter(Boolean);
+      if (cells.length && cells.every(function (c) { return HEADER_WORDS.indexOf(c) > -1; })) return;
+      var em = /[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}/.exec(line), rest = em ? line.replace(em[0], " ") : line;
+      var ph = /\+?\d[\d ()-]{6,}\d/.exec(rest);
+      if (ph) rest = rest.replace(ph[0], " ");
+      var name = rest.replace(/[,;\t|]+/g, " ").replace(/\s+/g, " ").replace(/^[ -]+|[ -]+$/g, "");
+      if (!name) return;
+      var key = name.toLowerCase() + "|" + (em ? em[0].toLowerCase() : "");
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push({ name: name.slice(0, 120), phone: ph ? ph[0].trim() : "", email: em ? em[0].toLowerCase() : "" });
+    });
+    return out.slice(0, 2000);
+  }
+  var COURSE_WORDS = {
+    "Canapés": ["canapé", "canape", "canapés", "canapes", "snacks", "hors d'oeuvres", "on arrival"],
+    "Starter": ["starter", "starters", "entrée", "entree", "entrées", "appetiser", "appetisers", "appetizer", "appetizers", "first course"],
+    "Main": ["main", "mains", "main course", "main courses", "buffet", "main meal"],
+    "Dessert": ["dessert", "desserts", "pudding", "sweet", "sweets"],
+    "Late-night": ["late-night", "late night", "late night snack", "midnight snack"],
+    "Drinks": ["drinks", "beverages", "bar"]
+  };
+  function courseOf(word) {
+    var w = word.trim().replace(/^:+|:+$/g, "").trim().toLowerCase();
+    return Object.keys(COURSE_WORDS).filter(function (c) { return COURSE_WORDS[c].indexOf(w) > -1; })[0] || "";
+  }
+  function parseMenu(text) {
+    var items = [], course = "Main";
+    (text || "").split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim().replace(/^[•*\-·– ]+/, "").trim();
+      if (!line || items.length >= 60) return;
+      var c = courseOf(line);
+      if (c) { course = c; return; }
+      var m = /^([^:]{2,30}):\s*(.+)$/.exec(line), here = course;
+      if (m && courseOf(m[1])) { here = course = courseOf(m[1]); line = m[2].trim(); }
+      var name = line, desc = "", seps = [" - ", " – ", " — ", " | "], k;
+      for (k = 0; k < seps.length; k++) {
+        var at = line.indexOf(seps[k]);
+        if (at > -1) { name = line.slice(0, at).trim(); desc = line.slice(at + seps[k].length).trim(); break; }
+      }
+      if (k === seps.length) { var b = /^(.+?)\s*\((.+)\)$/.exec(line); if (b) { name = b[1].trim(); desc = b[2].trim(); } }
+      if (name) items.push({ course: here, name: name.slice(0, 120), description: desc.slice(0, 240), tags: [], selectable: false });
+    });
+    return items;
+  }
+
+  // --- what a package would leave out (mirror events.package_gaps) ----------------------------------
+  function gaps(ev, code) {
+    var p = pkg(code) || {}, feats = p.features || [], lim = p.limits || {}, out = [], n, allowed;
+    var has = function (k) { return feats.indexOf(k) > -1; };
+    n = ev.schedule.length; if (n && !has("programme")) out.push("your programme (" + plural(n, "item") + ")");
+    n = ev.menu.items.length; if (n && !has("menu")) out.push("your menu (" + plural(n, "dish", "dishes") + ")");
+    if (ev.tables.plan_now && +ev.tables.count > 0 && !has("seating")) out.push("the seating chart");
+    n = (ev.images.gallery || []).length; allowed = has("gallery") ? (lim.gallery_photos || 0) : 0;
+    if (n > allowed) out.push(allowed ? (n - allowed) + " of your " + n + " gallery photos" : "your photo gallery (" + plural(n, "photo") + ")");
+    n = ev.functions.length; allowed = has("multi_functions") ? (lim.functions || 1) : 1;
+    if (n > allowed) out.push((n - allowed) + " of your " + n + " event functions");
+    if (ev.design.colors && !has("advanced_design")) out.push("your own colours");
+    n = (ev.guest_list || []).length; if (n && !has("guest_management")) out.push("your guest list (" + plural(n, "guest") + ")");
+    return out;
+  }
+
+  // --- links that carry a draft: continue on another device, or show someone ----------------------------
+  function b64url(bytes) { var s = ""; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+  function unb64url(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var s = atob(str), b = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return b;
+  }
+  function through(bytes, stream) { return new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(function (b) { return new Uint8Array(b); }); }
+  function pack(ev, forSharing) {
+    var copy = Object.assign({}, ev, { images: undefined });
+    if (forSharing) { copy.contact = { name: "", email: "", phone: "" }; copy.guest_list = []; copy.booking = null; }
+    var bytes = new TextEncoder().encode(JSON.stringify(copy));
+    if (window.CompressionStream) return through(bytes, new CompressionStream("deflate-raw")).then(function (z) { return "z" + b64url(z); });
+    return Promise.resolve("j" + b64url(bytes));
+  }
+  function safeUrl(u) { return /^https?:\/\/[^\s<>"]+$/i.test(u || "") ? u : ""; }
+  function clean(raw) {
+    if (!raw || typeof raw !== "object" || !cat(raw.category) || !tpl(raw.template)) throw new Error("Not an Aurelia draft");
+    var ev = newEvent(raw.category, raw.template, String(raw.name || ""));
+    ["id", "created", "updated", "hosts", "description", "event_date", "start_time", "end_time", "ends_next_day", "selected_package", "booking"].forEach(function (k) { if (raw[k] !== undefined) ev[k] = raw[k]; });
+    ["contact", "venue", "design", "guest_settings", "menu", "info", "tables"].forEach(function (k) { if (raw[k] && typeof raw[k] === "object") ev[k] = Object.assign(ev[k], raw[k]); });
+    ["functions", "schedule", "wizard_done", "guest_list"].forEach(function (k) { if (Array.isArray(raw[k])) ev[k] = raw[k]; });
+    if (!/^e[a-z0-9]{4,12}$/.test(String(ev.id))) ev.id = uid("e");
+    if (!pkg(ev.selected_package)) ev.selected_package = "premium";
+    ev.images = { gallery: [] };
+    ev.venue.map_url = safeUrl(ev.venue.map_url);
+    ev.functions.forEach(function (f) { f.map_url = safeUrl(f.map_url); });
+    ["registry", "accommodation"].forEach(function (k) { (ev.info[k] || []).forEach(function (r) { r.url = safeUrl(r.url); }); });
+    return ev;
+  }
+  function unpack(code) {
+    return new Promise(function (resolve) { resolve(unb64url(code.slice(1))); }).then(function (bytes) {
+      if (code.charAt(0) === "z") {
+        if (!window.DecompressionStream) throw new Error("This browser is too old to open the link. Try Chrome, Safari or Edge.");
+        return through(bytes, new DecompressionStream("deflate-raw"));
+      }
+      return bytes;
+    }).then(function (b) { return clean(JSON.parse(new TextDecoder().decode(b))); });
+  }
+  function pageUrl() { return location.href.split("#")[0]; }
+  function shareOrCopy(url, title, done) {
+    if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) { navigator.share({ title: title, url: url }).catch(function () {}); return; }
+    var fallback = function () { window.prompt("Copy this link:", url); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast(done); }, fallback); else fallback();
+  }
+
+  // --- sending to Aurelia (Netlify Forms on the hosted static site) ---------------------------------------
+  function dataUrlBlob(u) {
+    var m = /^data:([^;,]+)(;base64)?,(.*)$/.exec(u || "");
+    if (!m) return null;
+    var s = m[2] ? atob(m[3]) : decodeURIComponent(m[3]), b = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+    return new Blob([b], { type: m[1] });
+  }
+  function postForm(name, fields, files) {
+    if (!D.forms) return Promise.reject(new Error("Forms are off on this copy of the site"));
+    var fd = new FormData();
+    fd.append("form-name", name);
+    Object.keys(fields).forEach(function (k) { fd.append(k, fields[k] == null ? "" : String(fields[k])); });
+    (files || []).forEach(function (f) { if (f[1]) fd.append(f[0], f[1], f[2]); });
+    return fetch("/", { method: "POST", body: fd }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); });
+  }
 
   // --- form helpers (same markup as app/views/forms.py) -------------------------------------------
   function attrs(a) { return Object.keys(a || {}).map(function (k) { return a[k] === true ? " " + k : (a[k] === false || a[k] == null ? "" : " " + k + '="' + esc(a[k]) + '"'); }).join(""); }
@@ -13083,7 +14450,7 @@ echo "Backed up to $DEST ($STAMP)"
       var row = {};
       fields.forEach(function (f) { row[f] = (fd.get(prefix + "-" + i + "-" + f) || "").toString().trim(); });
       return row;
-    }).filter(function (r) { return Object.keys(r).some(function (k) { return k !== "id" && r[k]; }); });
+    }).filter(function (r) { return Object.keys(r).some(function (k) { return ["id", "kind", "function", "course"].indexOf(k) < 0 && r[k]; }); });
   }
   function featureNote(ev, key, what) {
     if (feature(ev, key)) return "";
@@ -13102,11 +14469,17 @@ echo "Backed up to $DEST ($STAMP)"
     return { id: id, created: new Date().toISOString(), updated: new Date().toISOString(), category: category, template: template, name: name,
       hosts: "", description: "", event_date: "", start_time: "", end_time: "", contact: { name: "", email: "", phone: "" },
       venue: {}, design: {}, images: { gallery: [] }, guest_settings: gs, functions: [], schedule: [], menu: { name: "Reception menu", items: [] },
-      info: { dietary_options: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"] }, tables: { count: "", capacity: 10, shape: "round", names: [] },
-      selected_package: "premium", wizard_done: [], booking: null };
+      info: { dietary_options: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"] }, tables: { count: "", capacity: 10, shape: "round", names: [], plan_now: false },
+      guest_list: [], selected_package: "premium", wizard_done: [], booking: null };
   }
 
   // --- views: create ------------------------------------------------------------------------------
+  function packagePicker(selected) {
+    return '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">' + D.packages.map(function (p) {
+      return '<label class="choice"><input type="radio" name="pkg" value="' + p.code + '"' + (p.code === selected ? " checked" : "") + "><span>" + esc(p.name) + " · " + money(p.price_cents) +
+        "<small>" + esc(p.tagline) + "</small></span></label>"; }).join("") + "</div>" +
+      '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, so you don\'t fill in anything your package won\'t show. <a class="text-link" href="#pricing">Compare packages</a></p>';
+  }
   function viewCreate(param) {
     var pre = { category: "", template: "", group: "", pkg: "" };
     var m = /^create-(tpl|cat|grp|pkg)-(.+)$/.exec(param || "");
@@ -13125,31 +14498,38 @@ echo "Backed up to $DEST ($STAMP)"
         '<span><span class="row row--between" style="gap:8px"><b>' + esc(t.name) + '</b><span class="palette-swatches">' + sw + "</span></span><small>" + esc(t.direction) + "</small></span></label>";
     }).join("");
     root().innerHTML = '<section class="page-hero"><div class="grid-texture"></div><div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>' +
-      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion and a starting template. Everything is saved in this browser as you go; nothing is charged until you choose a package at the end.</p>' +
-      (state.order.length ? '<p style="margin-top:14px"><a class="arrow-link" href="#my-events"><span>Continue an event you started</span>' + icon("arrow") + "</a></p>" : "") + "</div></section>" +
-      '<section class="section"><div class="container"><form class="form" data-create data-no-busy novalidate><input type="hidden" name="pkg" value="' + esc(pre.pkg) + '"><div data-errors></div>' +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>' + groups + "</div>" +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">Templates that suit your occasion are shown first. You can switch any time in the design step. <a class="text-link" href="#templates">Preview the templates</a></p>' +
-      '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>' + tpls + "</div></div>" +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Name it</h2>' + field("name", "Event name", "", { required: true, hint: "Just for you, e.g. “Our wedding” or “Amahle's baby shower”. Guests see the names you add next." }) + "</div>" +
+      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Everything is saved in this browser as you go, and nothing is charged until you\'re ready.</p>' +
+      '<p class="small" style="margin-top:14px">' + (state.order.length ? '<a class="text-link" href="#my-events">Continue an event you started</a> · ' : "") + 'Rather have us do it? <a class="text-link" href="#help-me-set-up">We can set it up for you</a>.</p></div></section>' +
+      '<section class="section"><div class="container"><form class="form" data-create data-no-busy novalidate><div data-errors></div>' +
+      '<div class="box" data-field="category"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>' + groups + "</div>" +
+      '<div class="box" data-field="template"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step. <a class="text-link" href="#templates">Preview the templates</a></p>' +
+      '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>' + tpls + "</div>" +
+      '<button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>' +
+      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>' + packagePicker(pkg(pre.pkg) ? pre.pkg : "premium") + "</div>" +
       '<div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up ' + icon("arrow") + "</button></div></form></div></section>";
-    var form = root().querySelector("[data-create]");
-    function sync() {
-      var c = form.querySelector("input[name=category]:checked"), g = c ? c.getAttribute("data-group") : pre.group;
-      form.querySelectorAll("[data-tpl-grid] .choice").forEach(function (l) {
+    var form = root().querySelector("[data-create]"), grid = form.querySelector("[data-tpl-grid]"), more = form.querySelector("[data-show-all]"), all = false;
+    function sync(auto) {
+      var c = form.querySelector("input[name=category]:checked"), g = c ? c.getAttribute("data-group") : pre.group, first = null;
+      grid.querySelectorAll(".choice").forEach(function (l) {
         var ok = !g || l.getAttribute("data-groups").split(" ").indexOf(g) > -1;
-        l.style.order = ok ? 0 : 1; l.style.opacity = ok ? 1 : 0.55;
+        l.hidden = !(ok || all);
+        if (ok && !first) first = l;
       });
+      more.hidden = !g || all;
+      more.textContent = "Show all " + D.templates.length + " templates";
+      var picked = grid.querySelector("input[name=template]:checked");
+      if (auto && first && (!picked || picked.closest(".choice").hidden)) first.querySelector("input").checked = true;
     }
-    form.addEventListener("change", sync); sync();
+    form.addEventListener("change", function (e) { if (e.target.name === "category") sync(true); });
+    more.addEventListener("click", function () { all = true; sync(false); });
+    sync(false);
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var fd = new FormData(form), errs = {};
       if (!fd.get("category")) errs.category = "Choose the type of event.";
       if (!fd.get("template")) errs.template = "Choose a template. You can change it later.";
-      if (!(fd.get("name") || "").trim()) errs.name = "Event name is required.";
       if (showErrors(form, errs)) return;
-      var ev = newEvent(fd.get("category"), fd.get("template"), fd.get("name").trim());
+      var ev = newEvent(fd.get("category"), fd.get("template"), cat(fd.get("category")).name);
       if (pkg(fd.get("pkg"))) ev.selected_package = fd.get("pkg");
       state.events[ev.id] = ev; state.order.unshift(ev.id); state.current = ev.id; save();
       toast("Your event is saved in this browser as a private draft. Let's add the details.");
@@ -13179,7 +14559,8 @@ echo "Backed up to $DEST ($STAMP)"
     var cards = state.order.map(function (id) {
       var ev = state.events[id]; if (!ev) return "";
       var pct = Math.round(100 * ev.wizard_done.filter(function (n) { return n <= 9; }).length / 9);
-      var c = cat(ev.category), status = ev.booking ? '<span class="pill pill--ok">Booking requested</span>' : '<span class="pill pill--draft">Draft</span>';
+      var c = cat(ev.category), status = !ev.booking ? '<span class="pill pill--draft">Draft</span>'
+        : (ev.booking.status === "sent" || !D.forms ? '<span class="pill pill--ok">' + (D.forms ? "Booking sent" : "Booking ready") + "</span>" : '<span class="pill pill--draft">Booking not sent yet</span>');
       return '<article class="box event-card"><div class="event-card__top"><div><h2 style="font-size:1.25rem">' + esc(ev.name) + '</h2><div class="event-card__meta"><span>' + esc(c ? c.name : "") + "</span>" +
         (ev.event_date ? "<span>" + esc(R.fmtDate(ev.event_date, false)) + "</span>" : "") + "<span>" + esc((tpl(ev.template) || {}).name || "") + " template</span></div></div>" + status + "</div>" +
         '<div class="progress"><span style="width:' + pct + '%"></span></div><div class="btn-row">' +
@@ -13198,27 +14579,36 @@ echo "Backed up to $DEST ($STAMP)"
   var STEPS = [[1, "Event details", "calendar"], [2, "Venue", "pin"], [3, "Design", "palette"], [4, "Guests", "users"], [5, "Programme", "list"],
     [6, "Food and drinks", "dish"], [7, "Seating", "seat"], [8, "Extras", "gift"], [9, "Review", "eye"], [10, "Package", "card"]];
   var INTROS = { 1: "The essentials guests see first, and how we reach you.", 2: "Where it's happening and how to get there.", 3: "Make the template yours. The preview updates as you go.",
-    4: "Who's invited and how replies work. You'll add the guest list itself after publishing.", 5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-    7: "Start your seating plan. You'll seat guests once RSVPs arrive.", 8: "Dress code, gifts, contacts, accommodation and photos.", 9: "Check everything before you choose a package.",
-    10: "Choose your package and request your booking." };
+    4: "Your guest list and how replies work.", 5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
+    7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.", 9: "Check everything before you choose a package.",
+    10: "Choose your package and send us your booking." };
+  var OPTIONAL = [4, 5, 6, 7, 8], STEP_FEATURE = { 5: "programme", 6: "menu", 7: "seating" };
 
   function frame(ev, n, inner, opts) {
     opts = opts || {};
     var done = ev.wizard_done;
     var stepper = STEPS.map(function (s) {
+      var tag = STEP_FEATURE[s[0]] && !feature(ev, STEP_FEATURE[s[0]]) ? '<span class="stepper__tag" title="Not in your planned package">' + icon("lock") + "</span>"
+        : (OPTIONAL.indexOf(s[0]) > -1 ? '<span class="stepper__tag">optional</span>' : "");
       return '<li><a href="#setup-' + s[0] + '" class="' + (done.indexOf(s[0]) > -1 ? "is-done" : "") + '"' + (s[0] === n ? ' aria-current="step"' : "") + '><span class="n">' +
-        (done.indexOf(s[0]) > -1 && s[0] !== n ? "✓" : s[0]) + "</span>" + esc(s[1]) + "</a></li>"; }).join("");
+        (done.indexOf(s[0]) > -1 && s[0] !== n ? "✓" : s[0]) + "</span>" + esc(s[1]) + tag + "</a></li>"; }).join("");
     var pct = Math.round(100 * done.filter(function (x) { return x <= 10; }).length / 10);
     var nav = n < 10 ? '<div class="wizard-actions">' + (n > 1 ? '<a class="btn btn--ghost" href="#setup-' + (n - 1) + '">' + icon("arrow-left") + " Back</a>" : "<span></span>") +
-      '<div class="btn-row"><button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button><button class="btn btn--primary" type="submit" name="nav" value="next">' +
+      '<div class="btn-row">' + (n >= 3 && n <= 7 ? '<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' : "") +
+      (OPTIONAL.indexOf(n) > -1 ? '<a class="btn btn--ghost" href="#setup-' + (n + 1) + '">Skip for now</a>' : "") +
+      '<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button><button class="btn btn--primary" type="submit" name="nav" value="next">' +
       esc(opts.nextLabel || "Save and continue") + " " + icon("arrow") + "</button></div></div>" : "";
+    var optional = OPTIONAL.indexOf(n) > -1 ? '<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time before you send your booking, or ask us to add it later.</p>' : "";
     var card = '<div class="glass glass--strong wizard-card"><div class="row" style="gap:14px;margin-bottom:6px"><span class="icon-tile icon-tile--soft">' + icon(STEPS[n - 1][2]) +
-      '</span><div><span class="tiny muted mono">STEP ' + n + "</span><h2>" + esc(STEPS[n - 1][1]) + '</h2></div></div><p class="lead">' + INTROS[n] + "</p><hr>" +
+      '</span><div><span class="tiny muted mono">STEP ' + n + "</span><h2>" + esc(STEPS[n - 1][1]) + '</h2></div></div><p class="lead">' + INTROS[n] + "</p>" + optional + "<hr>" +
       '<form class="form" data-step="' + n + '" data-no-busy novalidate><div data-errors></div>' + inner + nav + "</form></div>";
     var preview = opts.preview ? '<div class="wizard-split">' + card + previewFrame() + "</div>" : card;
+    var plan = '<div class="plan-package"><label class="tiny muted" for="plan-pkg">Planning with</label><select class="select select--sm" id="plan-pkg" data-plan>' +
+      D.packages.map(function (p) { return '<option value="' + p.code + '"' + ((ev.selected_package || "premium") === p.code ? " selected" : "") + ">" + esc(p.name) + " · " + money(p.price_cents) + "</option>"; }).join("") + "</select></div>";
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 28px)"><div class="container">' +
-      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft, saved in this browser as you go. Nothing is shared until you publish.</p></div>" +
-      '<div class="btn-row"><a class="btn btn--ghost btn--sm" href="#my-events">My events</a><a class="btn btn--secondary btn--sm" href="#preview-event">' + icon("eye") + " Full preview</a></div></div>" +
+      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft, saved in this browser as you go. Nothing is shared until you send your booking.</p></div>" +
+      '<div class="btn-row">' + plan + '<button class="btn btn--ghost btn--sm" type="button" data-continue-link>' + icon("link") + ' Continue on another device</button>' +
+      '<a class="btn btn--secondary btn--sm" href="#preview-event">' + icon("eye") + " Full preview</a></div></div>" +
       '<div class="wizard-progress"><span>' + pct + '% complete</span><div class="progress"><span style="width:' + pct + '%"></span></div><span class="mono">Step ' + n + ' of 10</span></div>' +
       '<div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">' + stepper + "</ol></nav><div>" + preview + "</div></div></div></section>";
     refreshPreview(true);
@@ -13249,8 +14639,9 @@ echo "Backed up to $DEST ($STAMP)"
     return '<fieldset><legend>About you</legend><div class="form-row form-row--3">' + field("contact_name", "Your name", ev.contact.name, { required: true, attrs: { autocomplete: "name" } }) +
       field("contact_email", "Your email", ev.contact.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your booking confirmation and payment link go here." }) +
       field("contact_phone", "Your mobile (optional)", ev.contact.phone, { type: "tel", attrs: { autocomplete: "tel" } }) + "</div></fieldset>" +
-      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { required: true, hint: "For you and your emails." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
       field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
+      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name || ev.name === autoName(ev.category, ev.hosts)) ? "1" : "0" },
+        hint: "Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
       field("description", "A short welcome or description", ev.description, { type: "textarea", hint: "Optional. One or two sentences guests read first." }) +
       '<div class="form-row form-row--3">' + field("event_date", "Date", ev.event_date, { type: "date", required: true, attrs: { min: todayIso() } }) +
       field("start_time", "Starts", ev.start_time, { type: "time" }) + field("end_time", "Ends", ev.end_time, { type: "time" }) + "</div>" +
@@ -13258,7 +14649,8 @@ echo "Backed up to $DEST ($STAMP)"
   }
   function collect1(ev, fd) {
     ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
-    ev.name = val(fd, "name"); ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
+    ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
+    ev.name = val(fd, "name") || autoName(ev.category, ev.hosts) || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
   }
   function validate1(ev) {
@@ -13266,7 +14658,6 @@ echo "Backed up to $DEST ($STAMP)"
     if (!ev.contact.name) e.contact_name = "Your name is required.";
     if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(ev.contact.email)) e.contact_email = "Enter a valid email address, like name@example.com.";
     if (ev.contact.phone && !/^\+?[0-9 ()-]{7,20}$/.test(ev.contact.phone)) e.contact_phone = "Enter a phone number using digits, spaces and an optional +.";
-    if (!ev.name) e.name = "Event name is required.";
     if (!ev.hosts) e.hosts = (HOST[groupOf(ev)] || ["Hosts"])[0] + " is required.";
     if (!ev.event_date) e.event_date = "Date is required.";
     else if (ev.event_date < todayIso()) e.event_date = "Date can't be in the past.";
@@ -13313,6 +14704,12 @@ echo "Backed up to $DEST ($STAMP)"
     var bgs = dsg.backgrounds.map(function (k) { return [k, D.themes.backgrounds[k]]; });
     var adv = feature(ev, "advanced_design"), custom = !!(ev.design.colors);
     var w = ev.design.wording || {};
+    var deadline = ev.guest_settings.rsvp_deadline ? R.fmtDate(ev.guest_settings.rsvp_deadline, false) : "";
+    var cards = wordingOptions(ev).map(function (o) {
+      var f = {}; ["welcome", "invitation", "rsvp_note", "closing"].forEach(function (k) { f["w_" + k] = fillWording(o[k], ev.hosts, deadline); });
+      return '<div class="suggest-card"><b>' + esc(o.label) + "</b><p>" + esc(f.w_welcome) + "</p><p>" + esc(f.w_invitation) + "</p>" +
+        '<button class="btn btn--secondary btn--sm" type="button" data-fill="' + esc(JSON.stringify(f)) + '">Use this wording</button></div>';
+    }).join("");
     function upl(kind, label, hint) {
       var cur = ev.images[kind];
       return '<div class="field"><span class="label">' + esc(label) + "</span>" + (cur ? '<div class="row" style="gap:10px"><img src="' + cur + '" alt="" style="width:72px;height:54px;object-fit:cover;border-radius:8px">' +
@@ -13322,14 +14719,16 @@ echo "Backed up to $DEST ($STAMP)"
     }
     return "<fieldset><legend>Template</legend>" + '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">' + tplOpts + "</div>" +
       '<p class="hint" style="margin-top:8px">Switching template resets colours and fonts to that template\'s defaults. Your content stays.</p></fieldset>' +
-      '<fieldset><legend>Colour palette</legend><div class="choice-grid">' + pal + "</div></fieldset>" +
+      '<fieldset><legend>Colour palette</legend><div class="choice-grid">' + pal + "</div>" +
+      '<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">' + icon("sparkle") + " Try another look</button></fieldset>" +
       '<div class="box" style="padding:16px">' + check("custom_colors", "Use my own colours" + (adv ? "" : " <span class='pill pill--gold pill--plain'>Premium</span>"), custom, { attrs: { disabled: !adv, "data-reveals": "#custom-colors" } }) +
       '<div id="custom-colors" class="form-row form-row--4" style="margin-top:12px"' + (custom ? "" : " hidden") + ">" +
       [["bg", "Background"], ["text", "Text"], ["accent", "Accent"], ["accent2", "Second accent"]].map(function (c) { return color("color_" + c[0], c[1], res.colors[c[0]]); }).join("") + "</div></div>" +
       '<div class="form-row form-row--2">' + select("font_pair", "Typography", fonts, res.font_pair) + select("background", "Background", bgs, res.background) + "</div>" +
       '<div class="form-row form-row--3">' + upl("hero", "Main photo", "Landscape works best.") + upl("background", "Background image", "Used when Background is set to your photo.") + upl("logo", "Logo or crest", "PNG with transparency works best.") + "</div>" +
       field("monogram", "Monogram or initials", ev.design.monogram || "", { attrs: { maxlength: 12, placeholder: "L & S" }, hint: "Shown where the template uses a monogram, if you don't upload a logo." }) +
-      '<fieldset><legend>Your wording</legend><div class="form-row">' + field("w_welcome", "Welcome line", w.welcome || "", { attrs: { placeholder: "Together with their families" } }) +
+      '<fieldset><legend>Your wording</legend><p class="hint" style="margin-bottom:12px">Pick ready-made wording for your occasion, then change anything you like. Leave a box empty to use the template\'s own wording.</p>' +
+      '<div class="suggest-grid">' + cards + '</div><div class="form-row">' + field("w_welcome", "Welcome line", w.welcome || "", { attrs: { placeholder: "Together with their families" } }) +
       field("w_invitation", "Invitation wording", w.invitation || "", { type: "textarea", attrs: { rows: 4, placeholder: "Request the pleasure of your company as they celebrate their marriage." } }) +
       '<div class="form-row form-row--2">' + field("w_rsvp_note", "RSVP note", w.rsvp_note || "", { attrs: { placeholder: "Kindly reply by 1 February." } }) +
       field("w_closing", "Closing line", w.closing || "", { attrs: { placeholder: "We can't wait to celebrate with you." } }) + "</div></div></fieldset>";
@@ -13354,8 +14753,20 @@ echo "Backed up to $DEST ($STAMP)"
     var gs = ev.guest_settings, preset = ["Family", "Friends", "Colleagues", "VIP", "Church", "Neighbours", "Partners", "Clients"], chosen = gs.categories || [];
     var sides = (gs.sides || ["", ""]).concat(["", ""]).slice(0, 2);
     var pol = [["none", "No plus-ones", "Invitations are for the named guest only."], ["per_guest", "Set per guest", "You decide for each guest in your list."], ["open", "Everyone may bring", "Guests on the general link can add plus-ones."]];
+    var list = ev.guest_list || [], paste;
+    if (feature(ev, "guest_management")) {
+      paste = "<fieldset><legend>Your guest list</legend>" + (list.length ? '<div class="row row--between" style="gap:10px;margin-bottom:10px;flex-wrap:wrap"><p class="small"><b>' + plural(list.length, "guest") + "</b> on your list.</p>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-clear-guests>' + icon("trash") + " Clear the list</button></div>" +
+        '<details style="margin-bottom:12px"><summary class="small" style="cursor:pointer">Show the names</summary><p class="small muted" style="margin-top:8px">' +
+        list.map(function (g) { return esc(g.name) + (g.phone ? " · " + esc(g.phone) : "") + (g.email ? " · " + esc(g.email) : ""); }).join("<br>") + "</p></details>" : "") +
+        field("guest_paste", list.length ? "Add more names (optional)" : "Paste names (optional)", "", { type: "textarea", attrs: { rows: 6, placeholder: "Thandi Mokoena, 082 123 4567\nSipho Dlamini, sipho@example.com\nGogo Nomsa" },
+          hint: "One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. We add them when you save, and each guest gets a personal RSVP link." }) + "</fieldset>";
+    } else {
+      paste = '<div class="notice">' + icon("users") + "<span>With Essential, guests reply through your one link and appear in your dashboard as they do. Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>";
+    }
     return '<div class="form-row form-row--2">' + field("estimated", "Estimated number of guests", gs.estimated, { type: "number", attrs: { min: 0, max: 5000 } }) +
-      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" +
+      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" + paste +
+      '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">More options: plus-ones, children, families and guest groups</summary><div style="display:grid;gap:18px;margin-top:16px">' +
       "<fieldset><legend>Guest categories</legend>" + featureNote(ev, "guest_categories", "Using several guest categories") + '<div class="choice-grid">' +
       preset.map(function (c) { return '<label class="choice"><input type="checkbox" name="categories" value="' + c + '"' + (chosen.indexOf(c) > -1 ? " checked" : "") + "><span>" + c + "</span></label>"; }).join("") + "</div>" +
       field("categories_other", "Other categories", chosen.filter(function (c) { return preset.indexOf(c) < 0; }).join(", "), { hint: "Comma-separated, e.g. Book club, Soccer team" }) + "</fieldset>" +
@@ -13367,8 +14778,7 @@ echo "Backed up to $DEST ($STAMP)"
         ((gs.plus_one_policy || "per_guest") === x[0] ? " checked" : "") + "><span>" + x[1] + "<small>" + x[2] + "</small></span></label>"; }).join("") + "</div>" +
       field("plus_ones_default", "Plus-ones allowed by default", gs.plus_ones_default || 0, { type: "number", attrs: { min: 0, max: 10 } }) + "</fieldset>" +
       "<fieldset><legend>Children</legend>" + check("children_allowed", "Children are welcome", !!gs.children_allowed, { attrs: { "data-reveals": "#kids" } }) +
-      '<div id="kids"' + (gs.children_allowed ? "" : " hidden") + ">" + field("max_children", "Children per invitation (maximum)", gs.max_children || 0, { type: "number", attrs: { min: 0, max: 10 } }) + "</div></fieldset>" +
-      '<div class="notice">' + icon("info") + "<span>After publishing, you add your actual guest list (or import a spreadsheet). Each guest gets a personal RSVP link.</span></div>";
+      '<div id="kids"' + (gs.children_allowed ? "" : " hidden") + ">" + field("max_children", "Children per invitation (maximum)", gs.max_children || 0, { type: "number", attrs: { min: 0, max: 10 } }) + "</div></fieldset></div></details>";
   }
   function collect4(ev, fd) {
     var gs = ev.guest_settings, cats = fd.getAll("categories").concat(val(fd, "categories_other").split(",").map(function (s) { return s.trim(); }).filter(Boolean));
@@ -13412,7 +14822,10 @@ echo "Backed up to $DEST ($STAMP)"
     return featureNote(ev, "programme", "The programme") + '<fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">' +
       (multi ? "Traditional and multi-day events often have several parts, each with its own venue. " : "") + "Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows " + mf + ".</p>" +
       repeat("fn", fr, null, "Add a function", mf) + "</fieldset>" +
-      '<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>' + repeat("si", sr, null, "Add an item") + "</fieldset>";
+      '<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>' +
+      '<div class="notice" style="margin-bottom:14px">' + icon("wand") + "<div><span>Start from a typical " + esc(((cat(ev.category) || {}).name || "event").toLowerCase()) + " programme" +
+      (ev.start_time ? " timed from " + esc(ev.start_time) : "") + ', then adjust it.</span><div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-sample>Use a sample programme</button></div></div></div>' +
+      repeat("si", sr, null, "Add an item") + "</fieldset>";
   }
   function collect5(ev, fd) {
     ev.functions = readRows(fd, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"]).map(function (r) {
@@ -13441,7 +14854,11 @@ echo "Backed up to $DEST ($STAMP)"
     var items = ev.menu.items, info = ev.info, diet = info.dietary_options || [];
     return featureNote(ev, "menu", "The digital menu") + field("menu_name", "Menu name", ev.menu.name || "Reception menu") +
       '<fieldset><legend>Menu</legend><p class="hint" style="margin-bottom:12px">Tick “Guests choose” on main-course options to ask for a meal choice in the RSVP.</p>' +
-      repeat("mi", items.length ? items.map(function (it, i) { return miRow(i, it); }) : [miRow(0), miRow(1)], null, "Add a dish") + "</fieldset>" +
+      repeat("mi", items.length ? items.map(function (it, i) { return miRow(i, it); }) : [miRow(0), miRow(1)], null, "Add a dish") +
+      '<details style="margin-top:14px"' + (items.length ? "" : " open") + '><summary class="small" style="cursor:pointer;font-weight:500">Have the menu from your caterer? Paste it here</summary>' +
+      field("menu_paste", "Paste the menu", "", { type: "textarea", attrs: { rows: 7, placeholder: "Starters\nButternut soup with toasted seeds\nMain: Lamb shank - rosemary jus\nDessert: Malva pudding" },
+        hint: "One dish per line. A line with only a course name (Starters, Mains, Dessert) applies to the dishes below it. Text after a dash becomes the description." }) +
+      '<button class="btn btn--secondary btn--sm" type="button" data-menu-paste>' + icon("plus") + " Add these dishes</button></details></fieldset>" +
       "<fieldset><legend>Dietary requirements guests can tell you about</legend>" + featureNote(ev, "dietary", "Collecting dietary requirements") + '<div class="choice-grid">' +
       D.dietary.map(function (d) { return '<label class="choice"><input type="checkbox" name="dietary_options" value="' + esc(d) + '"' + (diet.indexOf(d) > -1 ? " checked" : "") + "><span>" + esc(d) + "</span></label>"; }).join("") +
       '</div><p class="hint" style="margin-top:8px">Guests can always add allergies in their own words.</p></fieldset>' +
@@ -13459,20 +14876,24 @@ echo "Backed up to $DEST ($STAMP)"
   // --- step 7 ---------------------------------------------------------------------------------------
   function step7(ev) {
     var t = ev.tables, est = +ev.guest_settings.estimated || 0, sug = est ? Math.max(1, Math.ceil(est / 10)) : 10;
-    return featureNote(ev, "seating", "The seating chart") + '<div class="form-row form-row--3">' +
+    var now = !!t.plan_now;
+    return featureNote(ev, "seating", "The seating chart") +
+      '<div class="notice">' + icon("seat") + "<span>Most hosts plan seating once replies are in. Then the seating editor in your dashboard can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>" +
+      check("plan_now", "Set up my tables now", now, { attrs: { "data-reveals": "#tables-now" } }) +
+      '<div id="tables-now" style="display:grid;gap:18px"' + (now ? "" : " hidden") + '><div class="form-row form-row--3">' +
       field("table_count", "Number of tables", t.count === "" ? sug : t.count, { type: "number", attrs: { min: 0, max: 200 }, hint: est ? "About " + sug + " for " + est + " guests at 10 a table." : "" }) +
       field("capacity", "Seats per table", t.capacity || 10, { type: "number", attrs: { min: 1, max: 40 } }) + select("shape", "Table shape", [["round", "Round"], ["long", "Long / banquet"]], t.shape || "round") + "</div>" +
-      field("table_names", "Table names (optional)", (t.names || []).join("\n"), { type: "textarea", attrs: { rows: 5, placeholder: "Head table\nProtea\nBaobab" }, hint: "One per line, in order. Leave blank for Table 1, Table 2 and so on." }) +
-      field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } }) +
-      '<div class="notice">' + icon("seat") + "<span>Once guests reply, you'll drag them onto tables in the seating editor in your dashboard.</span></div>";
+      field("table_names", "Table names (optional)", (t.names || []).join("\n"), { type: "textarea", attrs: { rows: 5, placeholder: "Head table\nProtea\nBaobab" }, hint: "One per line, in order. Leave blank for Table 1, Table 2 and so on." }) + "</div>" +
+      field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } });
   }
   function collect7(ev, fd) {
     ev.tables = { count: val(fd, "table_count"), capacity: parseInt(val(fd, "capacity") || 10, 10) || 10, shape: val(fd, "shape") || "round",
-      names: val(fd, "table_names").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 200) };
+      names: val(fd, "table_names").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 200), plan_now: !!fd.get("plan_now") };
     ev.info.seating_notes = val(fd, "seating_notes");
   }
   function validate7(ev) {
     var e = {}, c = +ev.tables.count;
+    if (!ev.tables.plan_now) return e;
     if (ev.tables.count !== "" && !(c >= 0 && c <= 200)) e.table_count = "Number of tables must be between 0 and 200.";
     if (!(ev.tables.capacity >= 1 && ev.tables.capacity <= 40)) e.capacity = "Seats per table must be between 1 and 40.";
     return e;
@@ -13526,43 +14947,62 @@ echo "Backed up to $DEST ($STAMP)"
   // --- step 9: review --------------------------------------------------------------------------------
   function step9(ev) {
     var v = ev.venue, gs = ev.guest_settings, info = ev.info, t = tpl(ev.template) || {};
-    var checks = [[!!ev.event_date, "Event date", 1], [!!(v.name && v.address), "Venue and address", 2], [!!gs.rsvp_deadline, "RSVP deadline", 4],
-      [!!ev.schedule.length || !feature(ev, "programme"), "Programme", 5], [!!(ev.contact.name && ev.contact.email), "Your contact details", 1]];
-    var missing = checks.filter(function (c) { return !c[0]; });
+    var w = ev.design.wording || {};
+    var needed = [[!!(ev.contact.name && ev.contact.email), "Your name and email", 1], [!!(ev.hosts && ev.event_date), "Names and date", 1], [!!(v.name && v.address), "Venue and address", 2]];
+    var nice = [[!!ev.images.hero, "A main photo", 3], [!!(w.welcome || w.invitation || w.rsvp_note || w.closing), "Your own wording (or keep the template's)", 3], [!!gs.rsvp_deadline, "An RSVP deadline", 4]];
+    if (feature(ev, "guest_management")) nice.push([!!(ev.guest_list || []).length, "Your guest list (you can send it later too)", 4]);
+    if (feature(ev, "programme")) nice.push([!!ev.schedule.length, "The programme", 5]);
+    if (feature(ev, "menu")) nice.push([!!ev.menu.items.length, "The menu", 6]);
+    nice.push([!!(info.dress_code || (info.contacts || []).length), "Dress code or contact people", 8]);
+    function li(c, must) {
+      return '<li class="' + (c[0] ? "is-done" : "") + '">' + icon(c[0] ? "check" : (must ? "alert" : "plus")) + "<span>" + (c[0] ? esc(c[1]) : '<a class="text-link" href="#setup-' + c[2] + '">' + esc(c[1]) + "</a>" + (must ? " <b>(needed)</b>" : "")) + "</span></li>";
+    }
+    var g = gaps(ev, ev.selected_package || "premium");
+    var gapNote = g.length ? '<div class="notice notice--warn">' + icon("lock") + "<span>Your planned package, " + esc((pkg(ev.selected_package) || {}).name || "") + ", won't show " + esc(joinOr(g)) +
+      ". Choose a package that includes them in the next step, or remove them.</span></div>" : "";
+    var checklist = '<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3><ul class="checklist">' +
+      needed.map(function (c) { return li(c, true); }).join("") + nice.map(function (c) { return li(c, false); }).join("") +
+      '</ul><p class="tiny muted">Only the first three are needed. Everything else can be added later.</p></div>';
+    var share = '<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you book</h3>' +
+      '<p class="small muted">Send a link to your partner or family. They see your website as it is now, without your contact details or guest list. Photos stay on this device.</p>' +
+      '<div class="btn-row"><button class="btn btn--secondary btn--sm" type="button" data-share-preview>' + icon("link") + ' Copy a preview link</button>' +
+      '<button class="btn btn--ghost btn--sm" type="button" data-share-preview="whatsapp">' + icon("chat") + " Send on WhatsApp</button></div></div>";
     function sec(n, title, rows) {
       return '<div class="review-section"><div class="review-section__head"><h3>' + esc(title) + '</h3><a class="btn btn--sm btn--ghost" href="#setup-' + n + '">' + icon("edit") + ' Edit</a></div><dl class="dl">' +
         rows.map(function (r) { return "<dt>" + esc(r[0]) + "</dt><dd>" + (r[1] ? esc(r[1]) : '<span class="muted">Not added</span>') + "</dd>"; }).join("") + "</dl></div>";
     }
     var tc = +ev.tables.count || 0;
-    return (missing.length ? '<div class="notice notice--warn">' + icon("alert") + '<div><b>Worth adding before you book:</b><ul style="margin:6px 0 0;padding-left:18px">' +
-        missing.map(function (m) { return '<li><a class="text-link" href="#setup-' + m[2] + '">' + esc(m[1]) + "</a></li>"; }).join("") + "</ul></div></div>" : "") +
+    return gapNote + checklist + share +
       '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aurelia.events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
       '<div style="margin:18px 0">' + previewFrame(620) + "</div>" +
       sec(1, "Event details", [["You", ev.contact.name + (ev.contact.email ? " · " + ev.contact.email : "")], ["Event", ev.name], ["Type", (cat(ev.category) || {}).name], ["Hosts", ev.hosts],
         ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""], ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")]]) +
       sec(2, "Venue", [["Venue", v.name], ["Address", v.address], ["Parking", v.parking], ["Directions", v.directions]]) +
       sec(3, "Design", [["Template", t.name], ["Photos", String(["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).length + (ev.images.gallery || []).length) + " added"], ["Welcome", (ev.design.wording || {}).welcome]]) +
-      sec(4, "Guests", [["Estimated", gs.estimated], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""],
+      sec(4, "Guests", [["Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") : ""], ["Estimated", gs.estimated], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""],
         ["Plus-ones", { none: "Not allowed", per_guest: "Set per guest", open: "Allowed" }[gs.plus_one_policy]], ["Children", gs.children_allowed ? "Welcome" : "Adults only"]]) +
       sec(5, "Programme", [["Functions", ev.functions.map(function (f) { return f.name; }).join(", ")], ["Programme items", ev.schedule.length ? String(ev.schedule.length) : ""]]) +
       sec(6, "Food and drinks", [["Menu items", ev.menu.items.length ? String(ev.menu.items.length) : ""], ["Dietary options", (info.dietary_options || []).join(", ")]]) +
-      sec(7, "Seating", [["Tables", tc ? tc + " tables, " + tc * ev.tables.capacity + " seats" : ""]]) +
+      sec(7, "Seating", [["Tables", ev.tables.plan_now ? (tc ? tc + " tables, " + tc * ev.tables.capacity + " seats" : "") : "Planned after RSVPs"]]) +
       sec(8, "Extras", [["Dress code", info.dress_code], ["Registry", (info.registry || []).length ? String(info.registry.length) : ""], ["Contacts", (info.contacts || []).length ? String(info.contacts.length) : ""]]);
   }
 
   // --- step 10: package and booking ----------------------------------------------------------------------
   function step10(ev) {
     var cards = D.packages.map(function (p) {
-      var sel = (ev.selected_package || "premium") === p.code;
+      var sel = (ev.selected_package || "premium") === p.code, pg = gaps(ev, p.code);
       return '<label class="price' + (sel ? " price--highlight" : "") + '" style="cursor:pointer">' + (p.highlight ? '<span class="price__badge">Most chosen</span>' : "") +
         '<div class="row row--between"><h3>' + esc(p.name) + '</h3><input type="radio" name="package" value="' + p.code + '"' + (sel ? " checked" : "") + ' aria-label="Choose ' + esc(p.name) + '" style="width:22px;height:22px;accent-color:var(--color-accent-dark)"></div>' +
         '<p class="muted small">' + esc(p.tagline) + '</p><div class="price__amount">' + money(p.price_cents) + "<small>once-off, VAT incl.</small></div><ul>" +
         p.bullets.map(function (b) { return "<li>" + icon("check") + "<span>" + esc(b) + "</span></li>"; }).join("") + '</ul><div class="price__limits">' +
-        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div></label>";
+        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div>" +
+        (pg.length ? '<p class="small price__gap">' + icon("lock") + "<span>Won't show " + esc(joinOr(pg)) + ".</span></p>" : "") + "</label>";
     }).join("");
     return '<div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' + cards + "</div>" +
       '<div data-field="accept">' + check("accept", 'I accept the <a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>. My website is published once payment is confirmed.', false) + "</div>" +
-      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-9">' + icon("arrow-left") + ' Back</a><div class="btn-row"><button class="btn btn--primary btn--lg" type="submit" name="nav" value="book">Request my booking ' + icon("arrow") + "</button></div></div>";
+      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-9">' + icon("arrow-left") + ' Back</a><div class="btn-row"><button class="btn btn--primary btn--lg" type="submit" name="nav" value="book">' +
+      (D.forms ? "Send my booking " : "Prepare my booking ") + icon("arrow") + "</button></div></div>" +
+      '<p class="small muted" style="margin-top:14px">Questions first, or rather have us finish the set-up? <a class="text-link" href="#help-me-set-up">Ask us to help</a>.</p>';
   }
 
   // --- booking confirmation ---------------------------------------------------------------------------
@@ -13578,16 +15018,19 @@ echo "Backed up to $DEST ($STAMP)"
     var d = ev.design, w = d.wording || {};
     add("Palette", d.palette); add("Typography", d.font_pair); add("Background", d.background); add("Own colours", d.colors ? JSON.stringify(d.colors) : ""); add("Monogram", d.monogram);
     add("Welcome line", w.welcome); add("Invitation wording", w.invitation); add("RSVP note", w.rsvp_note); add("Closing line", w.closing);
-    add("Photos chosen", ["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).join(", ") + ((ev.images.gallery || []).length ? " + " + ev.images.gallery.length + " gallery" : "") + " (please email them with this request)");
+    var photos = ["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).join(", ") + ((ev.images.gallery || []).length ? " + " + ev.images.gallery.length + " gallery" : "");
+    add("Photos chosen", photos ? photos + (D.forms ? "" : " (please email them with this request)") : "");
     lines.push("");
     add("Estimated guests", gs.estimated); add("RSVP deadline", gs.rsvp_deadline); add("Guest categories", (gs.categories || []).join(", ")); add("Families / sides", (gs.sides || []).join(", "));
     add("Family groups", (gs.family_groups || []).join(", ")); add("VIP note", gs.vip_note); add("Plus-one policy", gs.plus_one_policy + " (default " + (gs.plus_ones_default || 0) + ")");
-    add("Children", gs.children_allowed ? "welcome, up to " + (gs.max_children || 0) + " per invitation" : "adults only"); lines.push("");
+    add("Children", gs.children_allowed ? "welcome, up to " + (gs.max_children || 0) + " per invitation" : "adults only");
+    add("Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") + (D.forms ? " (attached)" : "") : ""); lines.push("");
+    if (!D.forms && (ev.guest_list || []).length) { lines.push("GUEST LIST"); ev.guest_list.forEach(function (x) { lines.push("- " + [x.name, x.phone, x.email].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.functions.length) { lines.push("FUNCTIONS"); ev.functions.forEach(function (f) { lines.push("- " + [f.name, f.func_date, [f.start_time, f.end_time].filter(Boolean).join("-"), f.venue_name, f.address, f.map_url].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.schedule.length) { lines.push("PROGRAMME"); ev.schedule.forEach(function (s) { lines.push("- " + [s.item_time, s.title, s.description, s.kind].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.menu.items.length) { lines.push("MENU: " + ev.menu.name); ev.menu.items.forEach(function (i) { lines.push("- " + [i.course, i.name, i.description, (i.tags || []).join(", "), i.selectable ? "guests choose" : ""].filter(Boolean).join(" | ")); }); }
     add("Dietary options", (info.dietary_options || []).join(", ")); add("Drinks", info.drinks); add("Catering notes", info.catering_notes); lines.push("");
-    add("Tables", ev.tables.count ? ev.tables.count + " x " + ev.tables.capacity + " seats, " + ev.tables.shape : ""); add("Table names", (ev.tables.names || []).join(", ")); add("Seating notes", info.seating_notes); lines.push("");
+    add("Tables", ev.tables.plan_now ? (ev.tables.count ? ev.tables.count + " x " + ev.tables.capacity + " seats, " + ev.tables.shape : "") : "plan after RSVPs"); add("Table names", (ev.tables.names || []).join(", ")); add("Seating notes", info.seating_notes); lines.push("");
     add("Dress code", [info.dress_code, info.dress_code_notes].filter(Boolean).join(" - "));
     (info.registry || []).forEach(function (r) { add("Registry", [r.name, r.url, r.note].filter(Boolean).join(" | ")); });
     add("Gift note", info.gift_note);
@@ -13596,27 +15039,147 @@ echo "Backed up to $DEST ($STAMP)"
     add("Special instructions", info.instructions);
     return lines.join("\n").replace(/\n{3,}/g, "\n\n");
   }
+  function guestCsv(ev) {
+    return ["Name,Mobile,Email"].concat((ev.guest_list || []).map(function (g) {
+      return [g.name, g.phone, g.email].map(function (x) { return '"' + String(x || "").replace(/"/g, '""') + '"'; }).join(","); })).join("\n");
+  }
+  function sendBooking(ev, kind) {
+    var p = pkg(ev.selected_package) || {};
+    var fields = { website: "", kind: kind, ref: ev.booking.ref, package: p.name || "", amount: money(p.price_cents || 0), name: ev.contact.name, email: ev.contact.email,
+      phone: ev.contact.phone, event: ev.hosts || ev.name, occasion: (cat(ev.category) || {}).name || "", date: ev.event_date,
+      guests: String((ev.guest_list || []).length || ev.guest_settings.estimated || ""), details: summaryText(ev),
+      guest_list: (ev.guest_list || []).length ? guestCsv(ev) : "", draft: JSON.stringify(Object.assign({}, ev, { images: undefined })) };
+    var files = ["hero", "logo", "background"].map(function (k) { var b = dataUrlBlob(ev.images[k]); return [k, b, k + (b && b.type === "image/png" ? ".png" : ".jpg")]; });
+    var gal = (ev.images.gallery || []).slice(0, 40), batches = [];
+    for (var i = 0; i < gal.length; i += 8) batches.push(gal.slice(i, i + 8));
+    return postForm("booking", fields, files).then(function () {
+      return batches.reduce(function (chain, batch, n) {
+        return chain.then(function () {
+          return postForm("booking-photos", { website: "", ref: ev.booking.ref, email: ev.contact.email, batch: (n + 1) + " of " + batches.length },
+            batch.map(function (g, j) { return ["photo" + (j + 1), dataUrlBlob(g.url), "gallery-" + (n * 8 + j + 1) + ".jpg"]; }));
+        });
+      }, Promise.resolve());
+    });
+  }
+  function startSend(ev, kind) {
+    ev.booking.status = "sending"; save(); viewBooked();
+    sendBooking(ev, kind).then(function () {
+      ev.booking.status = "sent"; ev.booking.sent_at = new Date().toISOString(); ev.booking.sent_version = ev.updated; save();
+      if (currentHash === "booked") viewBooked();
+      toast(kind === "update" ? "Your changes are sent." : "Your booking is sent.");
+    }, function () {
+      ev.booking.status = "failed"; save();
+      if (currentHash === "booked") viewBooked();
+    });
+  }
   function viewBooked() {
     var ev = cur();
     if (!ev || !ev.booking) { location.hash = "#my-events"; return; }
-    var p = pkg(ev.selected_package) || {}, link = (D.payment_links || {})[p.code] || "", text = summaryText(ev), email = D.email;
-    var pay = link
-      ? '<a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a>"
-      : '<div class="notice">' + icon("clock") + "<span><b>Online payment opens soon.</b> We'll email you a secure payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
-    var subject = "Booking " + ev.booking.ref + ": " + ev.name;
-    root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 32px)"><div class="container container--narrow" style="display:grid;gap:var(--gap)">' +
-      '<div class="glass glass--strong panel" style="display:grid;gap:14px;text-align:left"><span class="icon-tile icon-tile--soft">' + icon("check") + "</span>" +
-      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">Booking request ready</h1><p class="lead" style="font-size:1.0625rem">Reference <b class="mono">' + esc(ev.booking.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" + pay + "</div>" +
-      '<div class="box" style="display:grid;gap:14px"><h2 style="font-size:1.25rem">Send your booking to us</h2>' +
-      '<p class="muted small">Copy your booking details and email them to us, with any photos you chose. We confirm within one working day.</p>' +
+    var p = pkg(ev.selected_package) || {}, link = (D.payment_links || {})[p.code] || "", text = summaryText(ev), email = D.email, b = ev.booking;
+    if (D.forms && !b.status) { startSend(ev, "new"); return; }
+    var subject = "Booking " + b.ref + ": " + ev.name;
+    var emailBox = '<div class="box" style="display:grid;gap:14px"><h2 style="font-size:1.25rem">' + (D.forms ? "Send it by email instead" : "Send your booking to us") + "</h2>" +
+      '<p class="muted small">Copy your booking details and email them to us' + (ev.images.hero || (ev.images.gallery || []).length ? ", with the photos you chose" : "") + ". We confirm within one working day.</p>" +
       '<div class="notice">' + icon("mail") + '<div><span class="mono" style="user-select:all">' + esc(email) + "</span><br>" +
       '<span class="tiny muted">Subject: <span style="user-select:all">' + esc(subject) + "</span></span></div></div>" +
-      '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + ' Copy booking details</button>' +
+      '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + " Copy booking details</button>" +
       '<button class="btn btn--secondary" type="button" data-copy="' + esc(email) + '" data-copied="Email address copied">Copy email address</button>' +
-      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello Aurelia,\n\nPlease find my booking request " + ev.booking.ref + " below.\n\n") + '">Open my email app</a></div>' +
-      '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>" +
+      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello Aurelia,\n\nPlease find my booking request " + b.ref + " below.\n\n") + '">Open my email app</a></div>' +
+      '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>";
+    var status, showEmail = !D.forms || b.status === "failed";
+    if (!D.forms) status = '<p class="lead" style="font-size:1.0625rem">Your booking details are ready to send. Email them to us below and we\'ll take it from there.</p>';
+    else if (b.status === "sending") status = '<div class="notice" role="status">' + icon("clock") + "<span><b>Sending your booking" + ((ev.images.gallery || []).length ? " and photos" : "") + "…</b> Keep this page open for a moment.</span></div>";
+    else if (b.status === "failed") status = '<div class="notice notice--warn" role="alert">' + icon("alert") + '<div><b>We couldn\'t send it from here.</b> Check your connection and try again, or email it to us below.<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-resend>Try again</button></div></div></div>';
+    else {
+      var changed = b.sent_version && ev.updated > b.sent_version;
+      status = '<div class="notice notice--success" role="status">' + icon("check") + "<div><b>Sent. We have your booking.</b> We\'ll contact " + esc(ev.contact.email) + " within one working day." +
+        ((ev.images.gallery || []).length > 40 ? " Your first 40 gallery photos came through; email the rest to " + esc(email) + " with your reference." : "") + "</div></div>" +
+        (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you sent it.<div style="margin-top:10px"><button class="btn btn--primary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "");
+    }
+    var payBtn = typeof link === "object" && link.action
+      ? '<form method="post" action="' + esc(link.action) + '" target="_blank">' + Object.keys(link.fields).map(function (k) { return '<input type="hidden" name="' + esc(k) + '" value="' + esc(link.fields[k]) + '">'; }).join("") +
+        '<button class="btn btn--primary btn--lg" type="submit">' + icon("card") + " Pay " + money(p.price_cents) + " securely</button></form>"
+      : '<a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a>";
+    var pay = link
+      ? '<div class="box" style="display:grid;gap:10px"><h2 style="font-size:1.25rem">Pay now</h2><p class="small muted">Pay securely with PayFast by card, instant EFT and more. If PayFast asks for a reference, use <b class="mono">' + esc(b.ref) + '</b>. Your website goes live once payment is confirmed.</p>' +
+        "<div>" + payBtn + "</div></div>"
+      : '<div class="notice">' + icon("card") + "<span><b>Payment:</b> we'll email you a secure PayFast payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
+    var next = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.25rem">What happens next</h2><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:14px">' +
+      [["01", "We check your details", "Within one working day. If anything's missing, we ask you."], ["02", link ? "You pay" : "You get a payment link", link ? "Use the button above whenever you're ready." : "By email, for " + money(p.price_cents) + "."],
+        ["03", "Your website goes live", "We send you your link to share on WhatsApp, by email or as a QR code."]].map(function (x) {
+        return '<li><span class="mono">' + x[0] + "</span><div><b>" + esc(x[1]) + '</b><p class="small muted" style="margin-top:4px">' + esc(x[2]) + "</p></div></li>"; }).join("") + "</ol></div>";
+    root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 32px)"><div class="container container--narrow" style="display:grid;gap:var(--gap)">' +
+      '<div class="glass glass--strong panel" style="display:grid;gap:14px;text-align:left"><span class="icon-tile icon-tile--soft">' + icon("check") + "</span>" +
+      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">' + (D.forms ? "Your booking" : "Booking request ready") + '</h1><p class="small muted">Reference <b class="mono">' + esc(b.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" + status + "</div>" +
+      pay + next + (showEmail ? emailBox : "") +
       '<div class="btn-row"><a class="btn btn--secondary" href="#preview-event">' + icon("eye") + ' Preview your website</a><a class="btn btn--ghost" href="#setup-1">Edit details</a><a class="btn btn--ghost" href="#my-events">My events</a></div></div></section>';
+    window.scrollTo(0, 0);
   }
+
+  // --- a draft opened from a link ---------------------------------------------------------------------
+  function linkError(err) {
+    root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 48px)"><div class="container container--narrow"><div class="empty"><span class="icon-tile">' + icon("alert") +
+      '</span><h1 style="font-size:1.5rem">This link didn\'t open</h1><p>' + esc(err && err.message && /browser/.test(err.message) ? err.message : "It may have been cut short when it was copied. Ask for the link again, and copy all of it.") +
+      '</p><a class="btn btn--primary" href="#create">Create your own event</a></div></div></section>';
+  }
+  function importResume(code) {
+    unpack(code).then(function (ev) {
+      var mine = state.events[ev.id];
+      if (mine && mine.updated > ev.updated) { toast("This device already has a newer copy of that event.", "error"); ev = mine; }
+      else {
+        if (mine) ev.images = mine.images;
+        state.events[ev.id] = ev;
+        if (state.order.indexOf(ev.id) < 0) state.order.unshift(ev.id);
+        toast("Your draft is open on this device." + (ev.images.hero ? "" : " Photos stay on the device you added them on, so add them again in Design."));
+      }
+      state.current = ev.id; save();
+      history.replaceState(null, "", "#setup-" + Math.min(9, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1));
+      route(location.hash.slice(1));
+    }, linkError);
+  }
+  function viewShared(code) {
+    unpack(code).then(function (ev) {
+      root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.hosts || ev.name) +
+        '</h1><p>A draft of this event website, shared with you before it goes live. RSVPs open once it\'s published.</p></div>' +
+        '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#create">Create your own event</a></div></div>' +
+        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aurelia.events/' + esc(slugOf(ev)) + "</span>" +
+        '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
+        '<div class="preview-frame__stage" style="height:' + Math.max(560, window.innerHeight - 220) + 'px"><iframe title="Shared draft of an event website" data-shared></iframe></div></div></div></section>';
+      document.querySelector("iframe[data-shared]").srcdoc = R.render(ev, "preview");
+    }, linkError);
+  }
+
+  // --- forms on the static site: contact and set-up help ------------------------------------------------------
+  var REQUIRED = { contact: { name: "Your name", email: "Email", message: "Your message" }, "setup-help": { name: "Your name", email: "Email", occasion: "What you're celebrating" } };
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest("form[data-static-form]");
+    if (!form) return;
+    e.preventDefault();
+    var name = form.getAttribute("data-static-form"), fd = new FormData(form), fields = {}, errs = [];
+    fd.forEach(function (v, k) { if (k !== "_csrf") fields[k] = String(v).trim(); });
+    Object.keys(REQUIRED[name] || {}).forEach(function (k) { if (!fields[k]) errs.push(REQUIRED[name][k] + " is needed."); });
+    if (fields.email && !/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(fields.email)) errs.push("Enter a valid email address, like name@example.com.");
+    if (name === "setup-help" && /whatsapp|phone/.test(fields.reach || "") && !fields.phone) errs.push("Add a mobile number so we can reach you on " + (fields.reach === "phone" ? "the phone." : "WhatsApp."));
+    var box = form.querySelector("[data-static-errors]");
+    if (!box) { form.insertAdjacentHTML("afterbegin", '<div data-static-errors></div>'); box = form.querySelector("[data-static-errors]"); }
+    if (errs.length) {
+      box.innerHTML = '<div class="form-errors" role="alert" tabindex="-1"><b>Please fix ' + (errs.length === 1 ? "this item" : "these " + errs.length + " items") + ":</b><ul>" + errs.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+      box.firstChild.focus(); return;
+    }
+    box.innerHTML = "";
+    var ref = (name === "contact" ? "C-" : "H-") + Math.random().toString(36).slice(2, 7).toUpperCase(), btn = form.querySelector("[type=submit]");
+    fields.message = (fields.message || "") + "\n\nReference: " + ref;
+    if (btn) { btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+    postForm(name, fields).then(function () {
+      form.outerHTML = '<div class="notice notice--success" role="status">' + icon("check") + "<div><b>Thank you. Your reference is " + ref + '.</b><p class="small" style="margin-top:4px">' +
+        (name === "setup-help" ? "We'll contact you within one working day to go through the details and send you a quote." : "We usually reply within one working day.") + "</p></div></div>";
+    }, function () {
+      if (btn) { btn.disabled = false; btn.removeAttribute("aria-busy"); }
+      var body = Object.keys(fields).filter(function (k) { return k !== "website" && fields[k]; }).map(function (k) { return k + ": " + fields[k]; }).join("\n");
+      box.innerHTML = '<div class="notice notice--warn" role="alert">' + icon("alert") + '<div><b>We couldn\'t send this from here.</b> <a class="text-link" href="mailto:' + esc(D.email) + "?subject=" +
+        encodeURIComponent((name === "setup-help" ? "Set-up help " : "Message ") + ref) + "&body=" + encodeURIComponent(body) + '">Email it to us instead</a>.</div></div>';
+    });
+  });
 
   // --- full preview ------------------------------------------------------------------------------------
   function viewPreview() {
@@ -13655,16 +15218,27 @@ echo "Backed up to $DEST ($STAMP)"
       if (showErrors(form, errs)) { save(); return; }
       ev.booking = ev.booking || { ref: "AUR-" + Math.random().toString(36).slice(2, 7).toUpperCase(), at: new Date().toISOString() };
       ev.booking.package = ev.selected_package;
+      if (ev.booking.status !== "sent") delete ev.booking.status;
       if (ev.wizard_done.indexOf(10) < 0) ev.wizard_done.push(10);
       save(); location.hash = "#booked"; return;
     }
-    var e = STEP[n][2] ? STEP[n][2](ev) : {};
+    var e = STEP[n][2] ? STEP[n][2](ev) : {}, added = -1;
+    if (n === 4) {
+      var people = parseGuests((new FormData(form)).get("guest_paste"));
+      if (people.length) {
+        var have = {}; (ev.guest_list || []).forEach(function (g) { have[g.name.toLowerCase()] = 1; if (g.email) have[g.email] = 1; if (g.phone) have[g.phone.replace(/\D/g, "")] = 1; });
+        ev.guest_list = ev.guest_list || []; added = 0;
+        people.forEach(function (g) { var d = g.phone.replace(/\D/g, ""); if (have[g.name.toLowerCase()] || (g.email && have[g.email]) || (d && have[d])) return; ev.guest_list.push(g); have[g.name.toLowerCase()] = 1; added++; });
+      }
+    }
     if (showErrors(form, e)) { save(); return; }
     if (ev.wizard_done.indexOf(n) < 0) ev.wizard_done.push(n);
     if (ev.design._reset) { delete ev.design._reset; }
     save();
+    if (added > -1) toast("Added " + plural(added, "guest") + " to your list.");
     if (nav === "next") location.hash = "#setup-" + (n + 1);
-    else { toast("Saved."); viewStep(n); }
+    else if (nav === "review") location.hash = "#setup-9";
+    else { if (added < 0) toast("Saved."); viewStep(n); }
   }
 
   // --- images ---------------------------------------------------------------------------------------------
@@ -13697,6 +15271,14 @@ echo "Backed up to $DEST ($STAMP)"
     submitStep(form, nav);
   });
   document.addEventListener("change", function (e) {
+    if (!e.target.matches("#journey-root [data-plan]")) return;
+    var f = document.querySelector("#journey-root form[data-step]"), ev = cur();
+    if (f) collectStep(f);
+    ev.selected_package = e.target.value; save();
+    toast("Now planning with " + pkg(ev.selected_package).name + ". You can change this until you book.");
+    route(currentHash);
+  });
+  document.addEventListener("change", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
     if (!form) return;
     var t = e.target;
@@ -13710,6 +15292,7 @@ echo "Backed up to $DEST ($STAMP)"
         .catch(function (err) { toast(err.message, "error"); });
       return;
     }
+    if (t.name === "guest_paste" || t.name === "menu_paste") return;
     if (t.hasAttribute("data-gallery")) {
       var ev = cur(), lim = limit(ev, "gallery_photos"), files = Array.prototype.slice.call(t.files);
       collectStep(form);
@@ -13736,13 +15319,59 @@ echo "Backed up to $DEST ($STAMP)"
     var form = e.target.closest("#journey-root form[data-step]");
     if (!form || e.target.type === "file") return;
     if (e.target.name && e.target.name.indexOf("color_") === 0) { var c = form.querySelector('input[type=color][data-sync="' + e.target.name + '"]'); if (c && /^#[0-9a-f]{6}$/i.test(e.target.value)) c.value = e.target.value; }
+    if (e.target.name === "name") e.target.setAttribute("data-autoname", "0");
+    if (e.target.name === "hosts") { var nm = form.querySelector('[data-autoname="1"]'), cs = form.querySelector("[name=category]"); if (nm) nm.value = autoName(cs ? cs.value : cur().category, e.target.value); }
+    if (e.target.name === "guest_paste" || e.target.name === "menu_paste") return;
     clearTimeout(form._t);
     form._t = setTimeout(function () { collectStep(form); save(); refreshPreview(); }, 400);
   });
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("#journey-root [data-add-row], #journey-root [data-remove-row], #journey-root [data-device], #journey-root [data-open], #journey-root [data-delete], #journey-root [data-remove-image], #journey-root [data-remove-gallery], #journey-root [data-copy-booking]");
+    var t = e.target.closest("#journey-root [data-add-row], #journey-root [data-remove-row], #journey-root [data-device], #journey-root [data-open], #journey-root [data-delete], #journey-root [data-remove-image], #journey-root [data-remove-gallery], #journey-root [data-copy-booking], " +
+      "#journey-root [data-fill], #journey-root [data-surprise], #journey-root [data-sample], #journey-root [data-menu-paste], #journey-root [data-clear-guests], #journey-root [data-continue-link], #journey-root [data-share-preview], #journey-root [data-resend]");
     if (!t) return;
     var form = t.closest("form[data-step]");
+    if (t.hasAttribute("data-fill")) {
+      var vals = JSON.parse(t.getAttribute("data-fill"));
+      Object.keys(vals).forEach(function (k) { var el = form.querySelector('[name="' + k + '"]'); if (el) el.value = vals[k]; });
+      collectStep(form); save(); refreshPreview(true); toast("Wording added. Edit it as you like."); return;
+    }
+    if (t.hasAttribute("data-surprise")) {
+      var pals = form.querySelectorAll("input[name=palette]");
+      if (pals.length) pals[Math.floor(Math.random() * pals.length)].checked = true;
+      ["font_pair", "background"].forEach(function (k) { var sl = form.querySelector("select[name=" + k + "]"); if (sl && sl.options.length) sl.selectedIndex = Math.floor(Math.random() * Math.min(sl.options.length, k === "font_pair" ? 4 : sl.options.length)); });
+      collectStep(form); save(); refreshPreview(true); return;
+    }
+    if (t.hasAttribute("data-sample")) {
+      collectStep(form);
+      if (cur().schedule.length && !window.confirm("This replaces your programme items with a sample. Continue?")) return;
+      cur().schedule = sampleProgramme(cur()); save(); viewStep(5); toast("Sample programme added. Change the times and titles to match your day."); return;
+    }
+    if (t.hasAttribute("data-menu-paste")) {
+      var txt = form.querySelector("[name=menu_paste]"), dishes = parseMenu(txt ? txt.value : "");
+      if (!dishes.length) { toast("Paste the menu first, one dish per line.", "error"); return; }
+      collectStep(form);
+      var mev = cur(); mev.menu.items = mev.menu.items.filter(function (it) { return it.name; }).concat(dishes); save(); viewStep(6);
+      toast("Added " + plural(dishes.length, "dish", "dishes") + ". Check the courses."); return;
+    }
+    if (t.hasAttribute("data-clear-guests")) {
+      if (!window.confirm("Remove everyone from your guest list?")) return;
+      collectStep(form); cur().guest_list = []; save(); viewStep(4); return;
+    }
+    if (t.hasAttribute("data-continue-link")) {
+      var f0 = document.querySelector("#journey-root form[data-step]"); if (f0) { collectStep(f0); save(); }
+      pack(cur(), false).then(function (code) { shareOrCopy(pageUrl() + "#resume=" + code, "Continue my Aurelia event", "Link copied. Open it on your other device to carry on. Photos stay on this device."); });
+      return;
+    }
+    if (t.hasAttribute("data-share-preview")) {
+      var how = t.getAttribute("data-share-preview");
+      pack(cur(), true).then(function (code) {
+        var url = pageUrl() + "#see=" + code;
+        if (how === "whatsapp") window.open("https://wa.me/?text=" + encodeURIComponent("Have a look at our event website draft: " + url), "_blank", "noopener");
+        else shareOrCopy(url, "Our event website draft", "Preview link copied. Anyone with it can see the draft, without your contact details.");
+      });
+      return;
+    }
+    if (t.hasAttribute("data-resend")) { startSend(cur(), t.getAttribute("data-resend") || "new"); return; }
     if (t.hasAttribute("data-add-row")) {
       var wrap = t.closest("[data-repeat]"), list = wrap.querySelector("[data-rows]"), prefix = wrap.getAttribute("data-repeat"), max = +wrap.getAttribute("data-max");
       if (list.children.length >= max) { toast("Your package allows " + max + " here.", "error"); return; }
@@ -13780,6 +15409,8 @@ echo "Backed up to $DEST ($STAMP)"
   // --- routing ---------------------------------------------------------------------------------------------
   function route(id) {
     currentHash = id;
+    if (id.indexOf("resume=") === 0) return importResume(id.slice(7));
+    if (id.indexOf("see=") === 0) return viewShared(id.slice(4));
     if (id.indexOf("create") === 0) return viewCreate(id);
     if (id === "my-events") return viewMyEvents();
     if (id === "preview-event") return viewPreview();
@@ -13788,16 +15419,17 @@ echo "Backed up to $DEST ($STAMP)"
     if (m && +m[1] >= 1 && +m[1] <= 10) return viewStep(+m[1]);
     return viewMyEvents();
   }
-  function handles(id) { return /^(create(-.+)?|my-events|preview-event|booked|setup-\d+)$/.test(id); }
+  function handles(id) { return /^(create(-.+)?|my-events|preview-event|booked|setup-\d+|resume=.+|see=.+)$/.test(id); }
   window.AureliaJourney = { route: route, handles: handles };
 })();
 ```
 
 ### `preview_site/payment_links.json`
 
-<!-- FILE: preview_site/payment_links.json sha256=fc5196025a85ed91b495adcd9ffde9f018b315a9c09d526865d8f37e200b59ee nl=1 -->
+<!-- FILE: preview_site/payment_links.json sha256=a092c18d09cf0ab2c3cdf1f41a31d81cb8db89145253b9e4c7d3234b1f1c4efd nl=1 -->
 ```json
 {
+  "_help": "For each package, paste EITHER a PayFast payment link (https://...) OR the whole HTML code of a PayFast Pay Now button, exactly as PayFast gives it. Leave empty to email clients a payment link instead. Then rebuild: python3 tools/export_preview.py dist/aurelia-site --standalone",
   "essential": "",
   "premium": "",
   "signature": ""
@@ -13826,7 +15458,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=9a1054d9c6f8f062b14a4af17292d2e84e7e84d5a44ec0df3e7431bfd69dd920 nl=1 -->
+<!-- FILE: static/css/app.css sha256=4378a7c96f2f0492e9a1239df54d600960072da10ac269967b8802f627bf4541 nl=1 -->
 ```css
 /* Aurelia design system
    Built from docs/website-style-playbook.md (STS Holdings, Oct 2026): one gold accent used as a
@@ -14682,6 +16314,33 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 
 /* Phones: the wizard save bar sits at the end of the form instead of covering it */
 @media (max-width: 767px) { .wizard-actions { position: static; } }
+
+/* --- ease-of-use additions (2026-11): optional steps, package switcher, suggestions, checklists ------- */
+.stepper__tag { margin-left: auto; padding-left: 10px; font: 500 .6875rem/1 var(--font-mono); letter-spacing: .02em; color: var(--color-muted); text-transform: uppercase; }
+.stepper__tag .i { width: 14px; height: 14px; }
+.plan-package { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plan-package .select { width: auto; min-width: 0; max-width: 100%; }
+.suggest-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); margin-bottom: 18px; }
+.suggest-card { display: grid; gap: 8px; align-content: start; padding: 14px 16px; border: 1px solid var(--color-line); border-radius: 14px; background: var(--color-surface); }
+.suggest-card p { margin: 0; font-size: .875rem; color: var(--color-muted); }
+.suggest-card b { font-weight: 600; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checklist li { display: flex; align-items: flex-start; gap: 10px; }
+.checklist .i { flex: none; margin-top: 2px; }
+.checklist .is-done { color: var(--color-muted); }
+.checklist .is-done span { text-decoration: line-through; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.next-steps { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
+.next-step { display: grid; gap: 8px; align-content: start; padding: 16px; border-radius: 16px; border: 1px solid var(--color-line); background: var(--color-surface); text-decoration: none; color: inherit; }
+.next-step:hover { border-color: var(--color-border-strong); }
+.next-step .mono { color: var(--color-accent-text); }
+.wa-queue { display: grid; gap: 14px; }
+.wa-float { position: fixed; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); z-index: 40; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 999px; background: #1f8f4e; color: #fff; text-decoration: none; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+.wa-float:hover { background: #18773f; color: #fff; }
+.wa-float .i { width: 20px; height: 20px; }
+@media (max-width: 520px) { .wa-float span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .wa-float { padding: 0; width: 52px; justify-content: center; } }
+@media print { .wa-float { display: none; } }
+.price__gap { display: flex; gap: 8px; align-items: flex-start; margin: 0; } .price__gap .i { color: var(--warn); flex: none; margin-top: 2px; }
+.how-list li { display: flex; gap: 14px; align-items: flex-start; } .how-list .mono { flex: none; color: var(--color-accent-text); padding-top: 2px; }
 ```
 
 ### `static/css/eventsite.css`
@@ -15670,7 +17329,7 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 
 ### `static/js/seating.js`
 
-<!-- FILE: static/js/seating.js sha256=7919685f19fc235a3557b4689354420f916635f2a594e7438b222ba49c4d4a6e nl=1 -->
+<!-- FILE: static/js/seating.js sha256=a03048ec579e913ea0d8a4c7d8c50b762a063b38f67ce7ab2b8930dc3d45ea3f nl=1 -->
 ```javascript
 /* Seating chart editor: drag tables around the floor, drag guest parties onto tables,
    tap-to-assign on touch screens. Talks to /dashboard/events/<uid>/seating/api/* (JSON, CSRF header). */
@@ -15756,6 +17415,17 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
       '<div class="row"><button class="btn btn--primary btn--sm" type="submit">Save</button><button class="btn btn--danger btn--sm" type="button" data-delete-table>Delete</button>' +
       '<button class="btn btn--ghost btn--sm" type="button" data-close-editor>Done</button></div></form>';
   }
+
+  // --- automatic seating ------------------------------------------------------------------------
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-autoseat]");
+    if (!b) return;
+    b.disabled = true;
+    call("autoseat", { include_pending: !!(includePending && includePending.checked) }).then(function (res) {
+      b.disabled = false;
+      if (res && res.message) Aurelia.toast(res.message);
+    });
+  });
 
   // --- forms -------------------------------------------------------------------------------
   root.addEventListener("submit", function (e) {
@@ -16291,7 +17961,7 @@ if __name__ == "__main__":
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=a600373f529f3fbf2af22a53eb436c11efa38d22ea434306b41e0d62f0d482a3 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=3958059570da2b99166d0c35e9f74b56fd2f54beb4e7225e501a8c447d0aa11a nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -16319,7 +17989,7 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(self.c.get("/templates/does-not-exist").status, 404)
 
     def test_pricing_reads_packages_from_db(self):
-        db.run("UPDATE packages SET price_cents = 1_234_500 WHERE code = 'premium'")
+        db.run("UPDATE packages SET price_cents = 1234500 WHERE code = 'premium'")
         self.assertIn("R12,345", self.c.get("/pricing").text)
 
     def test_register_login_logout(self):
@@ -16385,12 +18055,29 @@ class WizardTest(unittest.TestCase):
         uid = find(r"/dashboard/events/([0-9a-f]+)/setup/1", r.location)
         return uid
 
-    def test_create_requires_login_and_preserves_choice(self):
+    def test_create_without_account_needs_only_name_and_email(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "name": "Shower"})
-        self.assertEqual(r.status, 303)
-        self.assertIn("/register?next=", r.location)
-        self.assertIn("baby-shower", r.location)
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("Your name", r.text)
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "package": "essential",
+                                  "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        self.assertIn("/setup/1", r.location)
+        user = db.one("SELECT * FROM users WHERE email = ?", ("amahle@example.com",))
+        self.assertEqual(user["password_hash"], "")
+        ev = db.one("SELECT * FROM events WHERE owner_id = ?", (user["id"],))
+        self.assertEqual(ev["selected_package"], "essential")
+        self.assertEqual(anon.get(r.location).status, 200)      # signed in straight away
+
+    def test_create_with_existing_email_sends_sign_in_link(self):
+        anon = Client(self.app)
+        r = anon.post("/create", {"category": "birthday", "template": "pulse", "contact_name": "Thandi",
+                                  "contact_email": "organiser@example.com", "terms": "1"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("sign-in link", r.text)
+        log = db.one("SELECT * FROM email_logs WHERE to_email = ? AND template_key = 'login_link' ORDER BY id DESC", ("organiser@example.com",))
+        self.assertIsNotNone(log)
 
     def test_full_wizard(self):
         uid = self.create()
@@ -16423,7 +18110,7 @@ class WizardTest(unittest.TestCase):
                                       "dietary_options": ["Vegetarian", "Halal"], "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertEqual(len(events.meal_options(events.get(uid)["id"])), 2)
-        r = self.c.post(base + "/7", {"table_count": "15", "capacity": "10", "shape": "round", "apply_capacity": "1",
+        r = self.c.post(base + "/7", {"plan_now": "1", "table_count": "15", "capacity": "10", "shape": "round", "apply_capacity": "1",
                                       "table_names": "Head table\nProtea", "nav": "next"})
         self.assertEqual(r.status, 303)
         tables = events.tables(events.get(uid)["id"])
@@ -16571,6 +18258,199 @@ class PaymentsTest(unittest.TestCase):
         self.assertEqual(other.get(f"/pay/sandbox/{order_uid}").status, 404)
         self.assertEqual(other.post(f"/pay/sandbox/{order_uid}", {"decision": "approve"}).status, 404)
         self.assertEqual(db.val("SELECT status FROM orders WHERE uid = ?", (order_uid,)), "pending")
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class HostingRuleTest(unittest.TestCase):
+    def test_site_never_ends_before_a_month_after_the_event(self):
+        fresh_app("hosting")
+        ev = {"event_date": "2028-06-01"}
+        self.assertEqual(events.hosting_end(ev, 6, start=__import__("datetime").date(2026, 11, 16)), "2028-07-02")
+        self.assertEqual(events.hosting_end({"event_date": "2027-01-10"}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
+        self.assertEqual(events.hosting_end({"event_date": ""}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
+
+```
+
+### `tests/test_ease.py`
+
+<!-- FILE: tests/test_ease.py sha256=f132641d648f5c4ddf0174951ca8193a75f5ac0d536dd8da9bbd3af399e7b7e0 nl=1 -->
+```python
+"""Tests for the ease-of-use round (2026-11): sign-in links, draft previews, pasting guests and menus,
+sample programmes, package gaps, the WhatsApp queue, next steps and the set-up help request."""
+from __future__ import annotations
+
+import re
+import unittest
+
+from tests.helpers import Client, fresh_app, make_user
+from tests.test_manage import add_guest, make_event, session_for
+from app import auth, db, events, suggestions
+
+
+class EaseTests(unittest.TestCase):
+    def setUp(self):
+        self.app = fresh_app("ease")
+        self.owner = make_user()
+        self.client = Client(self.app)
+        session_for(self.client, self.owner)
+        self.ev = make_event(self.owner, package=None)
+        events.touch(self.ev["id"], selected_package="premium")
+        self.base = f"/dashboard/events/{self.ev['uid']}"
+
+    # --- sign-in links ------------------------------------------------------------------------------
+    def test_sign_in_link_logs_in_once(self):
+        anon = Client(self.app)
+        r = anon.post("/login/email", {"email": "organiser@example.com", "next": "/dashboard"})
+        self.assertIn("Check your email", r.text)
+        log = db.one("SELECT * FROM email_logs WHERE template_key = 'login_link' ORDER BY id DESC")
+        self.assertIsNotNone(log)
+        token = auth.issue_token(self.owner["id"], "login", 2)    # the emailed one is hashed; issue a fresh one
+        r = anon.get(f"/login/link/{token}?next=/dashboard")
+        self.assertEqual(r.status, 303)
+        self.assertEqual(anon.get("/dashboard").status, 200)
+        self.assertIn("expired", Client(self.app).get(f"/login/link/{token}").text)   # works once
+
+    def test_unknown_email_gets_same_answer(self):
+        r = Client(self.app).post("/login/email", {"email": "nobody@example.com"})
+        self.assertIn("Check your email", r.text)
+        self.assertIsNone(db.one("SELECT 1 FROM email_logs WHERE to_email = 'nobody@example.com'"))
+
+    def test_register_without_password(self):
+        anon = Client(self.app)
+        r = anon.post("/register", {"name": "Naledi Khumalo", "email": "naledi@example.com", "terms": "1"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        self.assertEqual(db.one("SELECT password_hash FROM users WHERE email = 'naledi@example.com'")["password_hash"], "")
+        r = Client(self.app).post("/login", {"email": "naledi@example.com", "password": "anything"})
+        self.assertIn("no password yet", r.text)
+
+    # --- draft preview --------------------------------------------------------------------------------
+    def test_draft_preview_link(self):
+        ev = events.by_id(self.ev["id"])
+        url = events.draft_url(ev).replace("http://127.0.0.1:8040", "").replace(events.config.BASE_URL, "")
+        anon = Client(self.app)
+        r = anon.get(url)
+        self.assertEqual(r.status, 200)
+        self.assertIn("Shared draft", r.text)
+        self.assertIn("noindex", str(r.headers) + r.text)
+        self.assertEqual(anon.get(url[:-3] + "abc").status, 404)
+        self.assertEqual(anon.get(f"/events/{ev['slug']}").status in (200, 404), True)
+
+    # --- wizard helpers ----------------------------------------------------------------------------------
+    def test_guest_paste_in_step_4(self):
+        r = self.client.post(self.base + "/setup/4", {"guest_paste": "Name\tPhone\nThandi Mokoena\t082 123 4567\nSipho Dlamini, sipho@example.com\nThandi Mokoena\t082 123 4567",
+                                                      "plus_one_policy": "per_guest", "nav": "stay"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        names = [g["first_name"] + " " + g["last_name"] for g in db.q("SELECT * FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))]
+        self.assertEqual(names, ["Thandi Mokoena", "Sipho Dlamini"])
+        # pasting the same people again adds nobody
+        self.client.post(self.base + "/setup/4", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
+        self.assertEqual(db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (self.ev["id"],)), 2)
+
+    def test_guest_paste_needs_premium(self):
+        events.touch(self.ev["id"], selected_package="essential")
+        r = self.client.post(self.base + "/setup/4", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("part of the Premium package", r.text)
+
+    def test_sample_programme_and_menu_paste(self):
+        r = self.client.post(self.base + "/setup/5", {"nav": "sample"})
+        self.assertEqual(r.status, 303)
+        items = events.schedule(self.ev["id"])
+        self.assertEqual(items[1]["item_time"], "14:00")     # the ceremony starts at the event's start time
+        self.assertEqual(items[1]["title"], "Ceremony")
+        r = self.client.post(self.base + "/setup/6", {"menu_name": "Reception menu", "menu_paste": "Starters\nSoup\nMain: Lamb - jus\nDessert: Malva pudding",
+                                                      "nav": "next"})
+        self.assertEqual(r.status, 303)
+        dishes = db.q("SELECT course, name, description FROM menu_items WHERE event_id = ? ORDER BY sort", (self.ev["id"],))
+        self.assertEqual([(d["course"], d["name"]) for d in dishes], [("Starter", "Soup"), ("Main", "Lamb"), ("Dessert", "Malva pudding")])
+
+    def test_blank_starter_rows_are_ignored(self):
+        r = self.client.post(self.base + "/setup/5", {"si-0-kind": "other", "si-1-kind": "other", "si-0-function": "", "nav": "next"})
+        self.assertEqual(r.status, 303, r.text[:400])
+        r = self.client.post(self.base + "/setup/6", {"mi-0-course": "Main", "mi-1-course": "Main", "nav": "next"})
+        self.assertEqual(r.status, 303, r.text[:400])
+
+    def test_seating_step_can_wait_for_rsvps(self):
+        r = self.client.post(self.base + "/setup/7", {"table_count": "12", "capacity": "10", "nav": "next"})
+        self.assertEqual(r.status, 303)
+        self.assertEqual(events.tables(self.ev["id"]), [])
+
+    def test_package_gaps_shown_on_review_and_package_steps(self):
+        self.client.post(self.base + "/setup/5", {"nav": "sample"})
+        self.assertEqual(events.package_gaps(events.by_id(self.ev["id"]), "premium"), [])
+        self.assertIn("your programme", events.package_gaps(events.by_id(self.ev["id"]), "essential")[0])
+        self.client.post(self.base + "/plan-package", {"package": "essential", "back": "9"})
+        r = self.client.get(self.base + "/setup/9")
+        self.assertIn("won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
+        self.assertIn("Show someone before you pay", r.text)
+        r = self.client.get(self.base + "/setup/10")
+        self.assertIn("Won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
+
+    def test_event_name_follows_names(self):
+        r = self.client.post(self.base + "/setup/1", {"name": "", "category": "white-wedding", "hosts": "Lerato & Sipho", "event_date": "2027-03-14", "nav": "stay"})
+        self.assertEqual(r.status, 303)
+        self.assertEqual(events.by_id(self.ev["id"])["name"], "Lerato & Sipho's wedding")
+
+    # --- after publishing ----------------------------------------------------------------------------------
+    def test_whatsapp_queue(self):
+        events.touch(self.ev["id"], paid_package="premium", status="published")
+        a = add_guest(self.ev, "Ann", status="pending", phone="082 111 2222")
+        add_guest(self.ev, "Ben", status="pending", phone="083 333 4444")
+        add_guest(self.ev, "Cee", status="pending")                        # no number
+        r = self.client.get(self.base + "/share/whatsapp")
+        self.assertIn("1 of 2", r.text)
+        self.assertIn("wa.me/27821112222", r.text)
+        self.assertIn("1 guest has no mobile number", r.text)
+        r = self.client.post(self.base + "/share/whatsapp", {"guest_id": str(a["id"]), "action": "sent", "mode": "invite"})
+        self.assertEqual(r.status, 303)
+        self.assertIsNotNone(db.one("SELECT invited_at FROM guests WHERE id = ?", (a["id"],))["invited_at"])
+        r = self.client.get(r.location)
+        self.assertIn("2 of 2", r.text)
+        # reminders go to invited guests who haven't replied, once a day
+        r = self.client.get(self.base + "/share/whatsapp?mode=remind")
+        self.assertIn("a quick reminder", r.text)
+        self.client.post(self.base + "/share/whatsapp", {"guest_id": str(a["id"]), "action": "sent", "mode": "remind"})
+        self.assertIn("had a reminder today", self.client.get(self.base + "/share/whatsapp?mode=remind").text)
+
+    def test_next_steps_on_overview(self):
+        r = self.client.get(self.base)
+        self.assertIn("Ready to share it?", r.text)
+        events.touch(self.ev["id"], paid_package="premium", status="published")
+        r = self.client.get(self.base)
+        self.assertIn("Add your guest list", r.text)
+        add_guest(self.ev, "Ann", status="pending", phone="082 111 2222")
+        self.assertIn("Send your invitations", self.client.get(self.base).text)
+
+    # --- set-up help ------------------------------------------------------------------------------------------
+    def test_setup_help_request(self):
+        anon = Client(self.app)
+        self.assertEqual(anon.get("/help-me-set-up").status, 200)
+        r = anon.post("/help-me-set-up", {"name": "Busy Bride", "email": "bride@example.com", "reach": "whatsapp", "occasion": "white-wedding"})
+        self.assertIn("mobile number", r.text)
+        r = anon.post("/help-me-set-up", {"name": "Busy Bride", "email": "bride@example.com", "phone": "082 000 0000", "reach": "whatsapp",
+                                          "occasion": "white-wedding", "package": "premium"})
+        ref = re.search(r"reference is (S-\d+)", r.text).group(1)
+        req = db.one("SELECT * FROM support_requests WHERE topic = 'setup_help'")
+        self.assertIn("Premium", req["message"])
+        self.assertTrue(db.one("SELECT 1 FROM email_logs WHERE to_email = 'bride@example.com' AND template_key = 'setup_help_received'"))
+        self.assertTrue(ref.startswith("S-"))
+
+
+class SuggestionTests(unittest.TestCase):
+    def test_every_occasion_has_wording_and_a_programme(self):
+        from app import catalog
+        fresh_app("suggest")
+        for c in catalog.CATEGORIES:
+            self.assertGreaterEqual(len(suggestions.wording_options(c[0])), 2, c[0])
+            self.assertTrue(suggestions.sample_programme(c[0], "", c[2]), c[0])
+            for opt in suggestions.wording_options(c[0]):
+                for k in ("welcome", "invitation", "rsvp_note", "closing"):
+                    text = suggestions.fill_wording(opt[k], "A & B", "")
+                    self.assertNotIn("{", text, (c[0], k))
+                    self.assertNotIn("  ", text, (c[0], k))
 
 
 if __name__ == "__main__":
@@ -16831,7 +18711,7 @@ if __name__ == "__main__":
 
 ### `tests/test_manage.py`
 
-<!-- FILE: tests/test_manage.py sha256=93a8859dc32fef1f6cde716edaa711bcece051671e98fc5161eacd24083e2cec nl=1 -->
+<!-- FILE: tests/test_manage.py sha256=8238a15eea1c6ba6186177c1176df65d3deeefed706830a05b3d4f946c45d3f6 nl=1 -->
 ```python
 """Organiser dashboard tests: guests, CSV import, access control, package gating, seating API,
 reports, QR codes and communications."""
@@ -16971,6 +18851,33 @@ class ManageTests(unittest.TestCase):
         self.assertIn("data-seating", r.text)
 
     # --- seating ----------------------------------------------------------------------------------
+    def test_auto_seat_keeps_families_together(self):
+        import json
+        mok = [add_guest(self.ev, n, family_group="Mokoena family", plus=1) for n in ("Thabo", "Lindi")]   # 4 people
+        dla = [add_guest(self.ev, n, family_group="Dlamini family") for n in ("Sipho", "Ayanda", "Zola")]  # 3 people
+        add_guest(self.ev, "Pending Pat", status="pending")
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        self.assertIn("created 1 tables", r["message"])
+        tables = {g["table"] for g in r["state"]["guests"] if g["name"].split()[0] in ("Thabo", "Lindi", "Sipho", "Ayanda", "Zola")}
+        self.assertEqual(len(tables), 1)                      # 7 people fit one table of 10
+        self.assertEqual(r["warning"], "")
+        self.assertIsNone(db.one("SELECT 1 FROM seat_assignments a JOIN guests g ON g.id = a.guest_id WHERE g.first_name = 'Pending'"))
+        # a second run with nothing left to seat says so; including pending seats Pat
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        self.assertIn("already has a seat", r["message"])
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={"include_pending": True}).text)
+        self.assertIn("Seated 1 party", r["message"])
+
+    def test_auto_seat_splits_big_groups_and_reports_overflow(self):
+        import json
+        for n in range(7):
+            add_guest(self.ev, f"Cousin{n}", family_group="Big family", plus=1)        # 14 people
+        self.client.post(self.base + "/seating/api/autocreate", json_body={"count": 1, "capacity": 10})
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        self.assertIn("Seated 5 parties", r["message"])
+        self.assertIn("2 parties (4 people) didn't fit", r["warning"])
+        self.assertEqual(r["state"]["tables"][0]["seated"], 10)
+
     def test_seating_api(self):
         a = add_guest(self.ev, "Ann", plus=1)      # party of 2
         b = add_guest(self.ev, "Ben", kids=2)       # party of 3
@@ -17146,7 +19053,7 @@ if __name__ == "__main__":
 
 ### `tools/export_preview.py`
 
-<!-- FILE: tools/export_preview.py sha256=ec5d3b0152e7dc0dc84046cebe3a4a7d622a0fa6e6727dfd206e562c872c9f23 nl=1 -->
+<!-- FILE: tools/export_preview.py sha256=5e2e828516af4778dd325fd5d84163008cc93cc7319eb1e6896f291e2ff64896 nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Build the shareable, server-free version of the Aurelia site (published as a Claude Artifact).
@@ -17176,7 +19083,7 @@ STANDALONE = "--standalone" in sys.argv[1:]
 OUT = os.path.abspath(ARGS[0] if ARGS else os.path.join(SRC, "preview_build"))
 sys.path.insert(0, SRC)
 from tests.helpers import Client, fresh_app  # noqa: E402  (uses a temporary data folder)
-from app import catalog, config, db, events  # noqa: E402
+from app import catalog, config, db, events, suggestions  # noqa: E402
 from app.eventsite import designs, render as ev_render, themes  # noqa: E402
 from app.views import wizard  # noqa: E402
 
@@ -17202,6 +19109,38 @@ open(os.path.join(OUT, "static/js/app.js"), "w").write(js)
 # --- data for the browser journey ----------------------------------------------------------------
 links_file = os.path.join(SRC, "preview_site", "payment_links.json")
 payment_links = json.load(open(links_file)) if os.path.isfile(links_file) else {}
+PAY_HOSTS = ("payfast.io", "payfast.co.za", "payf.st")
+
+
+def _pay_host_ok(url: str) -> bool:
+    m = re.match(r"^https://([^/?#]+)", url or "")
+    return bool(m) and any(m.group(1) == h or m.group(1).endswith("." + h) for h in PAY_HOSTS)
+
+
+def payment_option(value):
+    """A package's payment set-up: a PayFast link, or the HTML of a PayFast "Pay Now" button pasted as it
+    was generated. The button's form is rebuilt from its action and hidden fields only, and only for
+    PayFast addresses, so nothing else from the pasted code reaches the page."""
+    value = (value or "").strip() if isinstance(value, str) else ""
+    if not value:
+        return ""
+    if "<form" in value.lower():
+        action = re.search(r'<form[^>]*\saction=["\']([^"\']+)', value, re.I)
+        if not action or not _pay_host_ok(action.group(1)):
+            sys.exit("payment_links.json: a pasted button must post to a PayFast address (payfast.io or payfast.co.za).")
+        fields = {}
+        for tag in re.findall(r"<input[^>]*>", value, re.I):
+            name = re.search(r'\sname=["\']([^"\']+)', tag, re.I)
+            val = re.search(r'\svalue=["\']([^"\']*)', tag, re.I)
+            kind = re.search(r'\stype=["\']([^"\']+)', tag, re.I)
+            if name and (not kind or kind.group(1).lower() == "hidden"):
+                fields[name.group(1)] = val.group(1) if val else ""
+        if not fields:
+            sys.exit("payment_links.json: the pasted button has no hidden fields. Paste the whole code PayFast gives you.")
+        return {"action": action.group(1), "fields": fields}
+    if not _pay_host_ok(value):
+        sys.exit(f"payment_links.json: {value[:60]} isn't a PayFast link (https://...payfast.io or payfast.co.za).")
+    return value
 data = {
     "brand": config.BRAND_NAME, "email": EMAIL,
     "groups": {k: {"name": g["name"]} for k, g in catalog.GROUPS.items()},
@@ -17224,7 +19163,11 @@ data = {
                   "moon": designs.MOON, "star": designs.STAR},
     "host_label": {k: list(v) for k, v in wizard.HOST_LABEL.items()},
     "courses": wizard.COURSES, "kinds": [list(k) for k in wizard.KINDS], "dress_codes": wizard.DRESS_CODES,
-    "payment_links": payment_links,
+    "payment_links": {k: payment_option(v) for k, v in payment_links.items() if not k.startswith("_")},
+    "suggest": {"wording": suggestions.WORDING, "programmes": {k: [list(x) for x in v] for k, v in suggestions.PROGRAMMES.items()},
+                "programme_for": suggestions.PROGRAMME_FOR, "default_start": suggestions.DEFAULT_START, "name_noun": suggestions.NAME_NOUN},
+    # Netlify Forms only exist on a standalone (Netlify) build; elsewhere the booking falls back to email.
+    "forms": STANDALONE,
 }
 open(os.path.join(OUT, "static/js/data.js"), "w").write("window.AURELIA_DATA = " + json.dumps(data, ensure_ascii=False) + ";\n")
 
@@ -17232,7 +19175,7 @@ open(os.path.join(OUT, "static/js/data.js"), "w").write("window.AURELIA_DATA = "
 PAGES = {"/": "home", "/weddings": "weddings", "/baby-celebrations": "baby-celebrations", "/parties": "parties",
          "/celebrations": "celebrations", "/templates": "templates", "/pricing": "pricing",
          "/how-it-works": "how-it-works", "/faq": "faq", "/contact": "contact", "/privacy": "privacy",
-         "/terms": "terms", "/refunds": "refunds"}
+         "/terms": "terms", "/refunds": "refunds", "/help-me-set-up": "help-me-set-up"}
 TPLS = {t["slug"]: db.loads(t["groups"], []) for t in catalog.templates()}
 ACCOUNT = ("/login", "/register", "/dashboard", "/account", "/forgot-password")
 previews = set()
@@ -17294,7 +19237,17 @@ for v in ("weddings", "baby-celebrations", "parties", "celebrations"):
 notice = (f'<div class="notice" style="max-width:520px"><i class="i i--mail" aria-hidden="true"></i><div><b>Email us</b><br>'
           f'<span class="mono" style="user-select:all">{EMAIL}</span><br>'
           f'<button class="btn btn--sm btn--secondary" type="button" data-copy="{EMAIL}" data-copied="Email address copied" style="margin-top:10px">Copy email address</button></div></div>')
-views["contact"] = re.sub(r'<form class="form box".*?</form>', notice, views["contact"], flags=re.S)
+if STANDALONE:
+    # Real forms on Netlify: journey.js posts them to Netlify Forms and shows the reference.
+    for vid, name in (("contact", "contact"), ("help-me-set-up", "setup-help")):
+        views[vid] = re.sub(r'<form class="form box" method="post" novalidate><input type="hidden" name="_csrf" value="[^"]*">',
+                            f'<form class="form box" novalidate data-no-busy data-static-form="{name}">', views[vid], count=1)
+        assert f'data-static-form="{name}"' in views[vid], vid
+else:
+    views["contact"] = re.sub(r'<form class="form box".*?</form>', notice, views["contact"], flags=re.S)
+    views["help-me-set-up"] = re.sub(r'<form class="form box".*?</form>',
+                                     notice.replace("<b>Email us</b>", "<b>Email us your date, occasion and how to reach you</b>"),
+                                     views["help-me-set-up"], flags=re.S)
 
 head_links = rewrite(re.search(r'(<link rel="preconnect".*?)<script>', home, re.S).group(1))
 theme_script = re.search(r"(<script>\(function\(\)\{try.*?</script>)", home, re.S).group(1)
@@ -17316,10 +19269,24 @@ if(J&&J.handles(id)){J.route(id);}
 var t=target.querySelector('h1');document.title=(t?t.textContent.trim()+' · ':'')+'Aurelia';
 setTimeout(function(){window.dispatchEvent(new Event('resize'));target.querySelectorAll('[data-reveal]').forEach(function(e){e.classList.add('is-visible');});},60);}
 window.addEventListener('hashchange',show);show();})();</script>"""
+def _netlify_form(name: str, fields: list, files: list = ()) -> str:
+    inputs = "".join(f'<textarea name="{f[1:]}"></textarea>' if f.startswith("~") else f'<input name="{f}">' for f in fields)
+    inputs += "".join(f'<input type="file" name="{f}">' for f in files)
+    return f'<form name="{name}" data-netlify="true" netlify-honeypot="website"><input name="website">{inputs}</form>'
+
+
+# Netlify reads these at upload time to set up the forms; journey.js submits them with fetch.
+netlify_forms = ('<div hidden aria-hidden="true">'
+                 + _netlify_form("booking", ["kind", "ref", "package", "amount", "name", "email", "phone", "event", "occasion", "date",
+                                             "guests", "~details", "~guest_list", "~draft"], ["hero", "logo", "background"])
+                 + _netlify_form("booking-photos", ["ref", "email", "batch"], [f"photo{n}" for n in range(1, 9)])
+                 + _netlify_form("contact", ["name", "email", "topic", "~message"])
+                 + _netlify_form("setup-help", ["name", "email", "phone", "reach", "occasion", "event_date", "package", "~message"])
+                 + "</div>") if STANDALONE else ""
 scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "eventrender.js", "journey.js"))
 index = (f'<title>Aurelia</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
          f'{rewrite(chrome_start)}<main id="main">{sections}</main>{rewrite(footer)}'
-         f'<div class="toasts" aria-live="polite"></div>{scripts}{router}')
+         f'<div class="toasts" aria-live="polite"></div>{netlify_forms}{scripts}{router}')
 index = index.replace("<body", "<div").replace("</body>", "")
 if STANDALONE:
     desc = ("Personalised event websites for South African weddings, baby celebrations and parties: "
@@ -17346,7 +19313,7 @@ print(f"{OUT}: {len(views)} pages + journey, {len(previews)} template samples, l
 
 ### `tools/make_bundle.py`
 
-<!-- FILE: tools/make_bundle.py sha256=37447c40300f2c308cee0bdc5b95059969473287a0d96b306432a5f2216103a7 nl=1 -->
+<!-- FILE: tools/make_bundle.py sha256=bc66adcd4aa2fc7b87899ed20051b005fef89ab658dde99285cf96fa48a1f2fb nl=1 -->
 ````python
 #!/usr/bin/env python3
 """Write AURELIA-COMPLETE.md: the whole project in one Markdown file.
@@ -17437,11 +19404,15 @@ every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
   pricing with full comparison, how it works, FAQ, contact/support form, privacy (POPIA), terms, refunds.
-- **Accounts:** register, log in/out, password reset, email confirmation, profile, data download,
-  account deletion.
+- **Accounts:** register with just a name and email (password optional), sign in with an emailed link
+  or a password, password reset, email confirmation, profile, data download, account deletion.
 - **10-step event set-up wizard:** event details, venue, design (live preview), guests, programme,
   food and drinks, seating, extras (dress code, registry, contacts, accommodation, gallery), review,
-  package and payment. Saved as a private draft at every step.
+  package and payment. Saved as a private draft at every step. Built to keep the client's work small:
+  package chosen up front with locked steps marked, steps 4 to 8 optional, ready-made wording and sample
+  programmes per occasion, guest lists and caterers' menus pasted in, seating left until RSVPs arrive,
+  a review checklist, a warning when a package wouldn't show something already filled in, and a
+  shareable draft preview link for family. "We'll set it up for you" request page.
 - **Event website generator:** 11 templates with different layouts (Atelier, Folio, Bloom, Heritage,
   Champagne, Linea, Confetti, Pulse, Aurora, Laureate, Cradle), each with palettes, font pairs,
   backgrounds, photos and custom wording. One public link per event, plus a personal link per guest.
@@ -17678,8 +19649,8 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - [ ] PayFast sandbox journey passes, then live credentials with `PAYFAST_SANDBOX=0`
 - [ ] Company address, VAT number and information officer set in `.env`
 - [ ] Legal pages (`/privacy`, `/terms`, `/refunds`) reviewed by a lawyer; edit them in `app/views/marketing.py`
-- [ ] Footer social links (currently `#`) set in `app/views/layout.py`
-- [ ] Demonstration testimonials on the home page replaced or removed (`TESTIMONIALS` in `app/views/marketing.py`)
+- [ ] Optional: `WHATSAPP_NUMBER` and `SOCIAL_*` links set in `.env` (hidden until set)
+- [ ] Real customer reviews added to `TESTIMONIALS` in `app/views/marketing.py` (the section stays hidden while empty)
 - [ ] Package prices, features and limits confirmed in `/admin/packages`
 - [ ] Nightly backups running and copied off the server
 
@@ -17748,7 +19719,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 70 tests.
+- `tests/`: an in-process test client and 89 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 

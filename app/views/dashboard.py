@@ -171,7 +171,7 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if not (venue.get("name") and venue.get("address")):
         steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/2", "Add venue"))
     if not paid:
-        steps.append(("Choose a package and pay", "Your website goes live as soon as payment is confirmed.", f"{base(ev)}/setup/10", "Choose a package"))
+        pass                                    # the "Ready to share it?" banner above already asks for this
     elif not live and ev["status"] != "suspended":
         steps.append(("Publish your website", "It's paid for. Publish it so guests can open your link.", f"{base(ev)}/settings", "Publish"))
     if live and has(ev, "guest_management") and s["invited"] == 0:
@@ -212,7 +212,7 @@ def _reminder_message(ev, g) -> str:
             f"It takes a minute: {events.invite_url(ev, g)}")
 
 
-def _broadcast_box(ev) -> str:
+def _broadcast_box(ev, with_queue: bool = True) -> str:
     msg = _invite_message(ev)
     return f"""<div class="box"><div class="box__head"><h2>Send to many people at once</h2></div>
 <p class="small muted">Use a WhatsApp broadcast list: everyone gets the message privately, as if you'd sent it to them alone.</p>
@@ -220,7 +220,7 @@ def _broadcast_box(ev) -> str:
 <li>Add your guests, up to 256 per list.</li><li>Paste this message and send.</li></ol>
 <textarea class="textarea" id="broadcast-msg" rows="4" readonly aria-label="Message for a broadcast list">{esc(msg)}</textarea>
 <div class="row" style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-copy-target="#broadcast-msg" data-copied="Message copied">{i("copy")}Copy message</button></div>
-<p class="tiny muted" style="margin-top:10px">Only people who have your number saved in their phone receive broadcasts. For everyone else, send one by one above, or post the message in a group.</p></div>"""
+<p class="tiny muted" style="margin-top:10px">Only people who have your number saved in their phone receive broadcasts. For everyone else, {"send one by one, or " if with_queue else ""}post the message in a group chat.</p></div>"""
 
 
 @router.route("/dashboard/events/<uid>/share/whatsapp", methods=("GET", "POST"))
@@ -232,7 +232,7 @@ def whatsapp_queue(req, uid):
     skip = [int(x) for x in (req.arg("skip") or req.get("skip") or "").split(",") if x.isdigit()][:500]
     title = "Remind guests on WhatsApp" if mode == "remind" else "Send invitations on WhatsApp"
     if not has(ev, "personal_invites"):
-        body = page_head(title, "Personal links for each guest are part of Premium. You can still share your one link with everyone.") + _broadcast_box(ev)
+        body = page_head(title, "Personal links for each guest are part of Premium. You can still share your one link with everyone.") + _broadcast_box(ev, with_queue=False)
         return organiser_page(req, ev, title, body, "/share")
     today = db.now()[:10]
     if req.method == "POST":

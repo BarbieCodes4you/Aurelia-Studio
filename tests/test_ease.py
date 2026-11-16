@@ -137,7 +137,7 @@ class EaseTests(unittest.TestCase):
 
     def test_next_steps_on_overview(self):
         r = self.client.get(self.base)
-        self.assertIn("Choose a package and pay", r.text)
+        self.assertIn("Ready to share it?", r.text)
         events.touch(self.ev["id"], paid_package="premium", status="published")
         r = self.client.get(self.base)
         self.assertIn("Add your guest list", r.text)
