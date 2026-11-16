@@ -1,0 +1,16 @@
+# systemd unit: copy to /etc/systemd/system/aurelia.service, then
+#   sudo systemctl daemon-reload && sudo systemctl enable --now aurelia
+[Unit]
+Description=Aurelia event platform
+After=network.target
+
+[Service]
+User=aurelia
+WorkingDirectory=/opt/aurelia
+EnvironmentFile=/opt/aurelia/.env
+ExecStart=/usr/bin/python3 /opt/aurelia/run.py --host 127.0.0.1 --port 8040
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

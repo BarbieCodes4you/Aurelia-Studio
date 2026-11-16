@@ -1,0 +1,9 @@
+# Caddy gets and renews the HTTPS certificate automatically.
+# Replace the domain, point its DNS A record at the server, then: sudo systemctl reload caddy
+aurelia.example.co.za {
+	encode gzip
+	request_body {
+		max_size 25MB
+	}
+	reverse_proxy 127.0.0.1:8040
+}

@@ -1,0 +1,7 @@
+data/
+.env
+.git/
+.claude/
+__pycache__/
+*.pyc
+.DS_Store
