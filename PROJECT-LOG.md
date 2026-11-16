@@ -3,6 +3,46 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-16 (evening): smoother create-your-event, checkout on the site, Aurelia Studio
+
+**Decisions (from you)**
+- Name: **Aurelia Studio** (logo shows "Aurelia" with "Studio" set small beside it).
+- Packages back at the end; the create page asks occasion, template and names.
+- Fewer clicks, and checkout on the website itself, with no "send us your booking" step.
+- Seating: keep the "Most hosts plan seating once replies are in…" note, add drawn table types.
+- Programme: no "Type" or "Part of"; events over several days get a simple Day 1 / Day 2.
+- Gallery: also for photos from the day, added after the event.
+
+**Changes (app and website)**
+- Set-up is 8 steps: Details (names, date, venue, extras folded away) · Design · Guests · Programme ·
+  Food and drinks · Seating · Extras · Review and pay. Old links to steps 9 and 10 still work.
+- No "Save draft" button: the website saves as you type; one "Continue" button per step.
+- Guests: type a name and press Enter; add from phone contacts (Chrome on Android); upload Excel or
+  CSV (Name/Surname/Mobile/Email/Family columns, or none); paste with "Mokoena family:" headings;
+  remove with one tap; or skip and let guests add themselves when they reply.
+- Programme: one list for a one-day event; "Add another day" for lobola, traditional and multi-day
+  events, each day with its own date, optional venue and items. Item types are worked out from the
+  wording (e.g. "Dinner" counts as a meal). The event website shows each day's date.
+- Seating: drawn choices for the top table (sweetheart, head table, none) and guest tables (round,
+  long, mix), a live room sketch, and the app builds tables from the layout (top table at the front,
+  left out of automatic seating).
+- Extras: "Someone guests can call on the day" explained and folded away; gallery framed for photos
+  now or after the event; dashboard prompts "Share photos from the day" after the event.
+- Review and pay: checklist, your details, a Pay button on each package (terms accepted by paying),
+  draft link for family, everything else folded away. Website: Pay saves the booking in the background
+  and goes straight to PayFast; without PayFast connected yet, a thank-you page says you'll be in touch.
+- Bug fixed: spreadsheets with separate Name and Surname columns kept only the first name.
+
+**Checked**
+- 93 tests pass (Python 3.11 and 3.13). Website: full browser run-through of all 8 steps (Excel import,
+  days, seating, pay with and without PayFast), phone widths for every step, no script errors. App:
+  110 page loads on desktop and phone, no errors.
+
+**Open**
+- PayFast buttons (until then the website ends on the thank-you page).
+- Hosting decision: real checkout that confirms payment and publishes automatically needs the full
+  platform on a server (see the recommendation in this conversation).
+
 ## 2026-11-16 (later): making it as easy as possible for the client
 
 The 21 pain points from the journey review, fixed in both the hosted app and the Netlify site unless noted.

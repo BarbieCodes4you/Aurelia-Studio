@@ -1,6 +1,6 @@
-# Aurelia: complete project and hosting guide
+# Aurelia Studio: complete project and hosting guide
 
-Generated 2026-11-16 from the working project. **72 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-16 from the working project. **73 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -19,20 +19,21 @@ Generated 2026-11-16 from the working project. **72 files**, each included in fu
 
 ## 1. What this is
 
-**Aurelia** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
+**Aurelia Studio** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
 every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
   pricing with full comparison, how it works, FAQ, contact/support form, privacy (POPIA), terms, refunds.
 - **Accounts:** register with just a name and email (password optional), sign in with an emailed link
   or a password, password reset, email confirmation, profile, data download, account deletion.
-- **10-step event set-up wizard:** event details, venue, design (live preview), guests, programme,
-  food and drinks, seating, extras (dress code, registry, contacts, accommodation, gallery), review,
-  package and payment. Saved as a private draft at every step. Built to keep the client's work small:
-  package chosen up front with locked steps marked, steps 4 to 8 optional, ready-made wording and sample
-  programmes per occasion, guest lists and caterers' menus pasted in, seating left until RSVPs arrive,
-  a review checklist, a warning when a package wouldn't show something already filled in, and a
-  shareable draft preview link for family. "We'll set it up for you" request page.
+- **8-step event set-up:** details (names, date, venue), design (live preview), guests, programme,
+  food and drinks, seating, extras (dress code, registry, places to stay, gallery), then review and pay.
+  The create page asks three things: occasion, template and names. Saved as a private draft as you go.
+  Built to keep the client's work small: steps 3 to 7 optional, ready-made wording and sample
+  programmes per occasion, programmes split into days (lobola, traditional and multi-day events),
+  guests added by typing, phone contacts, Excel/CSV upload or pasting (family headings group them),
+  drawn seating layouts with a top table, a package-gap warning on each package, one Pay button per
+  package, and a shareable draft preview link for family. "We'll set it up for you" request page.
 - **Event website generator:** 11 templates with different layouts (Atelier, Folio, Bloom, Heritage,
   Champagne, Linea, Confetti, Pulse, Aurora, Laureate, Cradle), each with palettes, font pairs,
   backgrounds, photos and custom wording. One public link per event, plus a personal link per guest.
@@ -240,7 +241,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=invitesaurelia@gmail.com
 SMTP_PASSWORD=<the 16-character app password>
-EMAIL_FROM=Aurelia <invitesaurelia@gmail.com>
+EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
 ```
 
   Gmail allows about 500 messages a day, which suits launch volumes.
@@ -251,7 +252,7 @@ EMAIL_FROM=Aurelia <invitesaurelia@gmail.com>
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_...
-EMAIL_FROM=Aurelia <invites@your-domain.co.za>
+EMAIL_FROM=Aurelia Studio <invites@your-domain.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -313,7 +314,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 | `SECURE_COOKIES` | on if https | Secure flag on cookies |
 | `SESSION_DAYS` | 14 | Login lifetime |
 | `MAX_BODY_BYTES`, `MAX_UPLOAD_BYTES` | 25 MB, 6 MB | Request and image size limits |
-| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia | Name and tagline everywhere |
+| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studio | Name and tagline everywhere |
 | `SUPPORT_EMAIL` | invitesaurelia@gmail.com | Contact address on the site and in emails |
 | `COMPANY_ADDRESS`, `VAT_NUMBER`, `INFORMATION_OFFICER_EMAIL` | placeholders | Footer, receipts, POPIA |
 | `VAT_RATE` | 0.15 | VAT split on receipts (prices include VAT) |
@@ -364,7 +365,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 89 tests.
+- `tests/`: an in-process test client and 93 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 
@@ -523,7 +524,6 @@ is manual today, by design).
 | GET | `/templates/<slug:slug>/preview` | public_event |
 | GET | `/dashboard/events/<uid>/preview` | public_event |
 | GET, POST | `/create` | wizard |
-| POST | `/dashboard/events/<uid>/plan-package` | wizard |
 | GET, POST | `/dashboard/events/<uid>/setup/<int:n>` | wizard |
 
 ## 12. Source files
@@ -590,6 +590,7 @@ is manual today, by design).
 - `static/img/favicon.svg`
 - `static/js/app.js`
 - `static/js/eventsite.js`
+- `static/js/floorplan.js`
 - `static/js/seating.js`
 - `tests/__init__.py`
 - `tests/helpers.py`
@@ -616,7 +617,7 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=17b5b340cf134f47d3565221620e9717a076c9fb4745d03fcf67a6a42a7e80ca nl=1 -->
+<!-- FILE: .env.example sha256=7eb9fc0445257cf7ab624dc590b781b6179acc3f9ee2bf81c70e1fffcbbbe5f7 nl=1 -->
 ```
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
@@ -625,7 +626,7 @@ SECRET_KEY=                         # long random string in production (python3 
 # AURELIA_DATA_DIR=./data           # database, uploads, email outbox
 # DATABASE_PATH=./data/aurelia.sqlite3
 
-BRAND_NAME=Aurelia
+BRAND_NAME=Aurelia Studio
 SUPPORT_EMAIL=invitesaurelia@gmail.com
 COMPANY_ADDRESS=Johannesburg, South Africa
 INFORMATION_OFFICER_EMAIL=          # POPIA information officer
@@ -637,7 +638,7 @@ VAT_NUMBER=                         # shown on tax invoices
 
 # Email: outbox (dev, writes files to data/outbox), resend, or smtp
 EMAIL_PROVIDER=outbox
-EMAIL_FROM=Aurelia <no-reply@aurelia.example>
+EMAIL_FROM=Aurelia Studio <no-reply@aurelia.example>
 EMAIL_REPLY_TO=
 RESEND_API_KEY=
 SMTP_HOST=
@@ -703,9 +704,9 @@ CMD ["python3", "run.py"]
 
 ### `GO-LIVE-GUIDE.md`
 
-<!-- FILE: GO-LIVE-GUIDE.md sha256=a568af88fe0e30dd0dcacae736a7a14dab0c68fec2a251ef3a084ceeb3e56e68 nl=1 -->
+<!-- FILE: GO-LIVE-GUIDE.md sha256=2f21c261d88802dff894ab90b0732d326fec0a2f9a81ff27c10eb04e43fc51e1 nl=1 -->
 ```markdown
-# Aurelia: go-live guide (Netlify + PayFast)
+# Aurelia Studio: go-live guide (Netlify + PayFast)
 
 This is for the version of the site that runs on Netlify today: the marketing pages, templates and the
 full "Create your event" journey. Bookings, contact messages and set-up requests arrive through Netlify
@@ -775,9 +776,9 @@ The booking page then shows **Pay R12,999 securely**, and clients pay straight a
 
    | Package | Item name | Amount |
    |---|---|---|
-   | Essential | Aurelia Essential Experience | 8999.00 |
-   | Premium | Aurelia Premium Experience | 12999.00 |
-   | Signature | Aurelia Signature Experience | 17999.00 |
+   | Essential | Aurelia Studio Essential | 8999.00 |
+   | Premium | Aurelia Studio Premium | 12999.00 |
+   | Signature | Aurelia Studio Signature | 17999.00 |
 
 3. If it asks for return or cancel pages, use your site address, e.g. `https://aurelia-invites.netlify.app/`.
 4. Click **Create button** and copy the code it shows. If PayFast also gives you a link for the button,
@@ -832,12 +833,52 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=6e94598a4dd95d8f4989f66c08e90d8ca5897e25ec53e75b7c8e556855236e32 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=20b15f25e303fbd92075d4f026cf2b541e6368febc0098e7011ae2e628c17268 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-16 (evening): smoother create-your-event, checkout on the site, Aurelia Studio
+
+**Decisions (from you)**
+- Name: **Aurelia Studio** (logo shows "Aurelia" with "Studio" set small beside it).
+- Packages back at the end; the create page asks occasion, template and names.
+- Fewer clicks, and checkout on the website itself, with no "send us your booking" step.
+- Seating: keep the "Most hosts plan seating once replies are in…" note, add drawn table types.
+- Programme: no "Type" or "Part of"; events over several days get a simple Day 1 / Day 2.
+- Gallery: also for photos from the day, added after the event.
+
+**Changes (app and website)**
+- Set-up is 8 steps: Details (names, date, venue, extras folded away) · Design · Guests · Programme ·
+  Food and drinks · Seating · Extras · Review and pay. Old links to steps 9 and 10 still work.
+- No "Save draft" button: the website saves as you type; one "Continue" button per step.
+- Guests: type a name and press Enter; add from phone contacts (Chrome on Android); upload Excel or
+  CSV (Name/Surname/Mobile/Email/Family columns, or none); paste with "Mokoena family:" headings;
+  remove with one tap; or skip and let guests add themselves when they reply.
+- Programme: one list for a one-day event; "Add another day" for lobola, traditional and multi-day
+  events, each day with its own date, optional venue and items. Item types are worked out from the
+  wording (e.g. "Dinner" counts as a meal). The event website shows each day's date.
+- Seating: drawn choices for the top table (sweetheart, head table, none) and guest tables (round,
+  long, mix), a live room sketch, and the app builds tables from the layout (top table at the front,
+  left out of automatic seating).
+- Extras: "Someone guests can call on the day" explained and folded away; gallery framed for photos
+  now or after the event; dashboard prompts "Share photos from the day" after the event.
+- Review and pay: checklist, your details, a Pay button on each package (terms accepted by paying),
+  draft link for family, everything else folded away. Website: Pay saves the booking in the background
+  and goes straight to PayFast; without PayFast connected yet, a thank-you page says you'll be in touch.
+- Bug fixed: spreadsheets with separate Name and Surname columns kept only the first name.
+
+**Checked**
+- 93 tests pass (Python 3.11 and 3.13). Website: full browser run-through of all 8 steps (Excel import,
+  days, seating, pay with and without PayFast), phone widths for every step, no script errors. App:
+  110 page loads on desktop and phone, no errors.
+
+**Open**
+- PayFast buttons (until then the website ends on the thank-you page).
+- Hosting decision: real checkout that confirms payment and publishes automatically needs the full
+  platform on a server (see the recommendation in this conversation).
 
 ## 2026-11-16 (later): making it as easy as possible for the client
 
@@ -927,9 +968,9 @@ The 21 pain points from the journey review, fixed in both the hosted app and the
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=50b82f91c47fc211bdefd983bf5b2df8dd1eb6aed8683bee3aca245710ee0575 nl=1 -->
+<!-- FILE: README.md sha256=cc8d0b5789b1ddb0a6f2424b010a7d00d349ef813705a512fd147aa894b78e3f nl=1 -->
 ````markdown
-# Aurelia — digital event experience platform
+# Aurelia Studio — digital event experience platform
 
 **One event. One platform. One link. Everything organised.**
 
@@ -938,7 +979,7 @@ A complete web application for creating, publishing and managing event websites 
 guest list, seating chart, menus, programme, emails, WhatsApp sharing, reports, payments and an admin
 dashboard.
 
-"Aurelia" is a working name. Change it with `BRAND_NAME` in `.env`.
+The brand is "Aurelia Studio". Change it with `BRAND_NAME` in `.env`.
 
 ## Run it
 
@@ -961,7 +1002,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 89 tests
+python3 -m unittest discover -s tests -t .     # 93 tests
 ```
 
 ## The customer journey
@@ -1009,7 +1050,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 89 tests
+  tests/                      in-process test client and 93 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,
@@ -1881,7 +1922,7 @@ def limit(event, key: str, default: int = 0) -> int:
 
 ### `app/config.py`
 
-<!-- FILE: app/config.py sha256=a8b29e347d9b7058f49c6978ef8b9d38d5e2a0871ad3571d46c8289580024258 nl=1 -->
+<!-- FILE: app/config.py sha256=d4b0e7add09cf1e6bc8bfcd1cf2bb38df3ba883f3dc0dbb1f2918a3693b74f58 nl=1 -->
 ```python
 """Runtime configuration.
 
@@ -1962,7 +2003,7 @@ def _secret_key() -> str:
 
 
 # --- Brand ------------------------------------------------------------------------------
-BRAND_NAME = env("BRAND_NAME", "Aurelia")
+BRAND_NAME = env("BRAND_NAME", "Aurelia Studio")
 BRAND_TAGLINE = env("BRAND_TAGLINE", "Affordable luxury. Everything for your event in one place.")
 BRAND_LINE = "One event. One platform. One link. Everything organised."
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "invitesaurelia@gmail.com")
@@ -2174,7 +2215,7 @@ def migrate() -> list[str]:
 
 ### `app/events.py`
 
-<!-- FILE: app/events.py sha256=3bc9f100264700e2e4fa79e819f6a522df7e4e780ff619ec05b62d77ad39f103 nl=1 -->
+<!-- FILE: app/events.py sha256=05f69a6deabeb102cbac4867ce942d47ea216a693672910a6defb7ae650ab892 nl=1 -->
 ```python
 """Event model helpers shared by the wizard, dashboard, event websites, admin and emails."""
 from __future__ import annotations
@@ -2316,7 +2357,7 @@ def add_pasted_guests(ev, people: list[dict]) -> int:
             continue
         first, _, last = p["name"].partition(" ")
         db.insert("guests", {"event_id": ev["id"], "token": new_guest_token(), "first_name": first[:60], "last_name": last[:80],
-                             "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "source": "import",
+                             "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "family_group": p.get("group", "")[:60], "source": "import",
                              "email_consent": 1, "created_at": now, "updated_at": now})
         names.add(p["name"].lower())
         if p.get("email"):
@@ -2342,7 +2383,7 @@ def functions(event_id: int):
 
 
 def schedule(event_id: int):
-    return db.q("""SELECT s.*, f.name AS function_name FROM schedule_items s
+    return db.q("""SELECT s.*, f.name AS function_name, f.func_date AS function_date FROM schedule_items s
                    LEFT JOIN event_functions f ON f.id = s.function_id
                    WHERE s.event_id = ? ORDER BY COALESCE(f.sort, 0), s.sort, s.item_time, s.id""", (event_id,))
 
@@ -2501,6 +2542,40 @@ def keep_online_past_event(ev) -> None:
             return
         if ev["hosting_until"] < floor:
             touch(ev["id"], hosting_until=floor)
+
+
+TOP_TABLE_NOTE = "Top table"
+
+
+def seating_layout(ev) -> dict:
+    info = ev["info"] if isinstance(ev["info"], dict) else db.loads(ev["info"], {})
+    lay = dict((info or {}).get("seating_layout") or {})
+    lay.setdefault("top", "head" if catalog.category(ev["category"]) and catalog.category(ev["category"])["group_slug"] == "weddings" else "none")
+    lay.setdefault("guest", "round")
+    lay.setdefault("capacity", 10)
+    return lay
+
+
+def create_layout_tables(ev, layout: dict, count: int) -> int:
+    """Create the top table (if any) and `count` guest tables in the chosen shapes, laid out on the floor
+    plan with the top table at the front. Returns how many tables were made."""
+    cap = max(2, min(40, int(layout.get("capacity") or 10)))
+    made, sort = 0, 0
+    if layout.get("top") in ("head", "sweetheart"):
+        head = layout["top"] == "head"
+        db.insert("seating_tables", {"event_id": ev["id"], "name": "Head table" if head else "Sweetheart table",
+                                     "capacity": 10 if head else 2, "shape": "long" if head else "round",
+                                     "pos_x": 50, "pos_y": 6, "notes": TOP_TABLE_NOTE, "sort": sort})
+        made, sort = 1, 1
+    cols = 2 if layout.get("guest") == "long" else 4
+    for k in range(max(0, min(120, count))):
+        long = layout.get("guest") == "long" or (layout.get("guest") == "mixed" and k % 3 == 2)
+        x = (100 / cols) * (k % cols + 0.5)
+        y = 26 + (k // cols) * (18 if cols == 4 else 14)
+        db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": cap, "shape": "long" if long else "round",
+                                     "pos_x": round(x, 1), "pos_y": min(96, y), "sort": sort + k})
+        made += 1
+    return made
 ```
 
 ### `app/eventsite/__init__.py`
@@ -2647,7 +2722,7 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
 
 ### `app/eventsite/designs.py`
 
-<!-- FILE: app/eventsite/designs.py sha256=471484b6ca5288f4c3d6d1a151dbe2606cb961ec638c047e66f34e3d3b63ae97 nl=1 -->
+<!-- FILE: app/eventsite/designs.py sha256=155fe0f2545f6a63f92953563cc5d44ab07daf30d2c6bb4cdfea31637e0e964e nl=1 -->
 ```python
 """The eleven event-website designs.
 
@@ -2792,12 +2867,13 @@ def s_programme(ctx) -> str:
     for it in items:
         name = it.get("function_name") or ""
         if not groups or groups[-1][0] != name:
-            groups.append((name, []))
+            groups.append((name, [], it.get("function_date") or ""))
         groups[-1][1].append(it)
     out = ""
-    for name, rows in groups:
+    for name, rows, day in groups:
         if name and len(groups) > 1:
-            out += f'<h3 class="ev-prog__group">{esc(name)}</h3>'
+            when = fmt_date(day, False) if day else ""
+            out += f'<h3 class="ev-prog__group">{esc(name)}{(" <small>" + esc(when) + "</small>") if when else ""}</h3>'
         out += '<ol class="ev-prog">' + "".join(
             f'<li class="ev-prog__item ev-kind-{esc(it.get("kind") or "other")}"><time>{esc(fmt_time(it.get("item_time")))}</time>'
             f'<div><h4>{esc(it["title"])}</h4>{p(it.get("description") or "", "ev-small")}</div></li>' for it in rows) + "</ol>"
@@ -4493,7 +4569,7 @@ def unpublish(ev, actor_id: Optional[int] = None) -> None:
 
 ### `app/seed.py`
 
-<!-- FILE: app/seed.py sha256=790201fcaa50eca86f31abd782ad0a777feca772b7a30974c620342887509f62 nl=1 -->
+<!-- FILE: app/seed.py sha256=9a5afec69fa84f390428a24bbf56e32ee6441f85985e3b97ce7b7dbbc177b8cb nl=1 -->
 ```python
 """Demo data for development and demos. Every row is flagged is_demo = 1 and every email ends in
 @demo.aurelia.example, so it is easy to tell apart from customer data and to remove.
@@ -4640,7 +4716,7 @@ def run() -> None:
                                 "gift_note": "Your presence is our present.", "contacts": [{"name": "Zanele Dube", "role": "Maid of honour", "phone": "+27 82 000 0101", "email": ""}],
                                 "accommodation": [{"name": "Oakridge Guest Lodge (demo)", "url": "https://example.com/lodge", "note": "Quote DUBE-NKOSI for 10% off"}],
                                 "dietary_options": ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"], "drinks": "Welcome bubbles, open bar until 23:00."}),
-                 wizard_step=10, wizard_done=db.dumps(list(range(1, 10))))
+                 wizard_step=8, wizard_done=db.dumps(list(range(1, 8))))
     f1 = db.insert("event_functions", {"event_id": ev["id"], "name": "Ceremony", "func_date": d.isoformat(), "start_time": "14:00", "end_time": "15:00",
                                        "venue_name": "The Lawn", "sort": 0})
     f2 = db.insert("event_functions", {"event_id": ev["id"], "name": "Reception", "func_date": d.isoformat(), "start_time": "17:30", "end_time": "23:30",
@@ -4671,7 +4747,7 @@ def run() -> None:
                                           "family_groups": ["Mahlangu delegation", "Khumalo delegation"], "children_allowed": True, "max_children": 3,
                                           "plus_one_policy": "per_guest", "rsvp_deadline": (d2 - timedelta(days=21)).isoformat()}),
                  info=db.dumps({"dress_code": "Traditional attire", "dress_code_notes": "Ochre and indigo, or your family colours."}),
-                 wizard_step=10, wizard_done=db.dumps(list(range(1, 10))))
+                 wizard_step=8, wizard_done=db.dumps(list(range(1, 8))))
     a = db.insert("event_functions", {"event_id": ev2["id"], "name": "Umembeso (gift-giving)", "func_date": d2.isoformat(), "start_time": "09:00",
                                       "end_time": "13:00", "venue_name": "Mahlangu family home", "address": "45 Protea Street, Soweto", "sort": 0})
     b = db.insert("event_functions", {"event_id": ev2["id"], "name": "Wedding celebration", "func_date": (d2 + timedelta(days=1)).isoformat(),
@@ -4694,7 +4770,7 @@ def run() -> None:
     ev3 = events.create(host["id"], "baby-shower", "bloom", "Amahle's baby shower", "Amahle", is_demo=True)
     events.touch(ev3["id"], event_date=(today + timedelta(days=40)).isoformat(), start_time="11:00", end_time="15:00",
                  venue=db.dumps({"name": "Rosebank garden café (demo)", "address": "Rosebank, Johannesburg"}),
-                 design=db.dumps({"palette": "blush"}), selected_package="essential", wizard_step=4, wizard_done=db.dumps([1, 2, 3]))
+                 design=db.dumps({"palette": "blush"}), selected_package="essential", wizard_step=3, wizard_done=db.dumps([1, 2]))
 
     # 4. A second customer with a party, and a support request --------------------------------------
     other = _user("kagiso@" + DEMO_DOMAIN, "Demo-Host-2026", "Kagiso Molefe")
@@ -4703,7 +4779,7 @@ def run() -> None:
                  venue=db.dumps({"name": "Rooftop at 44 Stanley (demo)", "address": "44 Stanley Avenue, Milpark, Johannesburg"}),
                  info=db.dumps({"dress_code": "Cocktail"}), guest_settings=db.dumps({"rsvp_deadline": (today + timedelta(days=15)).isoformat(),
                                                                                     "plus_one_policy": "open", "plus_ones_default": 1}),
-                 wizard_step=10, wizard_done=db.dumps(list(range(1, 10))))
+                 wizard_step=8, wizard_done=db.dumps(list(range(1, 8))))
     _pay(ev4, other, "essential")
     _guests(events.by_id(ev4["id"]), rng, 40, cats=("Friends", "Colleagues"))
     db.insert("support_requests", {"user_id": other["id"], "event_id": ev4["id"], "name": other["name"], "email": other["email"], "topic": "event",
@@ -5334,7 +5410,7 @@ def vat_breakdown(amount_cents: int) -> tuple[int, int]:
 
 ### `app/services/pdf.py`
 
-<!-- FILE: app/services/pdf.py sha256=1725d345f04eaecbf951f9f220769e682157ef534b5415abdc00469f442da3d2 nl=1 -->
+<!-- FILE: app/services/pdf.py sha256=fbc3b1815a7faf7d2c218236b52dc68966b21d2ab9bd61f965c921f1d2a608fc nl=1 -->
 ```python
 """A small hand-written PDF 1.4 writer for reports.
 
@@ -5565,7 +5641,7 @@ class PDF:
         objs.append(f"<< /Type /Pages /Kids [{kids}] /Count {total} >>".encode())
         objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
         objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
-        objs.append(b"<< /Producer (Aurelia reports) /Title " + _pdf_str(_encode(self.title)) + b" >>")
+        objs.append(b"<< /Producer (Aurelia Studio reports) /Title " + _pdf_str(_encode(self.title)) + b" >>")
         for k, ops in enumerate(self.pages):
             self.pages[k] = ops  # keep list
             footer = [
@@ -6518,7 +6594,7 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
 
 ### `app/suggestions.py`
 
-<!-- FILE: app/suggestions.py sha256=1ea001b39db8648d9d79b018b1e55bc986bc67f9724b370df64b9c42168deb1a nl=1 -->
+<!-- FILE: app/suggestions.py sha256=1f2a0c84290242fba16c7f7a709a1e2ba88e4cfd2c1d90879375fecf75a70ada nl=1 -->
 ```python
 """Ready-made content that saves the client typing: invitation wording and sample programmes per
 occasion, plus parsers for a pasted guest list and a pasted caterer's menu.
@@ -6741,21 +6817,31 @@ _HEADER_WORDS = {"name", "names", "full name", "guest", "guests", "guest name", 
                  "phone", "mobile", "cell", "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"}
 
 
+def _sa_phone(p: str) -> str:
+    """Excel drops the leading 0 of SA mobiles (821234567); put it back."""
+    d = re.sub(r"\D", "", p or "")
+    return "0" + d if len(d) == 9 and d[0] in "678" and not (p or "").strip().startswith("+") else (p or "").strip()
+
+
 def parse_guest_list(text: str, limit: int = 2000) -> list[dict]:
     """One guest per line, in any order: name, mobile, email (commas, tabs or semicolons between).
-    Copying rows from Excel or Google Sheets works too. A header row is skipped."""
-    out, seen = [], set()
+    Copying rows from Excel or Google Sheets works too. A header row is skipped. A line that ends with
+    a colon ("Mokoena family:") is a group heading for the names below it, until the next heading."""
+    out, seen, group = [], set(), ""
     for raw in (text or "").splitlines():
         line = raw.strip().strip(",;\t")
         if not line:
+            continue
+        if line.endswith(":") and not _EMAIL.search(line) and not _PHONE.search(line):
+            group = line[:-1].strip()[:60]
+            continue
+        cells = [c.strip().lower() for c in re.split(r"[,;\t|]+", line) if c.strip()]
+        if cells and all(c in _HEADER_WORDS for c in cells):
             continue
         email = _EMAIL.search(line)
         rest = line.replace(email.group(0), " ") if email else line
         phone = _PHONE.search(rest)
         rest = rest.replace(phone.group(0), " ") if phone else rest
-        cells = [c.strip().lower() for c in re.split(r"[,;\t|]+", line) if c.strip()]
-        if cells and all(c in _HEADER_WORDS for c in cells):
-            continue
         name = re.sub(r"\s+", " ", re.sub(r"[,;\t|]+", " ", rest)).strip(" -")
         if not name:
             continue
@@ -6763,11 +6849,95 @@ def parse_guest_list(text: str, limit: int = 2000) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
-        out.append({"name": name[:120], "phone": phone.group(0).strip() if phone else "",
-                    "email": email.group(0).lower() if email else ""})
+        out.append({"name": name[:120], "phone": _sa_phone(phone.group(0)) if phone else "",
+                    "email": email.group(0).lower() if email else "", "group": group})
         if len(out) >= limit:
             break
     return out
+
+
+_COLS = {"name": ("name", "full name", "guest", "guest name", "names", "guest names"), "first": ("first name", "first", "firstname", "given name"),
+         "last": ("surname", "last name", "last", "lastname", "family name"),
+         "phone": ("phone", "mobile", "cell", "cellphone", "whatsapp", "number", "phone number", "mobile number", "contact", "tel"),
+         "email": ("email", "e-mail", "email address", "mail"), "group": ("family", "family group", "group", "side", "household")}
+
+
+def parse_sheet(rows: list, limit: int = 2000) -> list[dict]:
+    """Rows from a spreadsheet. With a header row (Name / Surname / Mobile / Email / Family), columns are
+    matched by heading; without one, each row is read like a pasted line."""
+    rows = [[str(c or "").strip() for c in r] for r in rows if any(str(c or "").strip() for c in r)]
+    if not rows:
+        return []
+    head = [c.lower() for c in rows[0]]
+    col = {k: next((n for n, h in enumerate(head) if h in words), None) for k, words in _COLS.items()}
+    if col["name"] is None and col["first"] is None:
+        return parse_guest_list("\n".join(", ".join(c for c in r if c) for r in rows), limit)
+    out, seen = [], set()
+    get = lambda r, k: r[col[k]] if col[k] is not None and col[k] < len(r) else ""
+    for r in rows[1:]:
+        name = get(r, "name") or get(r, "first")
+        last = get(r, "last")
+        if last and last.lower() not in name.lower():          # "Name" + "Surname" columns
+            name = f"{name} {last}"
+        name = re.sub(r"\s+", " ", name).strip()
+        if not name:
+            continue
+        email = (_EMAIL.search(get(r, "email")) or [""])[0].lower() if get(r, "email") else ""
+        key = (name.lower(), email)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"name": name[:120], "phone": _sa_phone(get(r, "phone")), "email": email, "group": get(r, "group")[:60]})
+        if len(out) >= limit:
+            break
+    return out
+
+
+def read_sheet_file(data: bytes, filename: str) -> list[list[str]]:
+    """Rows from an uploaded .csv or .xlsx (Excel, Google Sheets download). First sheet only."""
+    import csv
+    import io
+    import zipfile
+    from xml.etree import ElementTree as ET
+    if data[:2] == b"PK":
+        ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            names = z.namelist()
+            shared = []
+            if "xl/sharedStrings.xml" in names:
+                for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall("m:si", ns):
+                    shared.append("".join(t.text or "" for t in si.iter("{%s}t" % ns["m"])))
+            sheets = sorted(n for n in names if re.match(r"xl/worksheets/sheet\d+\.xml$", n))
+            if not sheets:
+                raise ValueError("That Excel file has no sheets.")
+            first = "xl/worksheets/sheet1.xml" if "xl/worksheets/sheet1.xml" in sheets else sheets[0]
+            out = []
+            for row in ET.fromstring(z.read(first)).iter("{%s}row" % ns["m"]):
+                cells = {}
+                for c in row.findall("m:c", ns):
+                    ref = re.match(r"([A-Z]+)", c.get("r", "A"))
+                    colno = 0
+                    for ch in ref.group(1):
+                        colno = colno * 26 + ord(ch) - 64
+                    t, v = c.get("t"), c.find("m:v", ns)
+                    if t == "s" and v is not None:
+                        val = shared[int(v.text)] if v.text and v.text.isdigit() and int(v.text) < len(shared) else ""
+                    elif t == "inlineStr":
+                        val = "".join(x.text or "" for x in c.iter("{%s}t" % ns["m"]))
+                    else:
+                        val = v.text if v is not None and v.text else ""
+                        if re.match(r"^\d+\.0$", val):
+                            val = val[:-2]
+                    cells[colno] = val
+                if cells:
+                    out.append([cells.get(n, "") for n in range(1, max(cells) + 1)])
+            return out
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = data.decode("cp1252", "replace")
+    dialect = csv.Sniffer().sniff(text[:2000], delimiters=",;\t") if text.strip() else csv.excel
+    return [r for r in csv.reader(io.StringIO(text), dialect)]
 
 
 # --- pasted menu -----------------------------------------------------------------------------------------
@@ -6821,6 +6991,27 @@ def parse_menu(text: str, limit: int = 60) -> list[dict]:
         if len(items) >= limit:
             break
     return items
+
+
+# --- programme item type, guessed from its title (the client never picks a "type") ---------------------
+KIND_WORDS = [
+    ("meal", ("dinner", "lunch", "breakfast", "brunch", "meal", "food", "starter", "main course", "dessert", "cake", "canap",
+              "braai", "buffet", "tea", "supper", "snack")),
+    ("ceremony", ("ceremony", "vows", "wedding", "negotiation", "lobola", "blessing", "prayer", "unveiling", "graduation",
+                  "church", "service", "ritual", "exchange of gifts", "umembeso", "umabo")),
+    ("speech", ("speech", "toast", "welcome", "remarks", "introduction", "thanks", "keynote", "panel", "announcement")),
+    ("entertainment", ("dance", "music", "dj", "band", "entertainment", "party", "reveal", "performance", "choir", "show")),
+    ("reception", ("reception", "seated", "drinks", "cocktail", "arrival of the couple", "entrance")),
+    ("activity", ("photo", "games", "gift", "workshop", "registration", "tour")),
+]
+
+
+def guess_kind(title: str) -> str:
+    t = (title or "").lower()
+    for kind, words in KIND_WORDS:
+        if any(w in t for w in words):
+            return kind
+    return "other"
 ```
 
 ### `app/views/__init__.py`
@@ -8436,7 +8627,7 @@ def audit_log(req):
 
 ### `app/views/dashboard.py`
 
-<!-- FILE: app/views/dashboard.py sha256=a554e99e726fc5fab51bb15c8934d838358eca88b2475213a68efdbb37335352 nl=1 -->
+<!-- FILE: app/views/dashboard.py sha256=1c59278e20aeff396cfc00647da489c3a315d9982933ded30f71cae976dd35fd nl=1 -->
 ```python
 """Organiser dashboard: event list, event overview, sharing (WhatsApp, QR), reports and settings."""
 from __future__ import annotations
@@ -8527,8 +8718,8 @@ def overview(req, uid):
     if not paid:
         banner = (f'<div class="cta-panel" style="margin-bottom:22px"><div><h2 style="font-size:1.6rem">Ready to share it?</h2>'
                   f'<p>Your event is saved as a private draft. Choose a package and pay securely to publish your website and start collecting RSVPs.</p></div>'
-                  f'<div class="btn-row"><a class="btn btn--primary btn--lg" href="{base(ev)}/setup/10">Choose a package</a>'
-                  f'<a class="btn btn--secondary" href="{base(ev)}/setup/9">Preview</a></div></div>')
+                  f'<div class="btn-row"><a class="btn btn--primary btn--lg" href="{base(ev)}/setup/8">Choose a package</a>'
+                  f'<a class="btn btn--secondary" href="{base(ev)}/setup/8">Preview</a></div></div>')
     elif ev["status"] == "suspended":
         banner = (f'<div class="notice notice--error" style="margin-bottom:22px">{i("alert")}<div><b>This event is suspended.</b> '
                   f'{esc(ev.get("suspended_reason") or "")} Guests can’t open the website. <a class="text-link" href="/contact">Contact support</a></div></div>')
@@ -8558,9 +8749,9 @@ def overview(req, uid):
     next_html = _next_steps(ev, s, paid, live, days, tables)
     checklist = [
         ("Event details and date", bool(ev.get("event_date") and ev.get("name")), f"{base(ev)}/setup/1"),
-        ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/2"),
-        ("Design chosen", 3 in (ev.get("wizard_done") or []), f"{base(ev)}/setup/3"),
-        ("Package paid", bool(paid), f"{base(ev)}/setup/10"),
+        ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/1"),
+        ("Design chosen", 2 in (ev.get("wizard_done") or []), f"{base(ev)}/setup/2"),
+        ("Package paid", bool(paid), f"{base(ev)}/setup/8"),
         ("Website published", live, f"{base(ev)}/settings"),
         ("Guests added", s["invited"] > 0, f"{base(ev)}/guests"),
     ]
@@ -8609,7 +8800,7 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if not (ev.get("hosts") and ev.get("event_date")):
         steps.append(("Add your names and date", "Guests see these first.", f"{base(ev)}/setup/1", "Add details"))
     if not (venue.get("name") and venue.get("address")):
-        steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/2", "Add venue"))
+        steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/1", "Add venue"))
     if not paid:
         pass                                    # the "Ready to share it?" banner above already asks for this
     elif not live and ev["status"] != "suspended":
@@ -8626,6 +8817,8 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if has(ev, "seating") and s["attending"] and s["unseated_parties"]:
         steps.append(("Seat your guests", f"{s['unseated_parties']} confirmed part{'y' if s['unseated_parties'] == 1 else 'ies'} without a table. Seat everyone automatically, then fine-tune.",
                       f"{base(ev)}/seating", "Open seating"))
+    if days is not None and days < 0 and has(ev, "gallery") and not db.val("SELECT COUNT(*) FROM uploads WHERE event_id = ? AND kind = 'gallery' AND created_at >= ?", (ev["id"], ev["event_date"] or ""), 0):
+        steps.append(("Share photos from the day", "Add your favourites to the gallery. Guests see them on the link they already have.", f"{base(ev)}/setup/7", "Add photos"))
     if days is not None and days < 0 and has(ev, "reports"):
         steps.append(("Download your final report", "Attendance, meals and seating in one file to keep.", f"{base(ev)}/reports", "Reports"))
     if not steps:
@@ -8742,7 +8935,7 @@ def share(req, uid):
     live = events.is_live(ev)
     note = "" if live else (f'<div class="notice notice--warn" style="margin-bottom:18px">{i("info")}<div>Your link is reserved, '
                             f'but guests will only see the website once it is paid for and published. '
-                            f'<a class="text-link" href="{base(ev)}/setup/10">Publish now</a></div></div>')
+                            f'<a class="text-link" href="{base(ev)}/setup/8">Publish now</a></div></div>')
     personal = (f'<div class="notice" style="margin-top:12px">{i("chat")}<div><span>Each guest also has a personal link that opens their own RSVP.</span>'
                 f'<div style="margin-top:10px"><a class="btn btn--secondary btn--sm" href="{base(ev)}/share/whatsapp">Send personal invitations on WhatsApp</a></div></div></div>') if has(ev, "personal_invites") else ""
     sub_js = json.dumps("Invitation: " + ev["name"]).replace("<", "\\u003c")
@@ -8801,7 +8994,7 @@ def reports_page(req, uid):
         final = (f'<form method="post" action="{base(ev)}/communications/final-report">{csrf(req)}<input type="hidden" name="back" value="/reports">'
                  f'<button class="btn btn--primary btn--sm" type="submit">{i("mail")}Email me the final report</button></form>')
     upsell = "" if can else (f'<div class="notice" style="margin-bottom:16px">{i("lock")}<div>Downloadable reports are part of the Premium Experience. '
-                             f'Your RSVP numbers stay visible on the dashboard. <a class="text-link" href="{base(ev)}/setup/10">Compare packages</a></div></div>')
+                             f'Your RSVP numbers stay visible on the dashboard. <a class="text-link" href="{base(ev)}/setup/8">Compare packages</a></div></div>')
     reminders_switch = forms.switch("auto_reminders", "Remind guests who haven't replied, 7 and 2 days before the RSVP deadline",
                                     bool(prefs.get("auto_reminders"))) if has(ev, "reminders") else \
         '<p class="small muted">Automatic guest reminders are part of the Premium Experience.</p>'
@@ -8858,7 +9051,7 @@ def settings(req, uid):
     live = events.is_live(ev)
     if not ev["paid_package"]:
         pub = (f'<p class="small muted">Publishing needs a confirmed payment.</p>'
-               f'<a class="btn btn--primary btn--sm" href="{base(ev)}/setup/10">Choose a package</a>')
+               f'<a class="btn btn--primary btn--sm" href="{base(ev)}/setup/8">Choose a package</a>')
     elif ev["status"] == "suspended":
         pub = '<p class="small">This event is suspended by the platform. <a class="text-link" href="/contact">Contact support</a>.</p>'
     elif live:
@@ -9310,7 +9503,7 @@ def slugify(text: str, max_len: int = 60) -> str:
 
 ### `app/views/layout.py`
 
-<!-- FILE: app/views/layout.py sha256=8c0c82c009ccc238fb88d9c1da3ea15ff4983c3573e679ac4783d3a21fc25238 nl=1 -->
+<!-- FILE: app/views/layout.py sha256=7387adc8c897bfbdd6bdb7ceefb4bb1dc0a984e06ce2e0f2dc8d90630707f74f nl=1 -->
 ```python
 """Page shells: the marketing site (header, drawer, footer), the app shell (dashboard and admin),
 toasts, and the error page."""
@@ -9346,7 +9539,9 @@ NAV = [
 
 
 def brand(href: str = "/") -> str:
-    return f'<a class="brand" href="{href}" aria-label="{esc(config.BRAND_NAME)} home">{BRAND_MARK}<span class="brand__name">{esc(config.BRAND_NAME)}</span></a>'
+    first, _, rest = config.BRAND_NAME.partition(" ")
+    name = esc(first) + (f' <span class="brand__sub">{esc(rest)}</span>' if rest else "")
+    return f'<a class="brand" href="{href}" aria-label="{esc(config.BRAND_NAME)} home">{BRAND_MARK}<span class="brand__name">{name}</span></a>'
 
 
 def head(title: str, description: str = "", extra: str = "", noindex: bool = False) -> str:
@@ -9486,7 +9681,7 @@ def error_page(req, status: int, message: str) -> str:
 
 ### `app/views/manage.py`
 
-<!-- FILE: app/views/manage.py sha256=f0facc6453de81825395f37ffdc1dbc1468a254b3a42204bb2ff03b3e8418e7d nl=1 -->
+<!-- FILE: app/views/manage.py sha256=346a68a6b9c891da70330c7ac9aa43a200063285da2297c7144ab8f19bd5f49e nl=1 -->
 ```python
 """Organiser tools: guests (with CSV import), RSVPs, seating editor, menu, programme, communications."""
 from __future__ import annotations
@@ -9616,7 +9811,7 @@ def guests_list(req, uid):
     if not can_edit:
         notice = ('<div class="notice" style="margin-bottom:16px">' + i("info") + '<div>Guests who RSVP through your '
                   'event link appear here. Adding, importing and editing guests is part of the Premium Experience. '
-                  f'<a class="text-link" href="{base(ev)}/setup/10">Compare packages</a></div></div>')
+                  f'<a class="text-link" href="{base(ev)}/setup/8">Compare packages</a></div></div>')
 
     def opts(values, current, blank):
         return f'<option value="">{blank}</option>' + "".join(
@@ -10337,15 +10532,12 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
     people = sum(events.party_size(g) for g in guests)
     created = 0
     if table_count == 0:
-        need = min(60, -(-people // 10))
+        layout = events.seating_layout(ev)
+        need = min(60, -(-people // int(layout.get("capacity") or 10)))
         with db.transaction():
-            for k in range(need):
-                x, y = _auto_pos(k)
-                db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": 10, "shape": "round",
-                                             "pos_x": x, "pos_y": y, "sort": k})
-        created = need
+            created = events.create_layout_tables(ev, layout, need)
     tables = events.tables(ev["id"])
-    free = {t["id"]: t["capacity"] - t["seated"] for t in tables}
+    free = {t["id"]: t["capacity"] - t["seated"] for t in tables if t["notes"] != events.TOP_TABLE_NOTE}   # the top table is set by hand
     groups: dict[str, list] = {}
     for g in guests:
         groups.setdefault((g["family_group"] or g["side"] or g["category"] or "").strip().lower() or f"~{g['id']}", []).append(g)
@@ -10374,7 +10566,7 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
                 db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, ?, ?, ?)",
                        (g["id"], tid, ev["id"], now))
                 seated += 1
-    message = f"Seated {seated} part{'y' if seated == 1 else 'ies'}" + (f" and created {created} tables of 10" if created else "") + ". Drag anyone to fine-tune."
+    message = f"Seated {seated} part{'y' if seated == 1 else 'ies'}" + (f" and created {created} tables from your layout" if created else "") + ". Drag anyone to fine-tune."
     warning = ""
     if left_out:
         n = sum(events.party_size(g) for g in left_out)
@@ -10598,7 +10790,7 @@ def programme(req, uid):
 <form class="form" method="post" action="{base(ev)}/programme/functions" style="margin-top:12px">{csrf(req)}{_function_fields({})}
 <div class="row row--end"><button class="btn btn--primary btn--sm" type="submit">Add function</button></div></form></details>""" if can_add_f else
              f'<p class="small muted" style="margin-top:12px">Your package includes {max_f} function{"s" if max_f != 1 else ""}. '
-             + ("" if has(ev, "multi_functions") else f'<a class="text-link" href="{base(ev)}/setup/10">Upgrade for more ceremonies and venues.</a>') + "</p>")
+             + ("" if has(ev, "multi_functions") else f'<a class="text-link" href="{base(ev)}/setup/8">Upgrade for more ceremonies and venues.</a>') + "</p>")
     rows = []
     current = object()
     for it in items:
@@ -10838,7 +11030,7 @@ def comms(req, uid):
     aud_opts += "".join(f'<option value="category:{esc(c)}"{" selected" if audience == "category:" + c else ""}>Category: {esc(c)}</option>' for c in cats)
     live_note = "" if events.is_live(ev) else (
         f'<div class="notice notice--warn" style="margin-bottom:16px">{i("alert")}<div>You can draft and preview messages now. '
-        f'Sending to guests starts once your website is paid for and published. <a class="text-link" href="{base(ev)}/setup/10">Publish your event</a></div></div>')
+        f'Sending to guests starts once your website is paid for and published. <a class="text-link" href="{base(ev)}/setup/8">Publish your event</a></div></div>')
     logs = db.q("SELECT * FROM email_logs WHERE event_id = ? ORDER BY created_at DESC, id DESC LIMIT 40", (ev["id"],))
     log_rows = "".join(
         f'<tr><td>{esc(l["subject"])}<span class="table__sub">{esc(l["to_email"])}</span></td><td>{"Guest" if l["audience"] == "guest" else "You"}</td>'
@@ -10946,7 +11138,7 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=835fe1d36f325445e7722eaccfca1d4087c5222e0556662d4d5c119460411973 nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=2760dd2a0e6bba04fbccef7a8166e021178bb0661762a5f8deea7a58829a801c nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
@@ -11433,7 +11625,7 @@ def setup_help(req):
 <div class="notice">{i("info")}<span>We send you a quote for the set-up with your package. Asking costs nothing and doesn't commit you.</span></div></div>
 <div>{form_html}</div></div></div></section>"""
     return page(req, "We'll set it up for you", body, "/help-me-set-up",
-                description="Let the Aurelia team build your event website for you. Free request, quote within one working day.")
+                description=f"Let the {config.BRAND_NAME} team build your event website for you. Free request, quote within one working day.")
 
 
 @router.route("/contact", methods=("GET", "POST"))
@@ -11580,7 +11772,7 @@ def media(req, key):
 
 ### `app/views/payments_views.py`
 
-<!-- FILE: app/views/payments_views.py sha256=e9e7f73283d4beb978c25d2e6573ee6827521faf3c20de5d5de9913f87f93b5d nl=1 -->
+<!-- FILE: app/views/payments_views.py sha256=184d7531058b904fc774c4d351e7ce343b80c6c632055447a69e1f519a4236ed nl=1 -->
 ```python
 """Checkout, the sandbox test checkout, gateway webhooks, payment status, billing and receipts."""
 from __future__ import annotations
@@ -11609,16 +11801,16 @@ def checkout(req, uid):
         raise HTTPError(403, "Only the event owner can make payments.")
     if not req.get("accept"):
         req.flash("error", "Please accept the terms and refund policy to continue.")
-        return redirect(f"/dashboard/events/{uid}/setup/10")
+        return redirect(f"/dashboard/events/{uid}/setup/8")
     if ev["status"] == "suspended":
         req.flash("error", "This event is suspended. Contact support.")
-        return redirect(f"/dashboard/events/{uid}/setup/10")
+        return redirect(f"/dashboard/events/{uid}/setup/8")
     try:
         order = payments.create_order(ev, req.user, req.get("package"))
         target = payments.gateway().checkout(order)
     except payments.PaymentError as e:
         req.flash("error", str(e))
-        return redirect(f"/dashboard/events/{uid}/setup/10")
+        return redirect(f"/dashboard/events/{uid}/setup/8")
     if "redirect" in target:
         return redirect(target["redirect"])
     inputs = "".join(f'<input type="hidden" name="{esc(k)}" value="{esc(v)}">' for k, v in target["fields"])
@@ -11669,7 +11861,7 @@ def pay_cancel(req, order_uid):
     if order["status"] == "pending" and not db.val("SELECT COUNT(*) FROM payments WHERE order_id = ?", (order["id"],), 0):
         db.run("UPDATE orders SET status = 'cancelled', updated_at = ? WHERE id = ?", (db.now(), order["id"]))
     req.flash("info", "Payment cancelled. Nothing was charged.")
-    return redirect(f"/dashboard/events/{ev['uid']}/setup/10")
+    return redirect(f"/dashboard/events/{ev['uid']}/setup/8")
 
 
 # --- webhooks (no CSRF: authenticated by signature) ---------------------------------------------------
@@ -11718,15 +11910,15 @@ def payment_return(req, uid, order_uid):
     elif st == "pending":
         inner = f"""<div class="empty" style="border-style:solid" data-poll="/api/orders/{order['uid']}/status"><span class="spinner" aria-hidden="true"></span>
 <h2>Waiting for the payment gateway</h2><p>We publish your website as soon as the gateway confirms payment. This page updates by itself; it usually takes a few seconds.</p>
-<a class="btn btn--ghost" href="/dashboard/events/{uid}/setup/10">Back to packages</a></div>
+<a class="btn btn--ghost" href="/dashboard/events/{uid}/setup/8">Back to packages</a></div>
 <script>(function(){{var box=document.querySelector('[data-poll]'),n=0;function tick(){{fetch(box.getAttribute('data-poll'),{{headers:{{Accept:'application/json'}},credentials:'same-origin'}}).then(function(r){{return r.json();}}).then(function(j){{if(j.status!=='pending'){{location.reload();}}else if(++n<45){{setTimeout(tick,2000);}}else{{box.querySelector('p').textContent='Still waiting. If you completed the payment, it will appear here shortly; you can safely leave this page.';}}}});}}setTimeout(tick,1500);}})();</script>"""
     else:
         inner = f"""<div class="empty" style="border-style:solid"><span class="icon-tile">{i("alert")}</span><h2>Payment {esc(st)}</h2>
 <p>Nothing was charged{f": {esc(order['failure_reason'])}" if order['failure_reason'] and order['failure_reason'] != st else ""}. Your event is saved; you can try again.</p>
-<a class="btn btn--primary" href="/dashboard/events/{uid}/setup/10">Try again</a></div>"""
+<a class="btn btn--primary" href="/dashboard/events/{uid}/setup/8">Try again</a></div>"""
     body = page_head("Payment", f"Order {esc(order['uid'])} · {catalog.money(order['amount_cents'], True)}"
                      + (' · <span class="pill pill--sandbox">sandbox</span>' if order["mode"] == "sandbox" else "")) + inner
-    return organiser_page(req, ev, "Payment", body, "/setup/10")
+    return organiser_page(req, ev, "Payment", body, "/setup/8")
 
 
 # --- billing & receipts ----------------------------------------------------------------------------------
@@ -12099,7 +12291,7 @@ def organiser_preview(req, uid):
 
 ### `app/views/shell.py`
 
-<!-- FILE: app/views/shell.py sha256=bf184e8ec76b5e7d2397d363df0bb19e3caabdd6f63563fbf028be17d186adc0 nl=1 -->
+<!-- FILE: app/views/shell.py sha256=5b90c0e0d6df42ccecc1809886edc78a438daaf47ba07621798437b50ae34408 nl=1 -->
 ```python
 """Navigation for the organiser dashboard and the admin dashboard.
 
@@ -12207,7 +12399,7 @@ def locked_panel(ev, feature: str, what: str) -> str:
     return (f'<div class="empty">{tile}'
             f'<h2 style="font-size:1.25rem">{esc(what)} is part of the {esc(name)}</h2>'
             f'<p>Upgrade this event to unlock it. You only pay the difference.</p>'
-            f'<a class="btn btn--primary" href="/dashboard/events/{ev["uid"]}/setup/10">See packages</a></div>')
+            f'<a class="btn btn--primary" href="/dashboard/events/{ev["uid"]}/setup/8">See packages</a></div>')
 
 
 def page_head(title: str, intro: str = "", actions: str = "") -> str:
@@ -12217,7 +12409,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=cb5fdd28b8d4e2bbbc955ba9aa10389bee1557f24d7c885effd2c7e9a1317201 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=6cfbfbfce75fa13a893217c873f32ffe153e6f401629a4c115c81db2a86c5071 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -12227,6 +12419,7 @@ anything; the event stays a private draft until a verified payment (step 10).
 from __future__ import annotations
 
 import json
+import re
 
 from .. import auth, catalog, config, db, events, suggestions
 from ..eventsite import themes
@@ -12239,9 +12432,8 @@ from .layout import page
 from .shell import organiser_page
 
 STEPS = [
-    (1, "Event details", "calendar"), (2, "Venue", "pin"), (3, "Design", "palette"), (4, "Guests", "users"),
-    (5, "Programme", "list"), (6, "Food and drinks", "dish"), (7, "Seating", "seat"), (8, "Extras", "gift"),
-    (9, "Review", "eye"), (10, "Package", "card"),
+    (1, "Details", "calendar"), (2, "Design", "palette"), (3, "Guests", "users"), (4, "Programme", "list"),
+    (5, "Food and drinks", "dish"), (6, "Seating", "seat"), (7, "Extras", "gift"), (8, "Review and pay", "card"),
 ]
 HOST_LABEL = {"weddings": ("Couple's names", "e.g. Lerato & Sipho"), "baby": ("Parents or honouree", "e.g. Naledi & Tumi"),
               "parties": ("Who are we celebrating?", "e.g. Kagiso's 40th"), "other": ("Host or organisation", "e.g. The Dlamini family")}
@@ -12270,23 +12462,22 @@ def feature_note(ev, feature: str, what: str) -> str:
 
 
 # --- /create -----------------------------------------------------------------------------------
-def _package_picker(selected: str) -> str:
-    opts = []
-    for p in catalog.packages():
-        opts.append(f'<label class="choice"><input type="radio" name="package" value="{esc(p["code"])}"{" checked" if p["code"] == selected else ""}>'
-                    f'<span>{esc(p["name"])} · {catalog.money(p["price_cents"])}<small>{esc(p["tagline"])}</small></span></label>')
-    return (f'<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">{"".join(opts)}</div>'
-            '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, '
-            'so you don\'t fill in anything your package won\'t show. <a class="text-link" href="/pricing" target="_blank" rel="noopener">Compare packages</a></p>')
-
-
 CREATE_JS = """<script>(function(){var f=document.querySelector('[data-create]');if(!f)return;var grid=f.querySelector('[data-tpl-grid]'),more=f.querySelector('[data-show-all]'),all=false;
 function sync(auto){var c=f.querySelector('input[name=category]:checked');var g=c?c.getAttribute('data-group'):'';var first=null,shown=0;
 grid.querySelectorAll('.choice').forEach(function(l){var ok=!g||l.getAttribute('data-groups').split(' ').indexOf(g)>-1;l.hidden=!(ok||all);if(ok){shown++;if(!first)first=l;}});
 if(more){more.hidden=!g||all;more.textContent='Show all '+grid.querySelectorAll('.choice').length+' templates';}
 var picked=grid.querySelector('input[name=template]:checked');if(auto&&first&&(!picked||picked.closest('.choice').hidden)){first.querySelector('input').checked=true;}}
-f.addEventListener('change',function(e){if(e.target.name==='category')sync(true);});
+f.addEventListener('change',function(e){if(e.target.name==='category'){sync(true);var h=f.querySelector('[data-host-labels]');if(h){var g=e.target.getAttribute('data-group'),L=JSON.parse(h.getAttribute('data-host-labels'))[g];
+if(L){var lab=f.querySelector('label[for='+h.id+']');if(lab)lab.firstChild.textContent=L[0];h.placeholder=L[1];}}}});
 if(more)more.addEventListener('click',function(){all=true;sync(false);});sync(false);})();</script>"""
+
+
+def _new_event(user_id: int, cat, tpl, hosts: str, pkg: str):
+    hosts = (hosts or "").strip()[:120]
+    name = suggestions.auto_event_name(cat["slug"], hosts) or cat["name"]
+    ev = events.create(user_id, cat["slug"], tpl["slug"], name, hosts)
+    events.touch(ev["id"], selected_package=pkg)
+    return ev
 
 
 @router.route("/create", methods=("GET", "POST"))
@@ -12310,6 +12501,9 @@ def create(req):
             f.error("category", "Choose the type of event.")
         if not tpl or not tpl["active"]:
             f.error("template", "Choose a template. You can change it later.")
+        hosts = f.text("hosts", "Names", max=120)
+        if not hosts:
+            f.error("hosts", "Add the names to show on your website, e.g. Lerato & Sipho.")
         user = req.user
         if not user:
             if req.get("website"):                    # honeypot: bots fill every field
@@ -12322,7 +12516,7 @@ def create(req):
                 f.error("contact_email", "Too many new accounts from this connection. Try again in an hour.")
             if f.ok:
                 existing = db.one("SELECT * FROM users WHERE email = ?", (cemail,))
-                back = url("/create", category=cat_slug, template=tpl_slug, package=pkg, go="1")
+                back = url("/create", category=cat_slug, template=tpl_slug, package=get("package"), hosts=hosts, go="1")
                 if existing:
                     from .accounts import send_login_link
                     if existing["status"] == "active" and not auth.rate_limited(f"login-link:{cemail}", 5, 3600):
@@ -12338,8 +12532,7 @@ def create(req):
                     send_verification(user)
                     auth.audit(uid_, "user.register", cemail, via="create")
         if f.ok and user and not check_email:
-            ev = events.create(user["id"], cat["slug"], tpl["slug"], cat["name"])
-            events.touch(ev["id"], selected_package=pkg)
+            ev = _new_event(user["id"], cat, tpl, hosts, pkg)
             auth.audit(user["id"], "event.create", ev["uid"], template=tpl["slug"])
             req.flash("success", "Your event is saved as a private draft. Let's add the details.")
             resp = redirect(step_url(ev, 1))
@@ -12349,8 +12542,7 @@ def create(req):
             return resp
     elif req.user and get("go") == "1" and cat and tpl:
         # back from an emailed sign-in link: create the event the visitor had chosen
-        ev = events.create(req.user["id"], cat["slug"], tpl["slug"], cat["name"])
-        events.touch(ev["id"], selected_package=pkg)
+        ev = _new_event(req.user["id"], cat, tpl, get("hosts"), pkg)
         auth.audit(req.user["id"], "event.create", ev["uid"], template=tpl["slug"])
         req.flash("success", "You're signed in and your event is saved as a private draft. Let's add the details.")
         return redirect(step_url(ev, 1))
@@ -12358,7 +12550,7 @@ def create(req):
         body = f"""<section class="section" style="padding-top:calc(var(--header-h) + 48px)"><div class="container container--narrow"><div class="glass glass--strong panel" style="display:grid;gap:14px">
 <span class="icon-tile icon-tile--soft">{i("mail")}</span><h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">You already have an account</h1>
 <p class="lead" style="font-size:1.0625rem">We've emailed a sign-in link to <b>{esc(check_email)}</b>. Open it on this device and you'll come straight back here with your choices kept. The link expires in 2 hours.</p>
-<p class="small muted">Rather use your password? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg, go='1')))}">Log in</a>.</p></div></div></section>"""
+<p class="small muted">Rather use your password? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=get('package'), hosts=get('hosts'), go='1')))}">Log in</a>.</p></div></div></section>"""
         return page(req, "Check your email", body, "/create", noindex=True)
     # occasion picker
     cats_html = []
@@ -12378,7 +12570,7 @@ def create(req):
             f'<a class="text-link tiny" href="/templates/{esc(t["slug"])}" target="_blank" rel="noopener" style="position:relative;z-index:2">Preview</a></span></label>')
     about = ""
     if not req.user:
-        about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. About you</h2>
+        about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. Where should we save it?</h2>
 <p class="muted small" style="margin-bottom:16px">So your draft is saved and you can come back to it on any device. No password needed: we email you a sign-in link whenever you want one. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
 <div class="form-row form-row--2">{field("contact_name", "Your name", f.data.get("contact_name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("contact_email", "Your email", f.data.get("contact_email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
@@ -12386,7 +12578,7 @@ def create(req):
 {forms.honeypot()}</div>"""
     body = f"""<section class="page-hero"><div class="grid-texture"></div><div class="container">
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>
-<h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Nothing is published or charged until you're ready.</p>
+<h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Three quick questions, then we build your website as you go. Nothing is published or charged until you're ready.</p>
 <p class="small" style="margin-top:14px">Rather have us do it? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>.</p></div></section>
 <section class="section"><div class="container"><form class="form" method="post" novalidate data-create>{csrf(req)}
 {errors_summary(f.errors)}
@@ -12394,7 +12586,8 @@ def create(req):
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step.</p>
 <div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
 <button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>
-<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>{_package_picker(pkg)}</div>
+<div class="box" data-field="hosts"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Whose celebration is it?</h2>
+{field("hosts", HOST_LABEL.get(group or "weddings", ("Names", ""))[0], f.data.get("hosts") or get("hosts"), required=True, errors=f.errors, attrs={"placeholder": HOST_LABEL.get(group or "weddings", ("", "e.g. Lerato & Sipho"))[1], "data-host-labels": esc(json.dumps({k: list(v) for k, v in HOST_LABEL.items()}))}, hint="Shown large on your website and used for your link. You can change it later.")}</div>
 {about}
 <div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up {i("arrow", "i--arrow")}</button></div></form></div></section>
 {CREATE_JS}"""
@@ -12402,8 +12595,9 @@ def create(req):
 
 
 # --- wizard shell -----------------------------------------------------------------------------
-OPTIONAL_STEPS = {4, 5, 6, 7, 8}
-STEP_FEATURE = {5: "programme", 6: "menu", 7: "seating"}
+LAST_STEP = 8
+OPTIONAL_STEPS = {3, 4, 5, 6, 7}
+STEP_FEATURE = {4: "programme", 5: "menu", 6: "seating"}
 
 
 def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctype: str = "") -> str:
@@ -12416,14 +12610,13 @@ def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctyp
     stepper = "".join(
         f'<li><a href="{step_url(ev, s)}" class="{"is-done" if s in done else ""}"{" aria-current=step" if s == n else ""} data-step-link>'
         f'<span class="n">{"✓" if s in done and s != n else s}</span>{esc(label)}{badge(s)}</a></li>' for s, label, _ in STEPS)
-    pct = round(100 * len(done & set(range(1, 11))) / 10)
+    pct = round(100 * len(done & set(range(1, LAST_STEP + 1))) / LAST_STEP)
     title, icon = STEPS[n - 1][1], STEPS[n - 1][2]
     skip = (f'<a class="btn btn--ghost" href="{step_url(ev, n + 1)}" data-step-link>Skip for now</a>' if n in OPTIONAL_STEPS else "")
-    to_review = (f'<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' if 3 <= n <= 7 else "")
+    to_review = (f'<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' if 2 <= n <= 6 else "")
     nav = f"""<div class="wizard-actions">{f'<a class="btn btn--ghost" href="{step_url(ev, n - 1)}">{i("arrow-left")} Back</a>' if n > 1 else '<span></span>'}
-<div class="btn-row">{to_review}{skip}<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button>
-<button class="btn btn--primary" type="submit" name="nav" value="next">Save and continue {i("arrow", "i--arrow")}</button></div></div>"""
-    if n == 10:   # step 10 holds its own checkout form; forms can't be nested
+<div class="btn-row">{to_review}{skip}<button class="btn btn--primary" type="submit" name="nav" value="next">Save and continue {i("arrow", "i--arrow")}</button></div></div>"""
+    if n == LAST_STEP:   # the last step holds its own checkout form; forms can't be nested
         form = inner
     else:
         form = (f'<form class="form" method="post" novalidate data-wizard-form{(" enctype=" + chr(34) + enctype + chr(34)) if enctype else ""}>'
@@ -12437,40 +12630,20 @@ def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctyp
         content = f'<div class="wizard-split"><div class="glass wizard-card glass--strong">{_card_head(n, title, icon)}{form}</div>{preview}</div>'
     else:
         content = f'<div class="glass glass--strong wizard-card">{_card_head(n, title, icon)}{form}</div>'
-    plan = ""
-    if not ev["paid_package"]:
-        opts = "".join(f'<option value="{esc(p["code"])}"{" selected" if p["code"] == catalog.planning_package(ev) else ""}>{esc(p["name"])} · {catalog.money(p["price_cents"])}</option>'
-                       for p in catalog.packages())
-        plan = (f'<form class="plan-package" method="post" action="/dashboard/events/{ev["uid"]}/plan-package" data-plan-package>{csrf(req)}'
-                f'<input type="hidden" name="back" value="{n}"><label class="tiny muted" for="plan-pkg">Planning with</label>'
-                f'<select class="select select--sm" id="plan-pkg" name="package">{opts}</select>'
-                f'<button class="btn btn--ghost btn--sm" type="submit" data-plan-submit>Change</button></form>')
     body = f"""<div class="page-head"><div><h1>Set up {esc(ev['name'])}</h1><p>Private draft. Saved as you go; nothing is shared until you publish.</p></div>
-<div class="btn-row">{plan}<a class="btn btn--secondary btn--sm" href="/dashboard/events/{ev['uid']}/preview" target="_blank" rel="noopener">{i("eye")} Full preview</a></div></div>
-<div class="wizard-progress"><span>{pct}% complete</span><div class="progress"><span style="width:{pct}%"></span></div><span class="mono">Step {n} of 10</span></div>
+<a class="btn btn--secondary btn--sm" href="/dashboard/events/{ev['uid']}/preview" target="_blank" rel="noopener">{i("eye")} Full preview</a></div>
+<div class="wizard-progress"><span>{pct}% complete</span><div class="progress"><span style="width:{pct}%"></span></div><span class="mono">Step {n} of {LAST_STEP}</span></div>
 <div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">{stepper}</ol></nav><div>{content}</div></div>"""
     return organiser_page(req, ev, f"Set-up step {n}", body, f"/setup/{n}", extra_scripts=WIZARD_JS)
 
 
-@router.post("/dashboard/events/<uid>/plan-package")
-def plan_package(req, uid):
-    ev = events.parse(auth.event_for(req, uid))
-    code = req.get("package")
-    back = req.get("back")
-    n = int(back) if back.isdigit() and 1 <= int(back) <= 10 else 1
-    if catalog.package(code) and not ev["paid_package"]:
-        events.touch(ev["id"], selected_package=code)
-        req.flash("success", f"Now planning with {catalog.package(code)['name']}. You can change this until you pay.")
-    return redirect(step_url(ev, n))
-
-
 def _card_head(n, title, icon):
     intros = {
-        1: "The essentials guests see first.", 2: "Where it's happening and how to get there.",
-        3: "Make the template yours. Changes show in the preview as you go.", 4: "Your guest list and how replies work.",
-        5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-        7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.",
-        9: "Check everything before you choose a package.", 10: "Choose a package. Your website goes live once payment is confirmed.",
+        1: "Who, when and where. The essentials guests see first.", 2: "Make the template yours. Changes show in the preview as you go.",
+        3: "Who's coming. Add them however suits you, or skip and let guests reply through your link.",
+        4: "The running order of your day, or of each day.", 5: "Menus, meal choices and dietary needs.",
+        6: "Choose your table layout. You seat guests once replies are in.", 7: "Dress code, gifts, places to stay and photos.",
+        8: "Check what's left, choose your package and pay. Your website goes live as soon as payment is confirmed.",
     }
     opt = ('<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time, before or after your website is live.</p>'
            if n in OPTIONAL_STEPS else "")
@@ -12504,7 +12677,9 @@ fetch(location.pathname,{method:'POST',body:fd,credentials:'same-origin',headers
 def wizard(req, uid, n):
     row = auth.event_for(req, uid)
     ev = events.parse(row)
-    if n < 1 or n > 10:
+    if n in (9, 10):                    # old links, from when set-up had 10 steps
+        return redirect(step_url(ev, LAST_STEP))
+    if n < 1 or n > LAST_STEP:
         raise HTTPError(404)
     handler = STEP_HANDLERS[n]
     result = handler(req, ev)
@@ -12519,64 +12694,36 @@ def finish_step(req, ev, n: int, f: Form):
     done = set(ev["wizard_done"] or [])
     if f.ok:
         done.add(n)
-        events.touch(ev["id"], wizard_done=db.dumps(sorted(done)), wizard_step=max(ev["wizard_step"], min(n + 1, 10)))
+        events.touch(ev["id"], wizard_done=db.dumps(sorted(done)), wizard_step=max(ev["wizard_step"], min(n + 1, LAST_STEP)))
         if req.is_htmx:
             return json_response({"ok": True})
         if req.get("nav") == "next":
             return redirect(step_url(ev, n + 1))
         if req.get("nav") == "review":
-            return redirect(step_url(ev, 9))
+            return redirect(step_url(ev, LAST_STEP))
         req.flash("success", "Saved.")
         return redirect(step_url(ev, n))
     return None
 
 
-# --- step 1: event details ----------------------------------------------------------------------
-def step1(req, ev):
+# --- step 1: details (names, date, venue) -------------------------------------------------------
+def step_details(req, ev):
     f = Form(req)
     g = group_of(ev)
     if req.method == "POST":
-        name = f.text("name", "Event name", max=120)
-        cat = f.choice("category", [c["slug"] for c in catalog.categories()], "event types", required=True)
+        cat = f.choice("category", [c["slug"] for c in catalog.categories()], "occasions", default=ev["category"])
+        c_row = catalog.category(cat)
+        g = c_row["group_slug"] if c_row else g
         hosts = f.text("hosts", HOST_LABEL.get(g, ("Hosts",))[0], required=True, max=120)
-        name = name or suggestions.auto_event_name(cat or ev["category"], hosts) or catalog.category_name(cat or ev["category"])
+        name = f.text("name", "Event name", max=120) or suggestions.auto_event_name(cat, hosts) or catalog.category_name(cat)
+        if name == ev["name"] and ev["name"] in (suggestions.auto_event_name(ev["category"], ev["hosts"]), ev["hosts"], catalog.category_name(ev["category"])):
+            name = suggestions.auto_event_name(cat, hosts) or name           # keep the automatic name in step with the names
         desc = f.text("description", "Description", max=1500)
         d = f.date("event_date", "Event date", required=True, future=not ev["paid_package"])
         st = f.time("start_time", "Start time")
         et = f.time("end_time", "End time")
         if st and et and et <= st and not req.get("ends_next_day"):
             f.error("end_time", "End time must be after the start time (tick “ends after midnight” if it does).")
-        if f.ok:
-            events.touch(ev["id"], name=name, category=cat, hosts=hosts, description=desc, event_date=d,
-                         start_time=st, end_time=et)
-            if not ev["published_at"] and hosts and ev["slug"].startswith(forms.slugify(ev["name"], 50)):
-                events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
-            events.keep_online_past_event(events.by_id(ev["id"]))
-        r = finish_step(req, events.by_id(ev["id"]), 1, f)
-        if r:
-            return r
-    d = {**ev, **f.data}
-    label, ph = HOST_LABEL.get(g, ("Hosts", ""))
-    cats = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
-    auto = "1" if (not d.get("name") or d.get("name") in (d.get("hosts"), catalog.category_name(d.get("category")),
-                                                           suggestions.auto_event_name(d.get("category"), d.get("hosts")))) else "0"
-    nouns = esc(json.dumps(suggestions.NAME_NOUN))
-    inner = f"""{errors_summary(f.errors)}
-{field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph, "autofocus": not d.get("hosts")}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
-<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), errors=f.errors, attrs={"data-autoname": auto, "data-nouns": nouns}, hint="Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above.")}
-{select("category", "Type of event", cats, d.get("category"), required=True, errors=f.errors)}</div>
-{field("description", "A short welcome or description", d.get("description"), type="textarea", errors=f.errors, hint="Optional. One or two sentences guests read first.")}
-<div class="form-row form-row--3">{field("event_date", "Date", d.get("event_date"), type="date", required=True, errors=f.errors)}
-{field("start_time", "Starts", d.get("start_time"), type="time", errors=f.errors)}{field("end_time", "Ends", d.get("end_time"), type="time", errors=f.errors)}</div>
-{check("ends_next_day", "Ends after midnight", bool(req.get("ends_next_day")))}
-<p class="tiny muted">Several ceremonies or days? Add each one in the Programme step.</p>"""
-    return wizard_frame(req, ev, 1, inner)
-
-
-# --- step 2: venue -------------------------------------------------------------------------------
-def step2(req, ev):
-    f = Form(req)
-    if req.method == "POST":
         venue = {
             "name": f.text("venue_name", "Venue name", required=True, max=160),
             "address": f.text("address", "Address", required=True, max=300),
@@ -12586,23 +12733,39 @@ def step2(req, ev):
             "accommodation": f.text("accommodation", "Accommodation", max=2000),
         }
         if f.ok:
+            events.touch(ev["id"], name=name, category=cat, hosts=hosts, description=desc, event_date=d, start_time=st, end_time=et)
             events.save_json(ev["id"], "venue", venue)
-        r = finish_step(req, ev, 2, f)
+            if not ev["published_at"] and hosts and not ev["slug"].startswith(forms.slugify(hosts, 50)):
+                events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
+            events.keep_online_past_event(events.by_id(ev["id"]))
+        r = finish_step(req, events.by_id(ev["id"]), 1, f)
         if r:
             return r
-    v = {**(ev["venue"] or {}), **{k.replace("venue_name", "name"): val for k, val in f.data.items()}}
+    d = {**ev, **f.data}
+    v = {**(ev["venue"] or {}), **{k.replace("venue_name", "name"): val for k, val in f.data.items() if k in ("venue_name", "address", "map_url", "parking", "directions", "accommodation")}}
+    label, ph = HOST_LABEL.get(g, ("Hosts", ""))
+    cats = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
+    more_open = " open" if any(v.get(k) for k in ("parking", "directions", "accommodation")) or d.get("description") or (f.errors.keys() & {"map_url"}) else ""
     inner = f"""{errors_summary(f.errors)}
-<div class="form-row form-row--2">{field("venue_name", "Venue name", v.get("name"), required=True, errors=f.errors)}
-{field("address", "Street address", v.get("address"), required=True, errors=f.errors, hint="Guests get a Google Maps link built from this.")}</div>
-{field("map_url", "Google Maps link (optional)", v.get("map_url"), type="url", errors=f.errors, hint="Paste a share link from Google Maps for an exact pin, e.g. a farm gate or a specific entrance.")}
-{field("parking", "Parking", v.get("parking"), type="textarea", errors=f.errors, attrs={"rows": 3}, hint="Where to park, security, valet, drop-off.")}
-{field("directions", "Directions", v.get("directions"), type="textarea", errors=f.errors, attrs={"rows": 3}, hint="Landmarks, gate codes, the last turn that GPS gets wrong.")}
-{field("accommodation", "Accommodation nearby", v.get("accommodation"), type="textarea", errors=f.errors, attrs={"rows": 3}, hint="Optional. Add specific places with links in the Extras step.")}"""
-    return wizard_frame(req, ev, 2, inner)
+{field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph, "autofocus": not d.get("hosts")}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
+<div class="form-row form-row--3">{field("event_date", "Date", d.get("event_date"), type="date", required=True, errors=f.errors)}
+{field("start_time", "Starts", d.get("start_time"), type="time", errors=f.errors)}{field("end_time", "Ends", d.get("end_time"), type="time", errors=f.errors)}</div>
+{check("ends_next_day", "Ends after midnight", bool(req.get("ends_next_day")))}
+<div class="form-row form-row--2">{field("venue_name", "Venue", v.get("name"), required=True, errors=f.errors, attrs={"placeholder": "Oakhaven Wine Estate"})}
+{field("address", "Address", v.get("address"), required=True, errors=f.errors, hint="Guests get directions and a map from this.")}</div>
+<p class="tiny muted">More than one day, or a second venue? Add each day in the Programme step.</p>
+<details class="box" style="padding:14px 16px"{more_open}><summary style="cursor:pointer;font-weight:500">More details (optional): map pin, parking, directions, a short welcome</summary><div style="display:grid;gap:16px;margin-top:16px">
+{field("map_url", "Google Maps link", v.get("map_url"), type="url", errors=f.errors, hint="For an exact pin, e.g. a farm gate. Paste the share link from Google Maps.")}
+{field("parking", "Parking", v.get("parking"), type="textarea", errors=f.errors, attrs={"rows": 2}, hint="Where to park, security, drop-off.")}
+{field("directions", "Directions", v.get("directions"), type="textarea", errors=f.errors, attrs={"rows": 2}, hint="Landmarks, gate codes, the last turn that GPS gets wrong.")}
+{field("description", "A short welcome", d.get("description"), type="textarea", errors=f.errors, attrs={"rows": 2}, hint="One or two sentences guests read first.")}
+<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), errors=f.errors, hint="Used in invitation messages. Filled in from your names.")}
+{select("category", "Occasion", cats, d.get("category"), errors=f.errors)}</div></div></details>"""
+    return wizard_frame(req, ev, 1, inner)
 
 
-# --- step 3: design ------------------------------------------------------------------------------
-def step3(req, ev):
+# --- step 2: design ------------------------------------------------------------------------------
+def step_design(req, ev):
     f = Form(req)
     g = group_of(ev)
     upload_errors = []
@@ -12651,8 +12814,8 @@ def step3(req, ev):
             events.touch(ev["id"], template=tpl, design=db.dumps(design))
         if rm.isdigit() and f.ok:
             req.flash("success", "Image removed.")
-            return redirect(step_url(ev, 3))
-        r = finish_step(req, ev, 3, f)
+            return redirect(step_url(ev, 2))
+        r = finish_step(req, ev, 2, f)
         if r:
             return r
         ev = events.get(ev["uid"])
@@ -12712,12 +12875,26 @@ def step3(req, ev):
 {field("w_invitation", "Invitation wording", w.get("invitation", ""), type="textarea", attrs={"rows": 4, "placeholder": "Request the pleasure of your company as they celebrate their marriage."})}
 <div class="form-row form-row--2">{field("w_rsvp_note", "RSVP note", w.get("rsvp_note", ""), attrs={"placeholder": "Kindly reply by 1 February."})}
 {field("w_closing", "Closing line", w.get("closing", ""), attrs={"placeholder": "We can't wait to celebrate with you."})}</div></div></fieldset>"""
-    html = wizard_frame(req, ev, 3, inner, wide_preview=True, enctype="multipart/form-data")
+    html = wizard_frame(req, ev, 2, inner, wide_preview=True, enctype="multipart/form-data")
     return html.replace("data-wizard-form", "data-wizard-form data-autosave", 1)
 
 
-# --- step 4: guests --------------------------------------------------------------------------------
-def step4(req, ev):
+# --- step 3: guests --------------------------------------------------------------------------------
+GUESTS_JS = """<script>(function(){var box=document.querySelector('[data-guest-add]');if(!box)return;var ta=box.querySelector('textarea[name=guest_paste]'),
+nm=box.querySelector('[data-qa-name]'),ph=box.querySelector('[data-qa-phone]'),cnt=box.querySelector('[data-pending-count]'),det=box.querySelector('[data-paste-box]');
+function count(){var n=ta.value.split(/\\n/).filter(function(l){l=l.trim();return l&&!/:$/.test(l);}).length;cnt.textContent=n?'('+n+' ready to add when you continue)':'';}
+function add(line){ta.value=(ta.value.trim()?ta.value.replace(/\\s+$/,'')+'\\n':'')+line;count();ta.dispatchEvent(new Event('input',{bubbles:true}));}
+function quick(){var n=nm.value.trim();if(!n)return;add(n+(ph.value.trim()?', '+ph.value.trim():''));nm.value='';ph.value='';nm.focus();if(window.Aurelia)Aurelia.toast(n+' added. Saved when you continue.');}
+box.querySelector('[data-qa-add]').addEventListener('click',quick);
+[nm,ph].forEach(function(el){el.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();if(el===nm&&!ph.value&&nm.value.trim())quick();else if(el===ph)quick();else ph.focus();}});});
+ta.addEventListener('input',count);count();
+var pick=box.querySelector('[data-pick-contacts]');if('contacts' in navigator&&'ContactsManager' in window){pick.hidden=false;pick.addEventListener('click',function(){
+navigator.contacts.select(['name','tel','email'],{multiple:true}).then(function(list){list.forEach(function(c){var n=(c.name&&c.name[0])||'';if(!n)return;
+add(n+(c.tel&&c.tel[0]?', '+c.tel[0]:'')+(c.email&&c.email[0]?', '+c.email[0]:''));});if(list.length){det.open=true;if(window.Aurelia)Aurelia.toast(list.length+' contacts added. Saved when you continue.');}}).catch(function(){});});}
+var file=box.querySelector('[data-guest-file]'),fname=box.querySelector('[data-guest-file-name]');file.addEventListener('change',function(){if(file.files[0]){fname.hidden=false;fname.textContent=file.files[0].name+' will be read when you continue.';}});})();</script>"""
+
+
+def step_guests(req, ev):
     f = Form(req)
     gs = dict(ev["guest_settings"] or {})
     if req.method == "POST":
@@ -12739,6 +12916,15 @@ def step4(req, ev):
         if gs["rsvp_deadline"] and ev["event_date"] and gs["rsvp_deadline"] > ev["event_date"]:
             f.error("rsvp_deadline", "The RSVP deadline should be on or before the event date.")
         pasted = suggestions.parse_guest_list(req.get("guest_paste"))
+        up = req.file("guest_file")
+        if up is not None and up.data:
+            if up.size > 3 * 1024 * 1024:
+                f.error("guest_paste", "That file is bigger than 3 MB. Save just the guest list as Excel or CSV and try again.")
+            else:
+                try:
+                    pasted += suggestions.parse_sheet(suggestions.read_sheet_file(up.data, up.filename or ""))
+                except Exception:          # a damaged or unusual file: say so plainly
+                    f.error("guest_paste", "We couldn't read that file. Save it as Excel (.xlsx) or CSV and try again, or paste the names instead.")
         if pasted and not catalog.has_feature(ev, "guest_management"):
             f.error("guest_paste", "Adding a guest list is part of the Premium package. Change the package you're planning with, or let guests reply through your one link.")
         if f.ok:
@@ -12746,7 +12932,7 @@ def step4(req, ev):
             if pasted:
                 added = events.add_pasted_guests(ev, pasted)
                 req.flash("success", f"Added {added} guest{'s' if added != 1 else ''} to your list." + (f" {len(pasted) - added} were already on it." if added < len(pasted) else ""))
-        r = finish_step(req, ev, 4, f)
+        r = finish_step(req, ev, 3, f)
         if r:
             return r
     feats = catalog.category_features(ev["category"])
@@ -12760,10 +12946,19 @@ def step4(req, ev):
     gcat_note = feature_note(ev, "guest_categories", "Using several guest categories")
     have = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0)
     if catalog.has_feature(ev, "guest_management"):
-        listed = (f'<p class="small" style="margin-bottom:10px"><b>{have} guest{"s" if have != 1 else ""}</b> on your list. '
+        listed = (f'<p class="small"><b>{have} guest{"s" if have != 1 else ""}</b> on your list. '
                   f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/guests">Open the guest list</a> to edit them, mark VIPs or add families.</p>') if have else ""
-        paste = f"""<fieldset><legend>Your guest list</legend>{listed}
-{field("guest_paste", "Paste names (optional)", req.get("guest_paste") if f.errors else "", type="textarea", errors=f.errors, attrs={"rows": 6, "placeholder": "Thandi Mokoena, 082 123 4567" + chr(10) + "Sipho Dlamini, sipho@example.com" + chr(10) + "Gogo Nomsa"}, hint="One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. Each guest gets a personal RSVP link.")}</fieldset>"""
+        paste = f"""<fieldset class="guest-add" data-guest-add><legend>Your guest list</legend>{listed}
+<div class="quick-add"><input class="input" data-qa-name placeholder="Guest's name" aria-label="Guest's name" autocomplete="off">
+<input class="input" data-qa-phone type="tel" placeholder="Mobile (optional)" aria-label="Guest's mobile" autocomplete="off">
+<button class="btn btn--secondary" type="button" data-qa-add>{i("plus")} Add</button></div>
+<p class="tiny muted" style="margin-top:-4px">Type a name, press Enter, type the next one. Couples can go on one line, e.g. “Thabo & Lindi Mokoena”.</p>
+<div class="btn-row"><button class="btn btn--ghost btn--sm" type="button" data-pick-contacts hidden>{i("phone")} Choose from my phone contacts</button>
+<label class="btn btn--ghost btn--sm" style="position:relative">{i("upload")} Upload Excel or CSV<input type="file" name="guest_file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;cursor:pointer" data-guest-file></label></div>
+<p class="small" data-guest-file-name hidden></p>
+<details data-paste-box{" open" if req.get("guest_paste") or f.errors.get("guest_paste") else ""}><summary class="small" style="cursor:pointer;font-weight:500">Paste a list <span class="muted" data-pending-count></span></summary>
+{field("guest_paste", "Names to add", req.get("guest_paste") if f.errors else "", type="textarea", errors=f.errors, attrs={"rows": 7, "placeholder": "Mokoena family:" + chr(10) + "Thandi Mokoena, 082 123 4567" + chr(10) + "Gogo Nomsa" + chr(10) + "Friends:" + chr(10) + "Sipho Dlamini, sipho@example.com"}, hint="One guest per line, with a mobile or email if you have it. A line ending in a colon, like “Mokoena family:”, groups the names below it. Copying a column from Excel, Google Sheets or your phone's notes works too.")}</details>
+<p class="small muted">No list yet? That's fine. Skip this step: when guests reply through your link, they're added to your list for you.</p></fieldset>"""
     else:
         paste = (f'<div class="notice">{i("users")}<span>With Essential, guests reply through your one link and appear in your dashboard as they do. '
                  f'Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>')
@@ -12785,10 +12980,10 @@ def step4(req, ev):
 <fieldset><legend>Children</legend>{check("children_allowed", "Children are welcome", bool(gs.get("children_allowed")), attrs={"data-reveals": "#kids"})}
 <div id="kids"{"" if gs.get("children_allowed") else " hidden"}>{field("max_children", "Children per invitation (maximum)", gs.get("max_children", 0), type="number", attrs={"min": 0, "max": 10}, errors=f.errors)}</div></fieldset>
 </div></details>"""
-    return wizard_frame(req, ev, 4, inner)
+    return wizard_frame(req, ev, 3, inner + GUESTS_JS, enctype="multipart/form-data")
 
 
-# --- step 5: programme ------------------------------------------------------------------------------
+# --- step 4: programme ------------------------------------------------------------------------------
 def _repeat(prefix: str, cols: str, rows_html: list, template_html: str, add_label: str, max_rows: int = 200) -> str:
     return (f'<div class="repeat" data-repeat="{prefix}" data-next="{len(rows_html) + 1}" data-max="{max_rows}" style="--cols:{cols}">'
             f'<div class="repeat" data-rows>{"".join(rows_html)}</div><template>{template_html}</template>'
@@ -12809,93 +13004,153 @@ def _sel(name, options, value, label):
     return f'<div class="field"><label class="tiny muted" for="{name}">{esc(label)}</label><select class="select select--sm" id="{name}" name="{name}">{o}</select></div>'
 
 
-def step5(req, ev):
+def _indexed(req, prefix: str, fields: list) -> list:
+    """Repeated rows posted as prefix-<i>-<field>, with their index kept (unlike req.rows)."""
+    pat = re.compile(rf"^{re.escape(prefix)}-(\d+)-")
+    idx = sorted({int(m.group(1)) for k in req.form for m in [pat.match(k)] if m})
+    return [(n, {f: req.get(f"{prefix}-{n}-{f}") for f in fields}) for n in idx]
+
+
+def _prog_row(k, d, it=None) -> str:
+    it = it or {}
+    g = lambda key: (it.get(key) if isinstance(it, dict) else it[key]) or ""
+    return (f'<div class="prog-row"><input type="hidden" name="si-{k}-day" value="{d}">'
+            + _in(f"si-{k}-time", g("item_time"), "time", label="Time") + _in(f"si-{k}-title", g("title"), ph="Ceremony", label="What happens")
+            + _in(f"si-{k}-description", g("description"), ph="Optional detail", label="Detail")
+            + f'<button class="btn btn--ghost btn--icon" type="button" data-remove-item aria-label="Remove item">{i("trash")}</button></div>')
+
+
+def _day_block(d, fn, rows: list, single_hint: bool) -> str:
+    fn = fn or {}
+    g = lambda key: (fn.get(key) if isinstance(fn, dict) else fn[key]) or ""
+    has_place = bool(g("venue_name") or g("address") or g("map_url"))
+    return f"""<section class="day-block" data-day="{d}"><input type="hidden" name="fn-{d}-id" value="{g("id")}">
+<div class="day-head"><div class="row row--between"><h3 data-day-title>Day</h3>
+<button class="btn btn--ghost btn--sm" type="button" data-remove-day>{i("trash")} Remove day</button></div>
+<div class="form-row form-row--4">{_in(f"fn-{d}-name", g("name"), ph="e.g. Negotiations, or Ceremony", label="What's on this day")}{_in(f"fn-{d}-date", g("func_date"), "date", label="Date")}
+{_in(f"fn-{d}-start", g("start_time"), "time", label="Starts")}{_in(f"fn-{d}-end", g("end_time"), "time", label="Ends")}</div>
+<details{" open" if has_place else ""}><summary class="small" style="cursor:pointer">Different venue for this day?</summary>
+<div class="form-row form-row--3" style="margin-top:10px">{_in(f"fn-{d}-venue", g("venue_name"), ph="Leave empty for the main venue", label="Venue")}
+{_in(f"fn-{d}-address", g("address"), ph="Address", label="Address")}{_in(f"fn-{d}-map", g("map_url"), "url", ph="Google Maps link", label="Map link")}</div></details></div>
+<div data-items>{"".join(rows)}</div>
+<div><button class="btn btn--sm btn--secondary" type="button" data-add-item>{i("plus")} Add to this day</button></div></section>"""
+
+
+PROGRAMME_JS = """<script>(function(){var box=document.querySelector('[data-days]');if(!box)return;var form=box.closest('form');
+var nd=+box.getAttribute('data-next-day'),nk=+box.getAttribute('data-next-item'),max=+box.getAttribute('data-max-days');
+var dayT=document.querySelector('template[data-day-template]').innerHTML,itemT=document.querySelector('template[data-item-template]').innerHTML;
+function fill(t,d,k){return t.split('__D__').join(d).split('__K__').join(k);}
+function sync(){var days=box.querySelectorAll('.day-block');box.classList.toggle('is-single',days.length===1);
+days.forEach(function(d,n){var t=d.querySelector('[data-day-title]');if(t)t.textContent='Day '+(n+1);});
+var add=document.querySelector('[data-add-day]'),lock=document.querySelector('[data-day-limit]');if(add)add.hidden=days.length>=max;if(lock)lock.hidden=days.length<max;}
+form.addEventListener('click',function(e){var t=e.target.closest('[data-add-day],[data-add-item],[data-remove-day],[data-remove-item]');if(!t)return;
+if(t.hasAttribute('data-add-day')){box.insertAdjacentHTML('beforeend',fill(dayT,nd,nk));nd++;nk++;sync();var b=box.lastElementChild.querySelector('input[name$="-name"]');if(b)b.focus();}
+else if(t.hasAttribute('data-add-item')){var d=t.closest('.day-block'),list=d.querySelector('[data-items]');list.insertAdjacentHTML('beforeend',fill(itemT,d.getAttribute('data-day'),nk));nk++;list.lastElementChild.querySelector('input').focus();}
+else if(t.hasAttribute('data-remove-day')){if(!confirm('Remove this day and everything planned for it?'))return;t.closest('.day-block').remove();sync();}
+else{t.closest('.prog-row').remove();}
+form.dispatchEvent(new Event('input'));});sync();})();</script>"""
+
+
+def step_programme(req, ev):
     f = Form(req)
-    max_funcs = catalog.limit(ev, "functions", 1) if catalog.has_feature(ev, "multi_functions") else 1
+    max_days = catalog.limit(ev, "functions", 1) if catalog.has_feature(ev, "multi_functions") else 1
+    funcs = events.functions(ev["id"])
     if req.method == "POST" and req.get("nav") == "sample":
-        items = suggestions.sample_programme(ev["category"], ev["start_time"] or "", group_of(ev))
+        items = suggestions.sample_programme(ev["category"], (funcs[0]["start_time"] if funcs and funcs[0]["start_time"] else ev["start_time"]) or "", group_of(ev))
+        first = funcs[0]["id"] if funcs else None
         with db.transaction():
-            db.run("DELETE FROM schedule_items WHERE event_id = ?", (ev["id"],))
+            db.run("DELETE FROM schedule_items WHERE event_id = ? AND (function_id IS ? OR function_id IS NULL)", (ev["id"], first))
             for n, it in enumerate(items):
-                db.insert("schedule_items", {"event_id": ev["id"], "function_id": None, "item_time": it["item_time"], "title": it["title"],
+                db.insert("schedule_items", {"event_id": ev["id"], "function_id": first, "item_time": it["item_time"], "title": it["title"],
                                              "description": it["description"], "kind": it["kind"], "sort": n})
-        req.flash("success", "Sample programme added. Change the times and titles to match your day.")
-        return redirect(step_url(ev, 5))
+        req.flash("success", "Sample programme added" + (f" to {funcs[0]['name']}" if funcs else "") + ". Change the times and titles to match your day.")
+        return redirect(step_url(ev, 4))
     if req.method == "POST":
-        frows = req.rows("fn", ["id", "name", "date", "start", "end", "venue", "address", "map"])
-        if len(frows) > max_funcs:
-            f.error("functions", f"Your package includes {max_funcs} event function{'s' if max_funcs != 1 else ''}. Upgrade for more.")
-        srows = req.rows("si", ["id", "time", "title", "description", "kind", "function"])
-        for r in frows:
-            if not r["name"]:
-                f.error("functions", "Each function needs a name, e.g. Ceremony or Reception.")
+        days = _indexed(req, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"])
+        rows = [(k, r) for k, r in _indexed(req, "si", ["time", "title", "description", "day"]) if r["time"] or r["title"] or r["description"]]
+        single = len(days) <= 1 and not any(days[0][1][x] for x in ("name", "date", "venue", "address", "map")) if days else True
+        if not single and len(days) > max_days:
+            f.error("functions", f"Your package includes {max_days} day{'s' if max_days != 1 else ''}. Choose a bigger package at the last step for more.")
+        for _, r in days:
             for k in ("start", "end"):
                 if r[k] and not forms.TIME_RE.match(r[k]):
-                    f.error("functions", "Function times must look like 14:30.")
-        for r in srows:
+                    f.error("functions", "Times must look like 14:30.")
+        for _, r in rows:
             if not r["title"]:
-                f.error("schedule", "Each programme item needs a title.")
+                f.error("schedule", "Each programme item needs a short description of what happens, e.g. Ceremony or Dinner.")
             if r["time"] and not forms.TIME_RE.match(r["time"]):
                 f.error("schedule", "Programme times must look like 14:30.")
         if f.ok:
+            from datetime import date, timedelta
             with db.transaction():
-                keep = []
-                for n, r in enumerate(frows):
-                    data = {"name": r["name"][:100], "func_date": r["date"] or None, "start_time": r["start"], "end_time": r["end"],
-                            "venue_name": r["venue"][:160], "address": r["address"][:300], "map_url": r["map"][:600], "sort": n}
-                    if r["id"].isdigit() and db.one("SELECT 1 FROM event_functions WHERE id = ? AND event_id = ?", (int(r["id"]), ev["id"])):
-                        db.update("event_functions", int(r["id"]), data)
-                        keep.append(int(r["id"]))
-                    else:
-                        keep.append(db.insert("event_functions", {"event_id": ev["id"], **data}))
+                fid_for, keep = {}, []
+                if not single:
+                    for n, (d, r) in enumerate(days):
+                        day_date = r["date"] or None
+                        if not day_date and ev["event_date"]:
+                            try:
+                                day_date = (date.fromisoformat(ev["event_date"]) + timedelta(days=n)).isoformat()
+                            except ValueError:
+                                day_date = None
+                        data = {"name": (r["name"] or f"Day {n + 1}")[:100], "func_date": day_date, "start_time": r["start"], "end_time": r["end"],
+                                "venue_name": r["venue"][:160], "address": r["address"][:300], "map_url": r["map"][:600], "sort": n}
+                        if r["id"].isdigit() and db.one("SELECT 1 FROM event_functions WHERE id = ? AND event_id = ?", (int(r["id"]), ev["id"])):
+                            db.update("event_functions", int(r["id"]), data)
+                            fid_for[d] = int(r["id"])
+                        else:
+                            fid_for[d] = db.insert("event_functions", {"event_id": ev["id"], **data})
+                        keep.append(fid_for[d])
                 marks = ",".join("?" * len(keep)) or "NULL"
                 db.run(f"DELETE FROM event_functions WHERE event_id = ? AND id NOT IN ({marks})", [ev["id"], *keep])
                 db.run("DELETE FROM schedule_items WHERE event_id = ?", (ev["id"],))
-                valid_fids = {r["id"] for r in events.functions(ev["id"])}
-                for n, r in enumerate(srows):
-                    fid = int(r["function"]) if r["function"].isdigit() and int(r["function"]) in valid_fids else None
-                    db.insert("schedule_items", {"event_id": ev["id"], "function_id": fid, "item_time": r["time"],
+                first = keep[0] if keep else None
+                for n, (_, r) in enumerate(rows):
+                    fid = fid_for.get(int(r["day"])) if r["day"].isdigit() else None
+                    db.insert("schedule_items", {"event_id": ev["id"], "function_id": fid if fid else first, "item_time": r["time"],
                                                  "title": r["title"][:160], "description": r["description"][:600],
-                                                 "kind": r["kind"] if r["kind"] in dict(KINDS) else "other", "sort": n})
-        r = finish_step(req, ev, 5, f)
+                                                 "kind": suggestions.guess_kind(r["title"]), "sort": n})
+        r = finish_step(req, ev, 4, f)
         if r:
             return r
-    funcs = events.functions(ev["id"])
     sched = events.schedule(ev["id"])
-    fopts = [("", "Whole event")] + [(fn["id"], fn["name"]) for fn in funcs]
-
-    def frow(i_, fn=None):
-        fn = fn or {}
-        g = lambda k: fn[k] if fn and fn[k] is not None else ""
-        return (f'<div class="repeat__row" style="--cols:repeat(4,minmax(0,1fr))"><input type="hidden" name="fn-{i_}-id" value="{g("id")}">'
-                + _in(f"fn-{i_}-name", g("name"), ph="Ceremony", label="Name") + _in(f"fn-{i_}-date", g("func_date"), "date", label="Date")
-                + _in(f"fn-{i_}-start", g("start_time"), "time", label="Starts") + _in(f"fn-{i_}-end", g("end_time"), "time", label="Ends")
-                + _in(f"fn-{i_}-venue", g("venue_name"), ph="Venue (if different)", label="Venue") + _in(f"fn-{i_}-address", g("address"), ph="Address", label="Address")
-                + _in(f"fn-{i_}-map", g("map_url"), "url", ph="Map link", label="Map link") + "<span></span>" + _rm() + "</div>")
-
-    def srow(i_, s=None):
-        s = s or {}
-        g = lambda k: s[k] if s and s[k] is not None else ""
-        return (f'<div class="repeat__row" style="--cols:110px minmax(0,1.3fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)"><input type="hidden" name="si-{i_}-id" value="{g("id")}">'
-                + _in(f"si-{i_}-time", g("item_time"), "time", label="Time") + _in(f"si-{i_}-title", g("title"), ph="Arrival and welcome drinks", label="Title")
-                + _in(f"si-{i_}-description", g("description"), ph="Optional detail", label="Detail")
-                + _sel(f"si-{i_}-kind", KINDS, g("kind") or "other", "Type") + _sel(f"si-{i_}-function", fopts, g("function_id"), "Part of") + _rm() + "</div>")
-
-    fn_rows = [frow(n, fn) for n, fn in enumerate(funcs)] or [frow(0)]
-    s_rows = [srow(n, s) for n, s in enumerate(sched)] or [srow(0), srow(1)]
-    multi = "multi_function" in catalog.category_features(ev["category"])
+    k = 0
+    blocks = []
+    if funcs:
+        for d, fn in enumerate(funcs):
+            mine = [s_ for s_ in sched if s_["function_id"] == fn["id"] or (d == 0 and s_["function_id"] not in {x["id"] for x in funcs})]
+            rows_html = []
+            for it in mine:
+                rows_html.append(_prog_row(k, d, it)); k += 1
+            if not rows_html:
+                rows_html.append(_prog_row(k, d)); k += 1
+            blocks.append(_day_block(d, fn, rows_html, False))
+        nd = len(funcs)
+    else:
+        rows_html = []
+        for it in sched:
+            rows_html.append(_prog_row(k, 0, it)); k += 1
+        if not rows_html:
+            rows_html = [_prog_row(k, 0), _prog_row(k + 1, 0)]; k += 2
+        blocks.append(_day_block(0, None, rows_html, True))
+        nd = 1
+    multi = "multi_function" in catalog.category_features(ev["category"]) or ev["category"] == "lobola"
+    tip = ("Lobola, traditional and multi-day weddings often run over more than one day. Add each day and plan what happens on it. "
+           if multi else "")
+    occasion = esc(catalog.category_name(ev["category"]).lower())
     inner = f"""{errors_summary(f.errors)}{feature_note(ev, "programme", "The programme")}
-<fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">{"Traditional and multi-day events often have several parts, each with its own venue. " if multi else ""}Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows {max_funcs}.</p>
-{_repeat("fn", "repeat(4,minmax(0,1fr))", fn_rows, frow("__i__"), "Add a function", max_funcs)}</fieldset>
-<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>
-<div class="notice" style="margin-bottom:14px">{i("wand")}<div><span>Start from a typical {esc(catalog.category_name(ev["category"]).lower())} programme{" timed from " + esc(ev["start_time"]) if ev["start_time"] else ""}, then adjust it.</span>
-<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="submit" name="nav" value="sample" formnovalidate{' data-confirm="This replaces the programme items below with a sample. Continue?"' if sched else ""}>Use a sample programme</button></div></div></div>
-{_repeat("si", "", s_rows, srow("__i__"), "Add an item")}</fieldset>"""
-    return wizard_frame(req, ev, 5, inner)
+<div class="notice" style="margin-bottom:6px">{i("wand")}<div><span>Start from a typical {occasion} programme{" timed from " + esc(ev["start_time"]) if ev["start_time"] else ""}, then change the times and titles.</span>
+<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="submit" name="nav" value="sample" formnovalidate{' data-confirm="This replaces the items for the first day with a sample. Continue?"' if sched else ""}>Use a sample programme</button></div></div></div>
+<div class="days" data-days data-next-day="{nd}" data-next-item="{k}" data-max-days="{max_days}">{"".join(blocks)}</div>
+<div class="row" style="gap:12px;flex-wrap:wrap"><button class="btn btn--secondary btn--sm" type="button" data-add-day>{i("calendar")} Add another day</button>
+<p class="small muted" style="margin:0">{tip}{f"Your package includes up to {max_days} days." if max_days > 1 else ""}</p>
+<p class="small muted" data-day-limit hidden style="margin:0">{"You've reached the number of days your package includes." if max_days > 1 else "Events over more than one day are part of Premium and Signature. Choose one at the last step."}</p></div>
+<template data-day-template>{_day_block("__D__", None, [_prog_row("__K__", "__D__")], False)}</template>
+<template data-item-template>{_prog_row("__K__", "__D__")}</template>{PROGRAMME_JS}"""
+    return wizard_frame(req, ev, 4, inner)
 
 
-# --- step 6: food ------------------------------------------------------------------------------------
-def step6(req, ev):
+# --- step 5: food ------------------------------------------------------------------------------------
+def step_food(req, ev):
     f = Form(req)
     info = dict(ev["info"] or {})
     if req.method == "POST":
@@ -12938,8 +13193,8 @@ def step6(req, ev):
             if pasted:
                 req.flash("success", f"Added {len(pasted)} dish{'es' if len(pasted) != 1 else ''} from your pasted menu. Check the courses below.")
                 if req.get("nav") == "next":
-                    return redirect(step_url(ev, 6))
-        r = finish_step(req, ev, 6, f)
+                    return redirect(step_url(ev, 5))
+        r = finish_step(req, ev, 5, f)
         if r:
             return r
     menu = db.one("SELECT * FROM menus WHERE event_id = ? ORDER BY sort, id LIMIT 1", (ev["id"],))
@@ -12970,75 +13225,78 @@ def step6(req, ev):
 <p class="hint" style="margin-top:8px">Guests can always add allergies in their own words.</p></fieldset>
 <div class="form-row form-row--2">{field("drinks", "Drinks", info.get("drinks", ""), type="textarea", attrs={"rows": 3, "placeholder": "Welcome bubbles, open bar until 23:00, mocktails for kids"})}
 {field("catering_notes", "Notes for guests about food", info.get("catering_notes", ""), type="textarea", attrs={"rows": 3})}</div>"""
-    return wizard_frame(req, ev, 6, inner)
+    return wizard_frame(req, ev, 5, inner)
 
 
-# --- step 7: seating -----------------------------------------------------------------------------------
-def step7(req, ev):
+# --- step 6: seating -----------------------------------------------------------------------------------
+TOP_CHOICES = {
+    "weddings": ("Where will the couple sit?", [("sweetheart", "Sweetheart table", "Just the two of you, facing your guests."),
+                                                ("head", "Head table", "The couple with the bridal party, along one side, facing guests."),
+                                                ("none", "With your guests", "No top table. You sit at a table among family and friends.")]),
+    "other": ("A top table for the hosts?", [("sweetheart", "Small top table", "For the hosts only, facing guests."),
+                                            ("head", "Top table", "Hosts and special guests, along one side, facing the room."),
+                                            ("none", "No top table", "Hosts sit among their guests.")]),
+}
+GUEST_CHOICES = [("round", "Round tables", "Easy conversation. 8 to 10 per table."),
+                 ("long", "Long tables", "Family style, in rows. Seats more in the same space."),
+                 ("mixed", "A mix", "Round tables with a few long ones for big families.")]
+
+SEATING_STEP_JS = """<script src="/static/js/floorplan.js"></script><script>(function(){var f=document.querySelector('[data-wizard-form]');if(!f||!window.AureliaFloor)return;
+f.querySelectorAll('[data-fp-icon]').forEach(function(el){el.innerHTML=AureliaFloor.icon(el.getAttribute('data-fp-icon'));});
+var box=f.querySelector('[data-plan-preview]');function v(n){var el=f.querySelector('[name='+n+']:checked')||f.querySelector('[name='+n+']');return el?el.value:'';}
+function draw(){box.innerHTML=AureliaFloor.plan({top:v('top_table'),guest:v('guest_tables'),count:v('table_count'),cap:v('capacity'),dance:box.getAttribute('data-dance')==='1'});}
+f.addEventListener('input',draw);f.addEventListener('change',draw);draw();})();</script>"""
+
+
+def _layout_choices(name, options, value):
+    return ('<div class="choice-grid layout-choice" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">' + "".join(
+        f'<label class="choice"><input type="radio" name="{name}" value="{k}"{" checked" if k == value else ""}><span><span data-fp-icon="{"none" if name == "top_table" and k == "none" else k}"></span>'
+        f'<b>{esc(t)}</b><small>{esc(d)}</small></span></label>' for k, t, d in options) + "</div>")
+
+
+def step_seating(req, ev):
     f = Form(req)
     info = dict(ev["info"] or {})
     existing = events.tables(ev["id"])
+    layout = events.seating_layout(ev)
+    est = (ev["guest_settings"] or {}).get("estimated") or db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0) or 0
     if req.method == "POST":
-        count = f.integer("table_count", "Number of tables", min=0, max=200)
-        cap = f.integer("capacity", "Seats per table", min=1, max=40, default=10)
-        shape = f.choice("shape", ["round", "long"], "shapes", default="round")
-        names = [n.strip()[:40] for n in req.get("table_names").splitlines() if n.strip()]
+        layout = {"top": f.choice("top_table", ["sweetheart", "head", "none"], "top tables", default=layout["top"]),
+                  "guest": f.choice("guest_tables", ["round", "long", "mixed"], "table types", default=layout["guest"]),
+                  "capacity": f.integer("capacity", "Seats per table", min=2, max=40, default=10)}
+        count = f.integer("table_count", "Number of tables", min=0, max=120, default=10)
+        info["seating_layout"] = layout
         info["seating_notes"] = f.text("seating_notes", "Special seating requirements", max=1500)
-        apply_cap = f.flag("apply_capacity")
         plan_now = f.flag("plan_now")
-        if plan_now and count < len([t for t in existing if t["parties"]]):
-            f.error("table_count", "Some tables already have guests. Move them before removing tables.")
-        if f.ok and not plan_now:
-            events.save_json(ev["id"], "info", info)
-        elif f.ok:
+        if plan_now and any(t["parties"] for t in existing):
+            f.error("plan_now", "Some tables already have guests. Change the tables in the seating editor instead.")
+        if f.ok:
             with db.transaction():
-                cur = events.tables(ev["id"])
-                # remove empty tables from the end until we reach the target
-                for t in reversed(cur):
-                    if len(cur) <= count:
-                        break
-                    if not t["parties"]:
-                        db.run("DELETE FROM seating_tables WHERE id = ?", (t["id"],))
-                        cur.remove(t)
-                for n in range(len(cur), count):
-                    col, rowi = n % 5, n // 5
-                    db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {n + 1}", "capacity": cap, "shape": shape,
-                                                 "pos_x": 12 + col * 19, "pos_y": 18 + rowi * 22, "sort": n})
-                cur = events.tables(ev["id"])
-                for n, t in enumerate(cur):
-                    upd = {}
-                    if n < len(names):
-                        upd["name"] = names[n]
-                    if apply_cap:
-                        upd["capacity"] = cap
-                        upd["shape"] = shape
-                    if upd:
-                        db.update("seating_tables", t["id"], upd)
                 events.save_json(ev["id"], "info", info)
-        r = finish_step(req, ev, 7, f)
+                if plan_now:
+                    db.run("DELETE FROM seating_tables WHERE event_id = ?", (ev["id"],))
+                    events.create_layout_tables(ev, layout, count)
+        r = finish_step(req, ev, 6, f)
         if r:
             return r
-    tables = events.tables(ev["id"])
-    est = (ev["guest_settings"] or {}).get("estimated") or 0
-    suggested = max(1, -(-est // 10)) if est else 10
-    cap = tables[0]["capacity"] if tables else 10
-    now = bool(tables) or bool(f.errors) or bool(req.get("plan_now"))
+    group = group_of(ev)
+    top_q, top_opts = TOP_CHOICES["weddings" if group == "weddings" else "other"]
+    suggested = max(1, -(-int(est) // int(layout.get("capacity") or 10))) if est else 10
+    guest_tables = [t for t in existing if t["notes"] != events.TOP_TABLE_NOTE]
     inner = f"""{errors_summary(f.errors)}{feature_note(ev, "seating", "The seating chart")}
-<div class="notice">{i("seat")}<span>Most hosts plan seating once replies are in. Then the <a class="text-link" href="/dashboard/events/{ev['uid']}/seating">seating editor</a> can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>
-{check("plan_now", "Set up my tables now", now, attrs={"data-reveals": "#tables-now"})}
-<div id="tables-now" style="display:grid;gap:18px"{"" if now else " hidden"}>
-<div class="form-row form-row--3">{field("table_count", "Number of tables", len(tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 200}, hint=f"About {suggested} for {est} guests at 10 a table." if est else "")}
-{field("capacity", "Seats per table", cap, type="number", errors=f.errors, attrs={"min": 1, "max": 40})}
-{select("shape", "Table shape", [("round", "Round"), ("long", "Long / banquet")], tables[0]["shape"] if tables else "round")}</div>
-{check("apply_capacity", "Apply seats and shape to existing tables too", not tables)}
-{field("table_names", "Table names (optional)", chr(10).join(t["name"] for t in tables), type="textarea", attrs={"rows": 5, "placeholder": "Head table" + chr(10) + "Protea" + chr(10) + "Baobab"}, hint="One per line, in order. Leave blank for Table 1, Table 2 and so on.")}
-<p class="small muted">{len(tables)} table{"s" if len(tables) != 1 else ""} set up so far.</p></div>
-{field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}"""
-    return wizard_frame(req, ev, 7, inner)
+<div class="notice">{i("seat")}<span>Most hosts plan seating once replies are in. Then the seating editor in your dashboard can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>
+<fieldset><legend>{esc(top_q)}</legend>{_layout_choices("top_table", top_opts, layout["top"])}</fieldset>
+<fieldset><legend>Guest tables</legend>{_layout_choices("guest_tables", GUEST_CHOICES, layout["guest"])}</fieldset>
+<div class="form-row form-row--2">{field("capacity", "Seats per table", layout.get("capacity") or 10, type="number", errors=f.errors, attrs={"min": 2, "max": 40})}
+{field("table_count", "Number of guest tables", len(guest_tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 120}, hint=f"About {suggested} for {est} guests." if est else "We'll adjust this once you know your numbers.")}</div>
+<div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview data-dance="{1 if group in ("weddings", "parties") else 0}"></div></div>
+<div class="field{' has-error' if 'plan_now' in f.errors else ''}">{check("plan_now", "Create these tables now", bool(req.get("plan_now")), hint="Optional. Otherwise we create them from this layout when you open the seating editor. You can rename and move tables there.")}</div>
+{field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}{SEATING_STEP_JS}"""
+    return wizard_frame(req, ev, 6, inner)
 
 
-# --- step 8: extras -------------------------------------------------------------------------------------
-def step8(req, ev):
+# --- step 7: extras -------------------------------------------------------------------------------------
+def step_extras(req, ev):
     f = Form(req)
     info = dict(ev["info"] or {})
     if req.method == "POST":
@@ -13075,8 +13333,8 @@ def step8(req, ev):
             events.save_json(ev["id"], "info", info)
         if rm.isdigit() and f.ok:
             req.flash("success", "Photo removed.")
-            return redirect(step_url(ev, 8))
-        r = finish_step(req, ev, 8, f)
+            return redirect(step_url(ev, 7))
+        r = finish_step(req, ev, 7, f)
         if r:
             return r
     def rows3(prefix, items, fields, phs):
@@ -13106,13 +13364,16 @@ def step8(req, ev):
 {field("dress_code_notes", "Dress code notes", info.get("dress_code_notes", ""), attrs={"placeholder": "Shades of emerald and gold; comfortable shoes for the lawn"})}</div>
 <fieldset><legend>Gift registry</legend>{_repeat("rg", "", rg_rows, rg_t, "Add a registry", 10)}
 {field("gift_note", "Gift preferences", info.get("gift_note", ""), type="textarea", attrs={"rows": 2, "placeholder": "Your presence is our present. If you'd like to give, a contribution to our honeymoon fund is welcome."})}</fieldset>
-<fieldset><legend>Contacts for guests</legend>{_repeat("ct", "", ct_rows, crow("__i__"), "Add a contact", 8)}</fieldset>
+<details class="box" style="padding:14px 16px"{" open" if info.get("contacts") else ""}><summary style="cursor:pointer;font-weight:500">Someone guests can call on the day (optional)</summary>
+<p class="hint" style="margin:10px 0 12px">For guests who are lost, running late or need help on the day, e.g. your planner, MC or a cousin. It shows on your website, so you're not the one answering calls. Leave it empty if you don't need it.</p>
+{_repeat("ct", "", ct_rows, crow("__i__"), "Add a person", 8)}</details>
 <fieldset><legend>Accommodation</legend>{_repeat("ac", "", ac_rows, ac_t, "Add a place to stay", 10)}</fieldset>
 {field("instructions", "Special instructions", info.get("instructions", ""), type="textarea", attrs={"rows": 3, "placeholder": "Unplugged ceremony: please keep phones away until the reception."})}
 <fieldset><legend>Photo gallery</legend>{feature_note(ev, "gallery", "The photo gallery")}
+<p class="hint" style="margin-bottom:12px">Add a few photos now, like your engagement shoot, or come back after the event and add photos from the day. Guests see them on the same link they already have.</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px">{thumbs}</div>
 {('<label class="file-drop" style="position:relative">' + i("image") + f'<span>Add photos ({len(gallery)} of {glimit})</span><span class="hint">JPG, PNG or WebP up to {config.MAX_UPLOAD_BYTES // 1048576} MB each.</span><span class="tiny" data-files></span><input type="file" name="gallery" multiple accept="image/jpeg,image/png,image/webp,image/gif"></label>') if glimit else '<p class="hint">Your current package has no gallery. Premium includes 40 photos.</p>'}</fieldset>"""
-    return wizard_frame(req, ev, 8, inner, enctype="multipart/form-data")
+    return wizard_frame(req, ev, 7, inner, enctype="multipart/form-data")
 
 
 def _join(parts: list) -> str:
@@ -13124,11 +13385,11 @@ def _q(text: str) -> str:
     return quote(text)
 
 
-# --- step 9: review --------------------------------------------------------------------------------------
-def step9(req, ev):
-    if req.method == "POST":
-        f = Form(req)
-        return finish_step(req, ev, 9, f) or redirect(step_url(ev, 10))
+# --- step 8: review and pay ------------------------------------------------------------------------------
+def step_review_pay(req, ev):
+    """One page to check and pay: what's still needed, the packages with a Pay button each, a draft link to
+    show family, and everything entered so far (folded away)."""
+    from ..services import payments
     venue = ev["venue"] or {}
     gs = ev["guest_settings"] or {}
     info = ev["info"] or {}
@@ -13139,35 +13400,60 @@ def step9(req, ev):
     t_row = catalog.template(ev["template"])
     n_guests = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0)
     wording = (ev["design"] or {}).get("wording") or {}
-    has_photo = bool(events.uploads(ev["id"], "hero"))
-    needed = [  # (done, label, step, needed before paying)
-        (bool(ev["hosts"] and ev["event_date"]), "Names and date", 1, True),
-        (bool(venue.get("name") and venue.get("address")), "Venue and address", 2, True),
-    ]
-    nice = [
-        (has_photo, "A main photo", 3), (any(wording.values()), "Your own wording (or keep the template's)", 3),
-        (bool(gs.get("rsvp_deadline")), "An RSVP deadline", 4),
-    ]
+    paid = catalog.package(ev["paid_package"])
+    pending = db.one("SELECT * FROM orders WHERE event_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", (ev["id"],))
+    needed = [(bool(ev["hosts"] and ev["event_date"]), "Names and date", 1), (bool(venue.get("name") and venue.get("address")), "Venue and address", 1)]
+    nice = [(bool(events.uploads(ev["id"], "hero")), "A main photo", 2), (any(wording.values()), "Your own wording (or keep the template's)", 2),
+            (bool(gs.get("rsvp_deadline")), "An RSVP deadline", 3)]
     if catalog.has_feature(ev, "guest_management"):
-        nice.append((bool(n_guests), "Your guest list (you can add it after paying too)", 4))
+        nice.append((bool(n_guests), "Your guest list (you can add it after paying too)", 3))
     if catalog.has_feature(ev, "programme"):
-        nice.append((bool(sched), "The programme", 5))
+        nice.append((bool(sched), "The programme", 4))
     if catalog.has_feature(ev, "menu"):
-        nice.append((bool(items), "The menu", 6))
-    nice.append((bool(info.get("dress_code") or info.get("contacts")), "Dress code or contact people", 8))
+        nice.append((bool(items), "The menu", 5))
+    missing_needed = [x for x in needed if not x[0]]
 
     def li(done, label, n, must=False):
         icon_ = i("check") if done else i("alert" if must else "plus")
         text = esc(label) if done else f'<a class="text-link" href="{step_url(ev, n)}">{esc(label)}</a>'
         return f'<li class="{"is-done" if done else ""}">{icon_}<span>{text}{"" if done or not must else " <b>(needed)</b>"}</span></li>'
-    gaps = events.package_gaps(ev, catalog.planning_package(ev))
-    gap_note = ""
-    if gaps:
-        gap_note = (f'<div class="notice notice--warn">{i("lock")}<span>Your planned package, {esc(catalog.package(catalog.planning_package(ev))["name"])}, '
-                    f'won\'t show {esc(_join(gaps))}. Choose a package that includes them in the next step, or remove them.</span></div>')
-    checklist = (f'<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3>'
-                 f'<ul class="checklist">{"".join(li(d, l, n, True) for d, l, n, _ in needed)}{"".join(li(d, l, n) for d, l, n in nice)}</ul>'
-                 f'<p class="tiny muted">Only the first two are needed. Everything else can be added after your website is live.</p></div>')
+    checklist = (f'<details class="box"{" open" if missing_needed else ""} style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">'
+                 f'{"Two things are needed before you pay" if len(missing_needed) == 2 else "One thing is needed before you pay" if missing_needed else "Ready to go. Optional extras you can still add"}</summary>'
+                 f'<ul class="checklist" style="margin-top:12px">{"".join(li(d, l, n, True) for d, l, n in needed)}{"".join(li(d, l, n) for d, l, n in nice)}</ul>'
+                 f'<p class="tiny muted" style="margin-top:8px">Everything except the first two can be added after your website is live.</p></details>')
+
+    cards = []
+    for p in catalog.packages():
+        is_paid = paid and p["code"] == paid["code"]
+        if paid and p["rank"] < paid["rank"]:
+            continue
+        price = p["price_cents"] - (paid["price_cents"] if paid and not is_paid else 0)
+        bullets = db.loads(p["bullets"], [])
+        limits = db.loads(p["limits"], {})
+        bl = "".join(f'<li>{i("check")}<span>{esc(b)}</span></li>' for b in bullets)
+        lim = "".join(f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, 0)) or "—"}</b></div>' for k, label in catalog.LIMIT_LABELS.items())
+        p_gaps = [] if is_paid else events.package_gaps(ev, p["code"])
+        gap_html = (f'<p class="small price__gap">{i("lock")} Won\'t show {esc(_join(p_gaps))}.</p>' if p_gaps else "")
+        if is_paid:
+            action = '<span class="pill pill--paid">Your current package</span>'
+        else:
+            label = f"Upgrade for {catalog.money(price)}" if paid else f"Pay {catalog.money(price)}"
+            action = (f'<button class="btn {"btn--primary" if p["highlight"] else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}"'
+                      f'{" disabled" if missing_needed else ""}>{label}</button>')
+        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
+<div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div>{action}<ul>{bl}</ul>
+<details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">{lim}</div></details>{gap_html}</article>""")
+    sandbox = ""
+    if payments.gateway().mode == "sandbox":
+        sandbox = (f'<div class="notice notice--warn">{i("info")}<span><b>Test mode.</b> Payments use the {esc(payments.gateway().label)}; '
+                   f'no real money moves and test payments are marked as sandbox everywhere.</span></div>')
+    status = ""
+    if paid:
+        status = f'<div class="notice notice--success">{i("check")}<span>Paid: <b>{esc(paid["name"])}</b>. Your website is {"live" if events.is_live(ev) else "ready to publish from Settings"}.</span></div>'
+    elif pending:
+        status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
+                  f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
     share = (f'<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>'
              f'<p class="small muted">Send this link to your partner or family. They see your website as it is now, with RSVPs switched off. It never appears in search engines.</p>'
              f'<div class="row" style="gap:8px;flex-wrap:wrap"><input class="input input--sm mono" style="flex:1;min-width:0" readonly value="{esc(events.draft_url(ev))}" aria-label="Draft preview link">'
@@ -13179,77 +13465,38 @@ def step9(req, ev):
         return (f'<div class="review-section"><div class="review-section__head"><h3>{esc(title)}</h3>'
                 f'<a class="btn btn--sm btn--ghost" href="{step_url(ev, n)}">{i("edit")} Edit</a></div><dl class="dl">{dl}</dl></div>')
     review = "".join([
-        sec(1, "Event details", [("Event", esc(ev["name"])), ("Type", esc(catalog.category_name(ev["category"]))), ("Hosts", esc(ev["hosts"])),
-                                 ("Date", esc(forms.fmt_date(ev["event_date"]))), ("Time", esc(" – ".join(x for x in (ev["start_time"], ev["end_time"]) if x)))]),
-        sec(2, "Venue", [("Venue", esc(venue.get("name"))), ("Address", esc(venue.get("address"))), ("Parking", esc(venue.get("parking"))),
-                         ("Directions", esc(venue.get("directions")))]),
-        sec(3, "Design", [("Template", esc(t_row["name"] if t_row else ev["template"])), ("Photos", str(len(events.uploads(ev["id"]))) + " uploaded"),
-                          ("Welcome", esc((ev["design"] or {}).get("wording", {}).get("welcome")))]),
-        sec(4, "Guests", [("Estimated", esc(gs.get("estimated") or "")), ("RSVP deadline", esc(forms.fmt_date(gs.get("rsvp_deadline")))),
-                          ("Plus-ones", esc({"none": "Not allowed", "per_guest": "Set per guest", "open": "Allowed"}.get(gs.get("plus_one_policy"), ""))),
+        sec(1, "Details", [("Names", esc(ev["hosts"])), ("Occasion", esc(catalog.category_name(ev["category"]))),
+                           ("Date", esc(forms.fmt_date(ev["event_date"]))), ("Time", esc(" – ".join(x for x in (ev["start_time"], ev["end_time"]) if x))),
+                           ("Venue", esc(venue.get("name"))), ("Address", esc(venue.get("address")))]),
+        sec(2, "Design", [("Template", esc(t_row["name"] if t_row else ev["template"])), ("Photos", str(len(events.uploads(ev["id"]))) + " uploaded"),
+                          ("Welcome", esc(wording.get("welcome")))]),
+        sec(3, "Guests", [("Guest list", f"{n_guests} guests" if n_guests else ""), ("RSVP deadline", esc(forms.fmt_date(gs.get("rsvp_deadline")))),
                           ("Children", "Welcome" if gs.get("children_allowed") else "Adults only")]),
-        sec(5, "Programme", [("Functions", esc(", ".join(fn["name"] for fn in funcs))), ("Programme items", str(len(sched)) if sched else "")]),
-        sec(6, "Food and drinks", [("Menu items", str(items) if items else ""), ("Dietary options", esc(", ".join(info.get("dietary_options", []))))]),
-        sec(7, "Seating", [("Tables", f"{len(tables)} tables, {sum(t['capacity'] for t in tables)} seats" if tables else "")]),
-        sec(8, "Extras", [("Dress code", esc(info.get("dress_code"))), ("Registry", str(len(info.get("registry", []))) if info.get("registry") else ""),
-                          ("Contacts", str(len(info.get("contacts", []))) if info.get("contacts") else "")]),
+        sec(4, "Programme", [("Days", esc(", ".join(fn["name"] for fn in funcs)) if funcs else "One day"), ("Programme items", str(len(sched)) if sched else "")]),
+        sec(5, "Food and drinks", [("Menu items", str(items) if items else ""), ("Dietary options", esc(", ".join(info.get("dietary_options", []))))]),
+        sec(6, "Seating", [("Tables", f"{len(tables)} tables, {sum(t['capacity'] for t in tables)} seats" if tables else "Planned after RSVPs")]),
+        sec(7, "Extras", [("Dress code", esc(info.get("dress_code"))), ("Registry", str(len(info.get("registry", []))) if info.get("registry") else ""),
+                          ("Gallery", str(len(events.uploads(ev["id"], "gallery"))) + " photos" if events.uploads(ev["id"], "gallery") else "")]),
     ])
-    inner = f"""{gap_note}{checklist}{share}
-<div class="notice">{i("link")}<span>Your website address will be <b class="mono">{esc(events.public_url(ev))}</b>. Change it in Settings.</span></div>
-<div class="preview-frame" data-preview data-device="desktop" style="margin:18px 0"><div class="preview-frame__bar"><span class="preview-frame__url">/events/{esc(ev['slug'])}</span>
-<div class="seg"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>
-<div class="preview-frame__stage"><iframe src="/dashboard/events/{ev['uid']}/preview" title="Preview of your event website"></iframe></div></div>
-{review}"""
-    html = wizard_frame(req, ev, 9, inner)
-    return html.replace("Save and continue", "Looks good, choose a package", 1)
-
-
-# --- step 10: package -----------------------------------------------------------------------------------
-def step10(req, ev):
-    paid = catalog.package(ev["paid_package"])
-    pending = db.one("SELECT * FROM orders WHERE event_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", (ev["id"],))
-    cards = []
-    for p in catalog.packages():
-        is_paid = paid and p["code"] == paid["code"]
-        if paid and p["rank"] < paid["rank"]:
-            continue
-        price = p["price_cents"] - (paid["price_cents"] if paid and not is_paid else 0)
-        bullets = db.loads(p["bullets"], [])
-        limits = db.loads(p["limits"], {})
-        items = "".join(f'<li>{i("check")}<span>{esc(b)}</span></li>' for b in bullets)
-        lim = "".join(f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, 0)) or "—"}</b></div>' for k, label in catalog.LIMIT_LABELS.items())
-        selected = (ev["selected_package"] == p["code"]) and not is_paid
-        p_gaps = [] if is_paid else events.package_gaps(ev, p["code"])
-        gap_html = (f'<p class="small price__gap">{i("lock")} Won\'t show {esc(_join(p_gaps))}.</p>' if p_gaps else "")
-        if is_paid:
-            action = '<span class="pill pill--paid">Your current package</span>'
-        else:
-            label = f"Upgrade for {catalog.money(price)}" if paid else f"Pay {catalog.money(price)}"
-            action = (f'<button class="btn {"btn--primary" if p["highlight"] or selected else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}">{label}</button>')
-        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
-<div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div><ul>{items}</ul><div class="price__limits">{lim}</div>{gap_html}{action}</article>""")
-    sandbox = ""
-    from ..services import payments
-    if payments.gateway().mode == "sandbox":
-        sandbox = (f'<div class="notice notice--warn">{i("info")}<span><b>Test mode.</b> Payments use the {esc(payments.gateway().label)}; '
-                   f'no real money moves and test payments are marked as sandbox everywhere.</span></div>')
-    status = ""
-    if paid:
-        status = f'<div class="notice notice--success">{i("check")}<span>Paid: <b>{esc(paid["name"])}</b>. Your website is {"live" if events.is_live(ev) else "ready to publish from Settings"}.</span></div>'
-    elif pending:
-        status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
-                  f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
-    inner = f"""{status}{sandbox}
-<form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}
+    pay_note = ("Finish the details marked “needed” above, then pay." if missing_needed else
+                "Secure payment by card or instant EFT. Prices include 15% VAT. Your website goes live as soon as the payment is confirmed, and you get a receipt by email.")
+    inner = f"""{status}{sandbox}{checklist}
+<form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}<input type="hidden" name="accept" value="1">
 <div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">{"".join(cards)}</div>
-<label class="check"><input type="checkbox" name="accept" value="1" required><span>I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and <a class="text-link" href="/refunds" target="_blank">refund policy</a>. My website is published only after the payment gateway confirms payment.</span></label>
-<p class="tiny muted">Secure payment by card or instant EFT. Prices include 15% VAT. You'll get a receipt by email.</p></form>
+<p class="small muted">{pay_note} By paying, you accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and <a class="text-link" href="/refunds" target="_blank">refund policy</a>.</p></form>
+{share}
+<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">See everything you've entered</summary><div style="display:grid;gap:16px;margin-top:16px">
+<div class="notice">{i("link")}<span>Your website address will be <b class="mono">{esc(events.public_url(ev))}</b>. Change it in Settings.</span></div>
+<div class="preview-frame" data-preview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">/events/{esc(ev['slug'])}</span>
+<div class="seg"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>
+<div class="preview-frame__stage"><iframe loading="lazy" src="/dashboard/events/{ev['uid']}/preview" title="Preview of your event website"></iframe></div></div>
+{review}</div></details>
 <p class="small muted" style="margin-top:14px">Questions before you pay, or rather have us finish the set-up? <a class="text-link" href="/help-me-set-up">Ask us to help</a>.</p>"""
-    return wizard_frame(req, ev, 10, inner)
+    return wizard_frame(req, ev, 8, inner)
 
 
-STEP_HANDLERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5, 6: step6, 7: step7, 8: step8, 9: step9, 10: step10}
+STEP_HANDLERS = {1: step_details, 2: step_design, 3: step_guests, 4: step_programme, 5: step_food, 6: step_seating, 7: step_extras,
+                 8: step_review_pay}
 ```
 
 ### `app/web.py`
@@ -13631,7 +13878,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `preview_site/eventrender.js`
 
-<!-- FILE: preview_site/eventrender.js sha256=2e47412670021f4909aef9724ecdf2d3d5f00d0b1cf6faacf09ffb152200a158 nl=1 -->
+<!-- FILE: preview_site/eventrender.js sha256=26cc733fc7ab457bc58d88a7d6cca8b445c74d8aba8a1bc43060ef0e35ac6625 nl=1 -->
 ```javascript
 /* Aurelia event-website renderer for the browser.
    A line-for-line port of app/eventsite/render.py + designs.py, so the shareable preview site can
@@ -13767,9 +14014,10 @@ echo "Backed up to $DEST ($STAMP)"
     var start = ev.start_time || "12:00";
     var funcs = (ev.functions || []).filter(function (f) { return f.name; });
     var fnames = {};
-    funcs.forEach(function (f) { fnames[f.id] = f.name; });
+    var fdates = {};
+    funcs.forEach(function (f) { fnames[f.id] = f.name; fdates[f.id] = f.func_date || ""; });
     var schedule = (ev.schedule || []).filter(function (s) { return s.title; }).map(function (s) {
-      return Object.assign({}, s, { function_name: s.function_id ? (fnames[s.function_id] || "") : "" });
+      return Object.assign({}, s, { function_name: s.function_id ? (fnames[s.function_id] || "") : "", function_date: s.function_id ? (fdates[s.function_id] || "") : "" });
     });
     var menus = [];
     var items = ((ev.menu || {}).items || []).filter(function (it) { return it.name; });
@@ -13875,11 +14123,11 @@ echo "Backed up to $DEST ($STAMP)"
     var groups = [];
     items.forEach(function (it) {
       var name = it.function_name || "";
-      if (!groups.length || groups[groups.length - 1][0] !== name) groups.push([name, []]);
+      if (!groups.length || groups[groups.length - 1][0] !== name) groups.push([name, [], it.function_date || ""]);
       groups[groups.length - 1][1].push(it);
     });
     return groups.map(function (g) {
-      return (g[0] && groups.length > 1 ? '<h3 class="ev-prog__group">' + esc(g[0]) + "</h3>" : "") + '<ol class="ev-prog">' + g[1].map(function (it) {
+      return (g[0] && groups.length > 1 ? '<h3 class="ev-prog__group">' + esc(g[0]) + (g[2] ? " <small>" + esc(fmtDate(g[2], false)) + "</small>" : "") + "</h3>" : "") + '<ol class="ev-prog">' + g[1].map(function (it) {
         return '<li class="ev-prog__item ev-kind-' + esc(it.kind || "other") + '"><time>' + esc(fmtTime(it.item_time)) + "</time><div><h4>" + esc(it.title) +
           "</h4>" + p(it.description || "", "ev-small") + "</div></li>"; }).join("") + "</ol>";
     }).join("");
@@ -14183,7 +14431,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `preview_site/journey.js`
 
-<!-- FILE: preview_site/journey.js sha256=c4f6fbc4c7114f9f78e4bf10cda3302825061d55eae259e5174f1cc4c6d977e3 nl=1 -->
+<!-- FILE: preview_site/journey.js sha256=e8c45658223afca40f4e2a81846c7fd73594eb3be7425c4603b8932fa012adc7 nl=1 -->
 ```javascript
 /* Aurelia customer journey for the shareable site: choose occasion and template, the 10-step set-up,
    live preview, package choice and booking request. Runs entirely in the visitor's browser; drafts are
@@ -14193,6 +14441,7 @@ echo "Backed up to $DEST ($STAMP)"
   "use strict";
   var D = window.AURELIA_DATA, R = window.AureliaRender, esc = R.esc;
   var KEY = "aurelia-journey-v1";
+  var HOST = D.host_label;
   var root = function () { return document.getElementById("journey-root"); };
   var state = load();
   var currentHash = "";
@@ -14207,6 +14456,12 @@ echo "Backed up to $DEST ($STAMP)"
       s.order.forEach(function (id) {
         var img = localStorage.getItem(KEY + "-img-" + id);
         if (img && s.events[id]) s.events[id].images = JSON.parse(img);
+        var e = s.events[id];
+        if (e && !e.v) {           // drafts from the 10-step version: map step numbers onto the 8 steps
+          var map = { 1: 1, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 8 };
+          e.wizard_done = (e.wizard_done || []).map(function (n) { return map[n] || n; }).filter(function (n, k, a) { return a.indexOf(n) === k; });
+          e.guest_list = e.guest_list || []; e.v = 2;
+        }
       });
     } catch (e) { /* storage unavailable: keep this visit in memory */ }
     return s;
@@ -14259,6 +14514,16 @@ echo "Backed up to $DEST ($STAMP)"
     text = text.split("{hosts}").join(hosts || "the hosts");
     return deadline ? text.split("{deadline}").join(deadline) : text.replace(/\s*by \{deadline\}/g, "").split("{deadline}").join("");
   }
+  var KIND_WORDS = [["meal", ["dinner", "lunch", "breakfast", "brunch", "meal", "food", "starter", "main course", "dessert", "cake", "canap", "braai", "buffet", "tea", "supper", "snack"]],
+    ["ceremony", ["ceremony", "vows", "wedding", "negotiation", "lobola", "blessing", "prayer", "unveiling", "graduation", "church", "service", "ritual", "exchange of gifts", "umembeso", "umabo"]],
+    ["speech", ["speech", "toast", "welcome", "remarks", "introduction", "thanks", "keynote", "panel", "announcement"]],
+    ["entertainment", ["dance", "music", "dj", "band", "entertainment", "party", "reveal", "performance", "choir", "show"]],
+    ["reception", ["reception", "seated", "drinks", "cocktail", "arrival of the couple", "entrance"]], ["activity", ["photo", "games", "gift", "workshop", "registration", "tour"]]];
+  function guessKind(title) {
+    var t = (title || "").toLowerCase();
+    for (var i = 0; i < KIND_WORDS.length; i++) if (KIND_WORDS[i][1].some(function (w) { return t.indexOf(w) > -1; })) return KIND_WORDS[i][0];
+    return "other";
+  }
   function sampleProgramme(ev) {
     var key = SUG.programme_for[ev.category] || ev.category;
     if (!SUG.programmes[key]) key = "private-celebration";
@@ -14271,11 +14536,16 @@ echo "Backed up to $DEST ($STAMP)"
   }
   var HEADER_WORDS = ["name", "names", "full name", "guest", "guests", "guest name", "first name", "surname", "last name", "phone", "mobile", "cell",
     "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"];
+  function saPhone(p) {
+    var d = String(p || "").replace(/\D/g, "");
+    return d.length === 9 && "678".indexOf(d[0]) > -1 && String(p).trim().charAt(0) !== "+" ? "0" + d : String(p || "").trim();
+  }
   function parseGuests(text) {
-    var out = [], seen = {};
+    var out = [], seen = {}, group = "";
     (text || "").split(/\r?\n/).forEach(function (raw) {
       var line = raw.trim().replace(/^[,;\t]+|[,;\t]+$/g, "");
       if (!line) return;
+      if (/:$/.test(line) && !/@/.test(line) && !/\d{6,}/.test(line.replace(/\D/g, ""))) { group = line.slice(0, -1).trim().slice(0, 60); return; }
       var cells = line.split(/[,;\t|]+/).map(function (c) { return c.trim().toLowerCase(); }).filter(Boolean);
       if (cells.length && cells.every(function (c) { return HEADER_WORDS.indexOf(c) > -1; })) return;
       var em = /[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}/.exec(line), rest = em ? line.replace(em[0], " ") : line;
@@ -14286,9 +14556,93 @@ echo "Backed up to $DEST ($STAMP)"
       var key = name.toLowerCase() + "|" + (em ? em[0].toLowerCase() : "");
       if (seen[key]) return;
       seen[key] = 1;
-      out.push({ name: name.slice(0, 120), phone: ph ? ph[0].trim() : "", email: em ? em[0].toLowerCase() : "" });
+      out.push({ name: name.slice(0, 120), phone: ph ? saPhone(ph[0]) : "", email: em ? em[0].toLowerCase() : "", group: group });
     });
     return out.slice(0, 2000);
+  }
+  var COLS = { name: ["name", "full name", "guest", "guest name", "names", "guest names"], first: ["first name", "first", "firstname", "given name"],
+    last: ["surname", "last name", "last", "lastname", "family name"], phone: ["phone", "mobile", "cell", "cellphone", "whatsapp", "number", "phone number", "mobile number", "contact", "tel"],
+    email: ["email", "e-mail", "email address", "mail"], group: ["family", "family group", "group", "side", "household"] };
+  function parseSheet(rows) {
+    rows = rows.map(function (r) { return r.map(function (c) { return String(c == null ? "" : c).trim(); }); }).filter(function (r) { return r.some(Boolean); });
+    if (!rows.length) return [];
+    var head = rows[0].map(function (c) { return c.toLowerCase(); }), col = {};
+    Object.keys(COLS).forEach(function (k) { var at = head.findIndex(function (h) { return COLS[k].indexOf(h) > -1; }); col[k] = at < 0 ? null : at; });
+    if (col.name === null && col.first === null) return parseGuests(rows.map(function (r) { return r.filter(Boolean).join(", "); }).join("\n"));
+    var get = function (r, k) { return col[k] !== null && col[k] < r.length ? r[col[k]] : ""; }, out = [], seen = {};
+    rows.slice(1).forEach(function (r) {
+      var name = get(r, "name") || get(r, "first"), last = get(r, "last");
+      if (last && name.toLowerCase().indexOf(last.toLowerCase()) < 0) name = name + " " + last;
+      name = name.replace(/\s+/g, " ").trim();
+      if (!name) return;
+      var em = /[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}/.exec(get(r, "email")), key = name.toLowerCase() + "|" + (em ? em[0].toLowerCase() : "");
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push({ name: name.slice(0, 120), phone: saPhone(get(r, "phone")), email: em ? em[0].toLowerCase() : "", group: get(r, "group").slice(0, 60) });
+    });
+    return out.slice(0, 2000);
+  }
+  // Spreadsheets: .csv, or .xlsx (Excel and Google Sheets downloads) read with a small zip reader.
+  function parseCsv(text) {
+    var first = text.split(/\r?\n/)[0] || "", delim = [",", ";", "\t"].sort(function (a, b) { return first.split(b).length - first.split(a).length; })[0];
+    var rows = [], row = [], cell = "", q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === delim) { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function readXlsx(buf) {
+    var u8 = new Uint8Array(buf), dv = new DataView(buf), i, files = {};
+    for (i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) break;
+    if (i < 0) return Promise.reject(new Error("bad zip"));
+    var count = dv.getUint16(i + 10, true), p = dv.getUint32(i + 16, true), td = new TextDecoder();
+    for (var k = 0; k < count && dv.getUint32(p, true) === 0x02014b50; k++) {
+      var nlen = dv.getUint16(p + 28, true), name = td.decode(u8.subarray(p + 46, p + 46 + nlen));
+      files[name] = { method: dv.getUint16(p + 10, true), size: dv.getUint32(p + 20, true), at: dv.getUint32(p + 42, true) };
+      p += 46 + nlen + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true);
+    }
+    function read(name) {
+      var f = files[name];
+      if (!f) return Promise.resolve("");
+      var start = f.at + 30 + dv.getUint16(f.at + 26, true) + dv.getUint16(f.at + 28, true), data = u8.subarray(start, start + f.size);
+      return (f.method === 0 ? Promise.resolve(data) : through(data, new DecompressionStream("deflate-raw"))).then(function (b) { return td.decode(b); });
+    }
+    var sheet = files["xl/worksheets/sheet1.xml"] ? "xl/worksheets/sheet1.xml" : Object.keys(files).filter(function (n) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(n); }).sort()[0];
+    if (!sheet) return Promise.reject(new Error("no sheet"));
+    return Promise.all([read("xl/sharedStrings.xml"), read(sheet)]).then(function (x) {
+      var dp = new DOMParser(), shared = [];
+      if (x[0]) Array.prototype.forEach.call(dp.parseFromString(x[0], "application/xml").getElementsByTagName("si"), function (si) {
+        shared.push(Array.prototype.map.call(si.getElementsByTagName("t"), function (t) { return t.textContent; }).join("")); });
+      return Array.prototype.map.call(dp.parseFromString(x[1], "application/xml").getElementsByTagName("row"), function (row) {
+        var out = [];
+        Array.prototype.forEach.call(row.getElementsByTagName("c"), function (c) {
+          var ref = /^([A-Z]+)/.exec(c.getAttribute("r") || "A")[1], n = 0;
+          for (var j = 0; j < ref.length; j++) n = n * 26 + ref.charCodeAt(j) - 64;
+          var t = c.getAttribute("t"), v = c.getElementsByTagName("v")[0], value;
+          if (t === "s") value = shared[+(v ? v.textContent : -1)] || "";
+          else if (t === "inlineStr") value = Array.prototype.map.call(c.getElementsByTagName("t"), function (e) { return e.textContent; }).join("");
+          else value = v ? v.textContent.replace(/\.0$/, "") : "";
+          out[n - 1] = value;
+        });
+        return Array.from(out, function (c) { return c || ""; });
+      });
+    });
+  }
+  function readSheetFile(file) {
+    return file.arrayBuffer().then(function (buf) {
+      var head = new Uint8Array(buf.slice(0, 2));
+      if (head[0] === 0x50 && head[1] === 0x4b) {
+        if (!window.DecompressionStream) throw new Error("old browser");
+        return readXlsx(buf);
+      }
+      return parseCsv(new TextDecoder().decode(buf).replace(/^\ufeff/, ""));
+    });
   }
   var COURSE_WORDS = {
     "Canapés": ["canapé", "canape", "canapés", "canapes", "snacks", "hors d'oeuvres", "on arrival"],
@@ -14328,7 +14682,7 @@ echo "Backed up to $DEST ($STAMP)"
     var has = function (k) { return feats.indexOf(k) > -1; };
     n = ev.schedule.length; if (n && !has("programme")) out.push("your programme (" + plural(n, "item") + ")");
     n = ev.menu.items.length; if (n && !has("menu")) out.push("your menu (" + plural(n, "dish", "dishes") + ")");
-    if (ev.tables.plan_now && +ev.tables.count > 0 && !has("seating")) out.push("the seating chart");
+    if (ev.tables.chosen && !has("seating")) out.push("your seating layout");
     n = (ev.images.gallery || []).length; allowed = has("gallery") ? (lim.gallery_photos || 0) : 0;
     if (n > allowed) out.push(allowed ? (n - allowed) + " of your " + n + " gallery photos" : "your photo gallery (" + plural(n, "photo") + ")");
     n = ev.functions.length; allowed = has("multi_functions") ? (lim.functions || 1) : 1;
@@ -14357,7 +14711,7 @@ echo "Backed up to $DEST ($STAMP)"
   }
   function safeUrl(u) { return /^https?:\/\/[^\s<>"]+$/i.test(u || "") ? u : ""; }
   function clean(raw) {
-    if (!raw || typeof raw !== "object" || !cat(raw.category) || !tpl(raw.template)) throw new Error("Not an Aurelia draft");
+    if (!raw || typeof raw !== "object" || !cat(raw.category) || !tpl(raw.template)) throw new Error("Not an event draft");
     var ev = newEvent(raw.category, raw.template, String(raw.name || ""));
     ["id", "created", "updated", "hosts", "description", "event_date", "start_time", "end_time", "ends_next_day", "selected_package", "booking"].forEach(function (k) { if (raw[k] !== undefined) ev[k] = raw[k]; });
     ["contact", "venue", "design", "guest_settings", "menu", "info", "tables"].forEach(function (k) { if (raw[k] && typeof raw[k] === "object") ev[k] = Object.assign(ev[k], raw[k]); });
@@ -14456,7 +14810,7 @@ echo "Backed up to $DEST ($STAMP)"
     if (feature(ev, key)) return "";
     var need = D.packages.filter(function (p) { return p.features.indexOf(key) > -1; })[0];
     return '<div class="notice notice--warn">' + icon("lock") + "<span>" + esc(what) + " shows on your website with the " + esc(need ? need.name : "a higher package") +
-      ". You can fill it in now and choose your package in step 10.</span></div>";
+      ". You can fill it in now and choose your package at the last step.</span></div>";
   }
 
   // --- new event model --------------------------------------------------------------------------
@@ -14470,16 +14824,10 @@ echo "Backed up to $DEST ($STAMP)"
       hosts: "", description: "", event_date: "", start_time: "", end_time: "", contact: { name: "", email: "", phone: "" },
       venue: {}, design: {}, images: { gallery: [] }, guest_settings: gs, functions: [], schedule: [], menu: { name: "Reception menu", items: [] },
       info: { dietary_options: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"] }, tables: { count: "", capacity: 10, shape: "round", names: [], plan_now: false },
-      guest_list: [], selected_package: "premium", wizard_done: [], booking: null };
+      guest_list: [], selected_package: "premium", wizard_done: [], booking: null, v: 2 };
   }
 
   // --- views: create ------------------------------------------------------------------------------
-  function packagePicker(selected) {
-    return '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">' + D.packages.map(function (p) {
-      return '<label class="choice"><input type="radio" name="pkg" value="' + p.code + '"' + (p.code === selected ? " checked" : "") + "><span>" + esc(p.name) + " · " + money(p.price_cents) +
-        "<small>" + esc(p.tagline) + "</small></span></label>"; }).join("") + "</div>" +
-      '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, so you don\'t fill in anything your package won\'t show. <a class="text-link" href="#pricing">Compare packages</a></p>';
-  }
   function viewCreate(param) {
     var pre = { category: "", template: "", group: "", pkg: "" };
     var m = /^create-(tpl|cat|grp|pkg)-(.+)$/.exec(param || "");
@@ -14498,14 +14846,15 @@ echo "Backed up to $DEST ($STAMP)"
         '<span><span class="row row--between" style="gap:8px"><b>' + esc(t.name) + '</b><span class="palette-swatches">' + sw + "</span></span><small>" + esc(t.direction) + "</small></span></label>";
     }).join("");
     root().innerHTML = '<section class="page-hero"><div class="grid-texture"></div><div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>' +
-      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Everything is saved in this browser as you go, and nothing is charged until you\'re ready.</p>' +
+      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Three quick questions, then we build your website as you go. Everything is saved in this browser, and nothing is charged until you\'re ready.</p>' +
       '<p class="small" style="margin-top:14px">' + (state.order.length ? '<a class="text-link" href="#my-events">Continue an event you started</a> · ' : "") + 'Rather have us do it? <a class="text-link" href="#help-me-set-up">We can set it up for you</a>.</p></div></section>' +
       '<section class="section"><div class="container"><form class="form" data-create data-no-busy novalidate><div data-errors></div>' +
       '<div class="box" data-field="category"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>' + groups + "</div>" +
       '<div class="box" data-field="template"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step. <a class="text-link" href="#templates">Preview the templates</a></p>' +
       '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>' + tpls + "</div>" +
       '<button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>' +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>' + packagePicker(pkg(pre.pkg) ? pre.pkg : "premium") + "</div>" +
+      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Whose celebration is it?</h2>' + field("hosts", (HOST[pre.group || "weddings"] || ["Names"])[0], "", { required: true,
+        attrs: { placeholder: (HOST[pre.group || "weddings"] || ["", "e.g. Lerato & Sipho"])[1] }, hint: "Shown large on your website and used for your link. You can change it later." }) + "</div>" +
       '<div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up ' + icon("arrow") + "</button></div></form></div></section>";
     var form = root().querySelector("[data-create]"), grid = form.querySelector("[data-tpl-grid]"), more = form.querySelector("[data-show-all]"), all = false;
     function sync(auto) {
@@ -14520,7 +14869,12 @@ echo "Backed up to $DEST ($STAMP)"
       var picked = grid.querySelector("input[name=template]:checked");
       if (auto && first && (!picked || picked.closest(".choice").hidden)) first.querySelector("input").checked = true;
     }
-    form.addEventListener("change", function (e) { if (e.target.name === "category") sync(true); });
+    form.addEventListener("change", function (e) {
+      if (e.target.name !== "category") return;
+      sync(true);
+      var L = HOST[e.target.getAttribute("data-group")], h = form.querySelector("[name=hosts]");
+      if (L && h) { form.querySelector("label[for=f-hosts]").firstChild.textContent = L[0]; h.placeholder = L[1]; }
+    });
     more.addEventListener("click", function () { all = true; sync(false); });
     sync(false);
     form.addEventListener("submit", function (e) {
@@ -14528,9 +14882,11 @@ echo "Backed up to $DEST ($STAMP)"
       var fd = new FormData(form), errs = {};
       if (!fd.get("category")) errs.category = "Choose the type of event.";
       if (!fd.get("template")) errs.template = "Choose a template. You can change it later.";
+      if (!val(fd, "hosts")) errs.hosts = "Add the names to show on your website, e.g. Lerato & Sipho.";
       if (showErrors(form, errs)) return;
-      var ev = newEvent(fd.get("category"), fd.get("template"), cat(fd.get("category")).name);
-      if (pkg(fd.get("pkg"))) ev.selected_package = fd.get("pkg");
+      var ev = newEvent(fd.get("category"), fd.get("template"), autoName(fd.get("category"), val(fd, "hosts")) || cat(fd.get("category")).name);
+      ev.hosts = val(fd, "hosts");
+      if (pkg(pre.pkg)) ev.selected_package = pre.pkg;
       state.events[ev.id] = ev; state.order.unshift(ev.id); state.current = ev.id; save();
       toast("Your event is saved in this browser as a private draft. Let's add the details.");
       location.hash = "#setup-1";
@@ -14558,13 +14914,13 @@ echo "Backed up to $DEST ($STAMP)"
   function viewMyEvents() {
     var cards = state.order.map(function (id) {
       var ev = state.events[id]; if (!ev) return "";
-      var pct = Math.round(100 * ev.wizard_done.filter(function (n) { return n <= 9; }).length / 9);
+      var pct = Math.round(100 * ev.wizard_done.filter(function (n) { return n < LAST; }).length / (LAST - 1));
       var c = cat(ev.category), status = !ev.booking ? '<span class="pill pill--draft">Draft</span>'
         : (ev.booking.status === "sent" || !D.forms ? '<span class="pill pill--ok">' + (D.forms ? "Booking sent" : "Booking ready") + "</span>" : '<span class="pill pill--draft">Booking not sent yet</span>');
       return '<article class="box event-card"><div class="event-card__top"><div><h2 style="font-size:1.25rem">' + esc(ev.name) + '</h2><div class="event-card__meta"><span>' + esc(c ? c.name : "") + "</span>" +
         (ev.event_date ? "<span>" + esc(R.fmtDate(ev.event_date, false)) + "</span>" : "") + "<span>" + esc((tpl(ev.template) || {}).name || "") + " template</span></div></div>" + status + "</div>" +
         '<div class="progress"><span style="width:' + pct + '%"></span></div><div class="btn-row">' +
-        '<button class="btn btn--primary btn--sm" type="button" data-open="' + id + '" data-to="' + (ev.booking ? "booked" : "setup-" + Math.min(10, (Math.max.apply(null, [0].concat(ev.wizard_done)) + 1))) + '">' + (ev.booking ? "View booking" : "Continue set-up") + "</button>" +
+        '<button class="btn btn--primary btn--sm" type="button" data-open="' + id + '" data-to="' + (ev.booking ? "booked" : "setup-" + Math.min(LAST, (Math.max.apply(null, [0].concat(ev.wizard_done)) + 1))) + '">' + (ev.booking ? "View booking" : "Continue set-up") + "</button>" +
         '<button class="btn btn--secondary btn--sm" type="button" data-open="' + id + '" data-to="preview-event">' + icon("eye") + " Preview website</button>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-delete="' + id + '">' + icon("trash") + " Delete</button></div></article>";
     }).join("");
@@ -14576,13 +14932,14 @@ echo "Backed up to $DEST ($STAMP)"
   }
 
   // --- wizard frame -------------------------------------------------------------------------------
-  var STEPS = [[1, "Event details", "calendar"], [2, "Venue", "pin"], [3, "Design", "palette"], [4, "Guests", "users"], [5, "Programme", "list"],
-    [6, "Food and drinks", "dish"], [7, "Seating", "seat"], [8, "Extras", "gift"], [9, "Review", "eye"], [10, "Package", "card"]];
-  var INTROS = { 1: "The essentials guests see first, and how we reach you.", 2: "Where it's happening and how to get there.", 3: "Make the template yours. The preview updates as you go.",
-    4: "Your guest list and how replies work.", 5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-    7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.", 9: "Check everything before you choose a package.",
-    10: "Choose your package and send us your booking." };
-  var OPTIONAL = [4, 5, 6, 7, 8], STEP_FEATURE = { 5: "programme", 6: "menu", 7: "seating" };
+  var STEPS = [[1, "Details", "calendar"], [2, "Design", "palette"], [3, "Guests", "users"], [4, "Programme", "list"], [5, "Food and drinks", "dish"],
+    [6, "Seating", "seat"], [7, "Extras", "gift"], [8, "Review and pay", "card"]];
+  var LAST = 8;
+  var INTROS = { 1: "Who, when and where. The essentials guests see first.", 2: "Make the template yours. The preview updates as you go.",
+    3: "Who's coming. Add them however suits you, or skip and let guests reply through your link.", 4: "The running order of your day, or of each day.",
+    5: "Menus, meal choices and dietary needs.", 6: "Choose your table layout. You seat guests once replies are in.", 7: "Dress code, gifts, places to stay and photos.",
+    8: "Check what's left, choose your package and pay." };
+  var OPTIONAL = [3, 4, 5, 6, 7], STEP_FEATURE = { 4: "programme", 5: "menu", 6: "seating" };
 
   function frame(ev, n, inner, opts) {
     opts = opts || {};
@@ -14592,29 +14949,26 @@ echo "Backed up to $DEST ($STAMP)"
         : (OPTIONAL.indexOf(s[0]) > -1 ? '<span class="stepper__tag">optional</span>' : "");
       return '<li><a href="#setup-' + s[0] + '" class="' + (done.indexOf(s[0]) > -1 ? "is-done" : "") + '"' + (s[0] === n ? ' aria-current="step"' : "") + '><span class="n">' +
         (done.indexOf(s[0]) > -1 && s[0] !== n ? "✓" : s[0]) + "</span>" + esc(s[1]) + tag + "</a></li>"; }).join("");
-    var pct = Math.round(100 * done.filter(function (x) { return x <= 10; }).length / 10);
-    var nav = n < 10 ? '<div class="wizard-actions">' + (n > 1 ? '<a class="btn btn--ghost" href="#setup-' + (n - 1) + '">' + icon("arrow-left") + " Back</a>" : "<span></span>") +
-      '<div class="btn-row">' + (n >= 3 && n <= 7 ? '<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' : "") +
-      (OPTIONAL.indexOf(n) > -1 ? '<a class="btn btn--ghost" href="#setup-' + (n + 1) + '">Skip for now</a>' : "") +
-      '<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button><button class="btn btn--primary" type="submit" name="nav" value="next">' +
-      esc(opts.nextLabel || "Save and continue") + " " + icon("arrow") + "</button></div></div>" : "";
-    var optional = OPTIONAL.indexOf(n) > -1 ? '<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time before you send your booking, or ask us to add it later.</p>' : "";
+    var pct = Math.round(100 * done.filter(function (x) { return x <= LAST; }).length / LAST);
+    var nav = n < LAST ? '<div class="wizard-actions">' + (n > 1 ? '<a class="btn btn--ghost" href="#setup-' + (n - 1) + '">' + icon("arrow-left") + " Back</a>" : "<span></span>") +
+      '<div class="btn-row">' + (n >= 2 && n <= 6 ? '<button class="btn btn--ghost" type="submit" name="nav" value="review">Skip to review and pay</button>' : "") +
+      (OPTIONAL.indexOf(n) > -1 ? '<a class="btn btn--ghost" href="#setup-' + (n + 1) + '">Skip this step</a>' : "") +
+      '<button class="btn btn--primary" type="submit" name="nav" value="next">' + esc(opts.nextLabel || "Continue") + " " + icon("arrow") + "</button></div></div>" : "";
+    var optional = OPTIONAL.indexOf(n) > -1 ? '<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time, before or after you pay.</p>' : "";
     var card = '<div class="glass glass--strong wizard-card"><div class="row" style="gap:14px;margin-bottom:6px"><span class="icon-tile icon-tile--soft">' + icon(STEPS[n - 1][2]) +
       '</span><div><span class="tiny muted mono">STEP ' + n + "</span><h2>" + esc(STEPS[n - 1][1]) + '</h2></div></div><p class="lead">' + INTROS[n] + "</p>" + optional + "<hr>" +
       '<form class="form" data-step="' + n + '" data-no-busy novalidate><div data-errors></div>' + inner + nav + "</form></div>";
     var preview = opts.preview ? '<div class="wizard-split">' + card + previewFrame() + "</div>" : card;
-    var plan = '<div class="plan-package"><label class="tiny muted" for="plan-pkg">Planning with</label><select class="select select--sm" id="plan-pkg" data-plan>' +
-      D.packages.map(function (p) { return '<option value="' + p.code + '"' + ((ev.selected_package || "premium") === p.code ? " selected" : "") + ">" + esc(p.name) + " · " + money(p.price_cents) + "</option>"; }).join("") + "</select></div>";
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 28px)"><div class="container">' +
-      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft, saved in this browser as you go. Nothing is shared until you send your booking.</p></div>" +
-      '<div class="btn-row">' + plan + '<button class="btn btn--ghost btn--sm" type="button" data-continue-link>' + icon("link") + ' Continue on another device</button>' +
+      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft. Everything saves as you type; nothing is shared until you pay.</p></div>" +
+      '<div class="btn-row"><button class="btn btn--ghost btn--sm" type="button" data-continue-link>' + icon("link") + ' Continue on another device</button>' +
       '<a class="btn btn--secondary btn--sm" href="#preview-event">' + icon("eye") + " Full preview</a></div></div>" +
-      '<div class="wizard-progress"><span>' + pct + '% complete</span><div class="progress"><span style="width:' + pct + '%"></span></div><span class="mono">Step ' + n + ' of 10</span></div>' +
+      '<div class="wizard-progress"><span>' + pct + '% complete</span><div class="progress"><span style="width:' + pct + '%"></span></div><span class="mono">Step ' + n + " of " + LAST + '</span></div>' +
       '<div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">' + stepper + "</ol></nav><div>" + preview + "</div></div></div></section>";
     refreshPreview(true);
   }
   function previewFrame(height) {
-    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aurelia.events/' + esc(slugOf(cur())) + "</span>" +
+    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(cur())) + "</span>" +
       '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
       '<div class="preview-frame__stage" style="height:' + (height || 680) + 'px"><iframe title="Live preview of your event website" data-live></iframe></div></div>';
   }
@@ -14631,64 +14985,55 @@ echo "Backed up to $DEST ($STAMP)"
     }, now ? 0 : 350);
   }
 
-  // --- step 1 ---------------------------------------------------------------------------------------
-  var HOST = D.host_label;
-  function step1(ev) {
-    var g = groupOf(ev), hl = HOST[g] || ["Hosts", ""];
+  // --- step 1: details (names, date, venue) ---------------------------------------------------------
+  function stepDetails(ev) {
+    var g = groupOf(ev), hl = HOST[g] || ["Hosts", ""], v = ev.venue;
     var cats = D.categories.map(function (c) { return [c.slug, D.groups[c.group].name + ": " + c.name]; });
-    return '<fieldset><legend>About you</legend><div class="form-row form-row--3">' + field("contact_name", "Your name", ev.contact.name, { required: true, attrs: { autocomplete: "name" } }) +
-      field("contact_email", "Your email", ev.contact.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your booking confirmation and payment link go here." }) +
-      field("contact_phone", "Your mobile (optional)", ev.contact.phone, { type: "tel", attrs: { autocomplete: "tel" } }) + "</div></fieldset>" +
-      field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
-      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name || ev.name === autoName(ev.category, ev.hosts)) ? "1" : "0" },
-        hint: "Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
-      field("description", "A short welcome or description", ev.description, { type: "textarea", hint: "Optional. One or two sentences guests read first." }) +
+    var more = !!(v.map_url || v.parking || v.directions || ev.description);
+    return field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
       '<div class="form-row form-row--3">' + field("event_date", "Date", ev.event_date, { type: "date", required: true, attrs: { min: todayIso() } }) +
       field("start_time", "Starts", ev.start_time, { type: "time" }) + field("end_time", "Ends", ev.end_time, { type: "time" }) + "</div>" +
-      check("ends_next_day", "Ends after midnight", !!ev.ends_next_day) + '<p class="tiny muted">Several ceremonies or days? Add each one in the Programme step.</p>';
+      check("ends_next_day", "Ends after midnight", !!ev.ends_next_day) +
+      '<div class="form-row form-row--2">' + field("venue_name", "Venue", v.name, { required: true, attrs: { placeholder: "Oakhaven Wine Estate" } }) +
+      field("address", "Address", v.address, { required: true, hint: "Guests get directions and a map from this." }) + "</div>" +
+      '<p class="tiny muted">More than one day, or a second venue? Add each day in the Programme step.</p>' +
+      '<details class="box" style="padding:14px 16px"' + (more ? " open" : "") + '><summary style="cursor:pointer;font-weight:500">More details (optional): map pin, parking, directions, a short welcome</summary><div style="display:grid;gap:16px;margin-top:16px">' +
+      field("map_url", "Google Maps link", v.map_url, { type: "url", hint: "For an exact pin, e.g. a farm gate. Paste the share link from Google Maps." }) +
+      field("parking", "Parking", v.parking, { type: "textarea", attrs: { rows: 2 }, hint: "Where to park, security, drop-off." }) +
+      field("directions", "Directions", v.directions, { type: "textarea", attrs: { rows: 2 }, hint: "Landmarks, gate codes, the last turn GPS gets wrong." }) +
+      field("description", "A short welcome", ev.description, { type: "textarea", attrs: { rows: 2 }, hint: "One or two sentences guests read first." }) +
+      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name || ev.name === autoName(ev.category, ev.hosts)) ? "1" : "0" },
+        hint: "Used in invitation messages. Filled in from your names." }) + select("category", "Occasion", cats, ev.category) + "</div></div></details>";
   }
-  function collect1(ev, fd) {
-    ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
+  function collectDetails(ev, fd) {
     ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
     ev.name = val(fd, "name") || autoName(ev.category, ev.hosts) || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
+    var url = val(fd, "map_url");
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    ev.venue = Object.assign(ev.venue || {}, { name: val(fd, "venue_name"), address: val(fd, "address"), map_url: url, parking: val(fd, "parking"), directions: val(fd, "directions") });
   }
-  function validate1(ev) {
+  function validateDetails(ev) {
     var e = {};
-    if (!ev.contact.name) e.contact_name = "Your name is required.";
-    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(ev.contact.email)) e.contact_email = "Enter a valid email address, like name@example.com.";
-    if (ev.contact.phone && !/^\+?[0-9 ()-]{7,20}$/.test(ev.contact.phone)) e.contact_phone = "Enter a phone number using digits, spaces and an optional +.";
-    if (!ev.hosts) e.hosts = (HOST[groupOf(ev)] || ["Hosts"])[0] + " is required.";
-    if (!ev.event_date) e.event_date = "Date is required.";
+    if (!ev.hosts) e.hosts = (HOST[groupOf(ev)] || ["Names"])[0] + " is needed.";
+    if (!ev.event_date) e.event_date = "Date is needed.";
     else if (ev.event_date < todayIso()) e.event_date = "Date can't be in the past.";
     if (ev.start_time && ev.end_time && ev.end_time <= ev.start_time && !ev.ends_next_day) e.end_time = "End time must be after the start time (tick “ends after midnight” if it does).";
+    if (!ev.venue.name) e.venue_name = "Venue is needed.";
+    if (!ev.venue.address) e.address = "Address is needed.";
+    if (ev.venue.map_url && !/^https?:\/\/[^\s<>"]+\.[^\s<>"]+/i.test(ev.venue.map_url)) e.map_url = "Map link must be a web address.";
+    return e;
+  }
+  function validateContact(ev) {
+    var e = {};
+    if (!ev.contact.name) e.contact_name = "Your name is needed.";
+    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(ev.contact.email)) e.contact_email = "Enter a valid email address, like name@example.com.";
+    if (ev.contact.phone && !/^\+?[0-9 ()-]{7,20}$/.test(ev.contact.phone)) e.contact_phone = "Enter a phone number using digits, spaces and an optional +.";
     return e;
   }
   function val(fd, k) { return (fd.get(k) || "").toString().trim(); }
 
-  // --- step 2 ---------------------------------------------------------------------------------------
-  function step2(ev) {
-    var v = ev.venue;
-    return '<div class="form-row form-row--2">' + field("venue_name", "Venue name", v.name, { required: true }) + field("address", "Street address", v.address, { required: true, hint: "Guests get a Google Maps link built from this." }) + "</div>" +
-      field("map_url", "Google Maps link (optional)", v.map_url, { type: "url", hint: "Paste a share link from Google Maps for an exact pin, e.g. a farm gate." }) +
-      field("parking", "Parking", v.parking, { type: "textarea", attrs: { rows: 3 }, hint: "Where to park, security, valet, drop-off." }) +
-      field("directions", "Directions", v.directions, { type: "textarea", attrs: { rows: 3 }, hint: "Landmarks, gate codes, the last turn GPS gets wrong." }) +
-      field("accommodation", "Accommodation nearby", v.accommodation, { type: "textarea", attrs: { rows: 3 }, hint: "Optional. Add specific places with links in the Extras step." });
-  }
-  function collect2(ev, fd) {
-    var url = val(fd, "map_url");
-    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
-    ev.venue = { name: val(fd, "venue_name"), address: val(fd, "address"), map_url: url, parking: val(fd, "parking"), directions: val(fd, "directions"), accommodation: val(fd, "accommodation") };
-  }
-  function validate2(ev) {
-    var e = {};
-    if (!ev.venue.name) e.venue_name = "Venue name is required.";
-    if (!ev.venue.address) e.address = "Address is required.";
-    if (ev.venue.map_url && !/^https?:\/\/[^\s<>"]+\.[^\s<>"]+/i.test(ev.venue.map_url)) e.map_url = "Map link must be a web address.";
-    return e;
-  }
-
-  // --- step 3 ---------------------------------------------------------------------------------------
+  // --- step 2: design ---------------------------------------------------------------------------------------
   function step3(ev) {
     var g = groupOf(ev), t = tpl(ev.template) || D.templates[0], dsg = D.themes.designs[t.design], res = R.resolve(t.design, ev.design);
     var tplOpts = D.templates.slice().sort(function (a, b) { return (a.groups.indexOf(g) > -1 ? 0 : 1) - (b.groups.indexOf(g) > -1 ? 0 : 1); }).map(function (x) {
@@ -14748,24 +15093,58 @@ echo "Backed up to $DEST ($STAMP)"
     ev.design = d;
   }
 
-  // --- step 4 ---------------------------------------------------------------------------------------
+  // --- step 3: guests --------------------------------------------------------------------------------------
+  function guestListHtml(ev) {
+    var list = ev.guest_list || [];
+    if (!list.length) return '<p class="small muted">No guests yet.</p>';
+    var groups = [];
+    list.forEach(function (g, k) { var name = g.group || ""; var grp = groups.filter(function (x) { return x[0] === name; })[0]; if (!grp) groups.push(grp = [name, []]); grp[1].push([g, k]); });
+    return '<p class="small"><b>' + plural(list.length, "guest") + '</b> on your list. <button class="btn btn--ghost btn--sm" type="button" data-clear-guests>Clear the list</button></p>' +
+      groups.map(function (grp) {
+        return (grp[0] ? '<p class="tiny muted mono" style="margin:10px 0 4px">' + esc(grp[0].toUpperCase()) + "</p>" : "") + '<ul class="guest-chips">' + grp[1].map(function (x) {
+          return '<li><span>' + esc(x[0].name) + (x[0].phone ? ' <span class="muted">' + esc(x[0].phone) + "</span>" : "") + '</span><button type="button" data-remove-guest="' + x[1] + '" aria-label="Remove ' + esc(x[0].name) + '">' + icon("close") + "</button></li>";
+        }).join("") + "</ul>";
+      }).join("");
+  }
+  function addGuests(people) {
+    var ev = cur(), have = {}, added = 0;
+    ev.guest_list = ev.guest_list || [];
+    ev.guest_list.forEach(function (g) { have[g.name.toLowerCase()] = 1; if (g.email) have[g.email] = 1; if (g.phone) have[g.phone.replace(/\D/g, "")] = 1; });
+    people.forEach(function (g) {
+      var d = (g.phone || "").replace(/\D/g, "");
+      if (have[g.name.toLowerCase()] || (g.email && have[g.email]) || (d && have[d])) return;
+      ev.guest_list.push({ name: g.name, phone: g.phone || "", email: g.email || "", group: g.group || "" });
+      have[g.name.toLowerCase()] = 1; added++;
+    });
+    ev.updated = new Date().toISOString(); save();
+    var box = document.querySelector("#journey-root [data-guest-list]");
+    if (box) box.innerHTML = guestListHtml(ev);
+    return added;
+  }
   function step4(ev) {
     var gs = ev.guest_settings, preset = ["Family", "Friends", "Colleagues", "VIP", "Church", "Neighbours", "Partners", "Clients"], chosen = gs.categories || [];
-    var sides = (gs.sides || ["", ""]).concat(["", ""]).slice(0, 2);
+    var sides = (gs.sides || ["", ""]).concat(["", ""]).slice(0, 2), paste;
     var pol = [["none", "No plus-ones", "Invitations are for the named guest only."], ["per_guest", "Set per guest", "You decide for each guest in your list."], ["open", "Everyone may bring", "Guests on the general link can add plus-ones."]];
-    var list = ev.guest_list || [], paste;
     if (feature(ev, "guest_management")) {
-      paste = "<fieldset><legend>Your guest list</legend>" + (list.length ? '<div class="row row--between" style="gap:10px;margin-bottom:10px;flex-wrap:wrap"><p class="small"><b>' + plural(list.length, "guest") + "</b> on your list.</p>" +
-        '<button class="btn btn--ghost btn--sm" type="button" data-clear-guests>' + icon("trash") + " Clear the list</button></div>" +
-        '<details style="margin-bottom:12px"><summary class="small" style="cursor:pointer">Show the names</summary><p class="small muted" style="margin-top:8px">' +
-        list.map(function (g) { return esc(g.name) + (g.phone ? " · " + esc(g.phone) : "") + (g.email ? " · " + esc(g.email) : ""); }).join("<br>") + "</p></details>" : "") +
-        field("guest_paste", list.length ? "Add more names (optional)" : "Paste names (optional)", "", { type: "textarea", attrs: { rows: 6, placeholder: "Thandi Mokoena, 082 123 4567\nSipho Dlamini, sipho@example.com\nGogo Nomsa" },
-          hint: "One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. We add them when you save, and each guest gets a personal RSVP link." }) + "</fieldset>";
+      var canPick = "contacts" in navigator && "ContactsManager" in window;
+      paste = '<fieldset><legend>Your guest list</legend>' +
+        '<div class="quick-add"><input class="input" data-qa-name placeholder="Guest\'s name" aria-label="Guest\'s name" autocomplete="off">' +
+        '<input class="input" data-qa-phone type="tel" placeholder="Mobile (optional)" aria-label="Guest\'s mobile" autocomplete="off">' +
+        '<button class="btn btn--secondary" type="button" data-qa-add>' + icon("plus") + " Add</button></div>" +
+        '<p class="tiny muted" style="margin:6px 0 10px">Type a name, press Enter, type the next one. Couples can go on one line, e.g. “Thabo & Lindi Mokoena”.</p>' +
+        '<div class="btn-row">' + (canPick ? '<button class="btn btn--ghost btn--sm" type="button" data-pick-contacts>' + icon("phone") + " Choose from my phone contacts</button>" : "") +
+        '<label class="btn btn--ghost btn--sm" style="position:relative">' + icon("upload") + ' Upload Excel or CSV<input type="file" data-guest-file accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></div>' +
+        '<details style="margin-top:10px"><summary class="small" style="cursor:pointer;font-weight:500">Paste a list</summary>' +
+        field("guest_paste", "Names to add", "", { type: "textarea", attrs: { rows: 6, placeholder: "Mokoena family:\nThandi Mokoena, 082 123 4567\nGogo Nomsa\nFriends:\nSipho Dlamini, sipho@example.com" },
+          hint: "One guest per line, with a mobile or email if you have it. A line ending in a colon, like “Mokoena family:”, groups the names below it. Copying a column from Excel, Google Sheets or your phone's notes works too." }) +
+        '<button class="btn btn--secondary btn--sm" type="button" data-paste-add>' + icon("plus") + " Add these names</button></details>" +
+        '<div data-guest-list style="margin-top:14px">' + guestListHtml(ev) + "</div>" +
+        '<p class="small muted" style="margin-top:10px">No list yet? That\'s fine. Skip this step: when guests reply through your link, they\'re added to your list for you.</p></fieldset>';
     } else {
       paste = '<div class="notice">' + icon("users") + "<span>With Essential, guests reply through your one link and appear in your dashboard as they do. Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>";
     }
-    return '<div class="form-row form-row--2">' + field("estimated", "Estimated number of guests", gs.estimated, { type: "number", attrs: { min: 0, max: 5000 } }) +
-      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" + paste +
+    return paste + '<div class="form-row form-row--2">' + field("estimated", "Roughly how many guests?", gs.estimated, { type: "number", attrs: { min: 0, max: 5000 } }) +
+      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" +
       '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">More options: plus-ones, children, families and guest groups</summary><div style="display:grid;gap:18px;margin-top:16px">' +
       "<fieldset><legend>Guest categories</legend>" + featureNote(ev, "guest_categories", "Using several guest categories") + '<div class="choice-grid">' +
       preset.map(function (c) { return '<label class="choice"><input type="checkbox" name="categories" value="' + c + '"' + (chosen.indexOf(c) > -1 ? " checked" : "") + "><span>" + c + "</span></label>"; }).join("") + "</div>" +
@@ -14798,51 +15177,93 @@ echo "Backed up to $DEST ($STAMP)"
     return e;
   }
 
-  // --- step 5 ---------------------------------------------------------------------------------------
+  // --- step 4: programme, one block per day -----------------------------------------------------------------
   function maxFunctions(ev) { return feature(ev, "multi_functions") ? (limit(ev, "functions") || 1) : 1; }
-  function fnOptions(ev) { return [["", "Whole event"]].concat(ev.functions.filter(function (f) { return f.name; }).map(function (f) { return [f.id, f.name]; })); }
-  function fnRow(i, f) {
-    f = f || {};
-    return '<div class="repeat__row" style="--cols:repeat(4,minmax(0,1fr))"><input type="hidden" name="fn-' + i + '-id" value="' + esc(f.id || uid("f")) + '">' +
-      mini("fn-" + i + "-name", f.name, "text", "Ceremony", "Name") + mini("fn-" + i + "-date", f.func_date, "date", "", "Date") + mini("fn-" + i + "-start", f.start_time, "time", "", "Starts") +
-      mini("fn-" + i + "-end", f.end_time, "time", "", "Ends") + mini("fn-" + i + "-venue", f.venue_name, "text", "Venue (if different)", "Venue") + mini("fn-" + i + "-address", f.address, "text", "Address", "Address") +
-      mini("fn-" + i + "-map", f.map_url, "url", "Map link", "Map link") + "<span></span>" + rm() + "</div>";
+  function progRow(k, d, it) {
+    it = it || {};
+    return '<div class="prog-row"><input type="hidden" name="si-' + k + '-day" value="' + d + '">' + mini("si-" + k + "-time", it.item_time, "time", "", "Time") +
+      mini("si-" + k + "-title", it.title, "text", "Ceremony", "What happens") + mini("si-" + k + "-description", it.description, "text", "Optional detail", "Detail") +
+      '<button class="btn btn--ghost btn--icon" type="button" data-remove-item aria-label="Remove item">' + icon("trash") + "</button></div>";
   }
-  var KINDS = D.kinds;
-  function siRow(i, s, ev) {
-    s = s || {};
-    return '<div class="repeat__row" style="--cols:110px minmax(0,1.3fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)">' + mini("si-" + i + "-time", s.item_time, "time", "", "Time") +
-      mini("si-" + i + "-title", s.title, "text", "Arrival and welcome drinks", "Title") + mini("si-" + i + "-description", s.description, "text", "Optional detail", "Detail") +
-      miniSel("si-" + i + "-kind", KINDS, s.kind || "other", "Type") + miniSel("si-" + i + "-function", fnOptions(ev), s.function_id || "", "Part of") + rm() + "</div>";
+  function dayBlock(d, fn, rowsHtml) {
+    fn = fn || {};
+    var place = !!(fn.venue_name || fn.address || fn.map_url);
+    return '<section class="day-block" data-day="' + d + '"><input type="hidden" name="fn-' + d + '-id" value="' + esc(fn.id || "") + '">' +
+      '<div class="day-head"><div class="row row--between"><h3 data-day-title>Day</h3><button class="btn btn--ghost btn--sm" type="button" data-remove-day>' + icon("trash") + " Remove day</button></div>" +
+      '<div class="form-row form-row--4">' + mini("fn-" + d + "-name", fn.name, "text", "e.g. Negotiations, or Ceremony", "What's on this day") + mini("fn-" + d + "-date", fn.func_date, "date", "", "Date") +
+      mini("fn-" + d + "-start", fn.start_time, "time", "", "Starts") + mini("fn-" + d + "-end", fn.end_time, "time", "", "Ends") + "</div>" +
+      "<details" + (place ? " open" : "") + '><summary class="small" style="cursor:pointer">Different venue for this day?</summary><div class="form-row form-row--3" style="margin-top:10px">' +
+      mini("fn-" + d + "-venue", fn.venue_name, "text", "Leave empty for the main venue", "Venue") + mini("fn-" + d + "-address", fn.address, "text", "Address", "Address") +
+      mini("fn-" + d + "-map", fn.map_url, "url", "Google Maps link", "Map link") + "</div></details></div>" +
+      '<div data-items>' + rowsHtml + '</div><div><button class="btn btn--sm btn--secondary" type="button" data-add-item>' + icon("plus") + " Add to this day</button></div></section>";
   }
   function step5(ev) {
-    var mf = maxFunctions(ev), multi = ((cat(ev.category) || {}).features || []).indexOf("multi_function") > -1;
-    var fr = ev.functions.length ? ev.functions.map(function (f, i) { return fnRow(i, f); }) : [fnRow(0)];
-    var sr = ev.schedule.length ? ev.schedule.map(function (s, i) { return siRow(i, s, ev); }) : [siRow(0, null, ev), siRow(1, null, ev)];
-    return featureNote(ev, "programme", "The programme") + '<fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">' +
-      (multi ? "Traditional and multi-day events often have several parts, each with its own venue. " : "") + "Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows " + mf + ".</p>" +
-      repeat("fn", fr, null, "Add a function", mf) + "</fieldset>" +
-      '<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>' +
-      '<div class="notice" style="margin-bottom:14px">' + icon("wand") + "<div><span>Start from a typical " + esc(((cat(ev.category) || {}).name || "event").toLowerCase()) + " programme" +
-      (ev.start_time ? " timed from " + esc(ev.start_time) : "") + ', then adjust it.</span><div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-sample>Use a sample programme</button></div></div></div>' +
-      repeat("si", sr, null, "Add an item") + "</fieldset>";
+    var mf = maxFunctions(ev), k = 0, blocks;
+    var multi = ((cat(ev.category) || {}).features || []).indexOf("multi_function") > -1 || ev.category === "lobola";
+    if (ev.functions.length) {
+      var ids = ev.functions.map(function (f) { return f.id; });
+      blocks = ev.functions.map(function (fn, d) {
+        var mine = ev.schedule.filter(function (x) { return x.function_id === fn.id || (d === 0 && ids.indexOf(x.function_id) < 0); });
+        var rows = mine.map(function (it) { return progRow(k++, d, it); }).join("") || progRow(k++, d);
+        return dayBlock(d, fn, rows);
+      }).join("");
+    } else {
+      var rows = ev.schedule.map(function (it) { return progRow(k++, 0, it); }).join("");
+      if (!rows) { rows = progRow(0, 0) + progRow(1, 0); k = 2; }
+      blocks = dayBlock(0, null, rows);
+    }
+    return featureNote(ev, "programme", "The programme") +
+      '<div class="notice" style="margin-bottom:6px">' + icon("wand") + "<div><span>Start from a typical " + esc(((cat(ev.category) || {}).name || "event").toLowerCase()) + " programme" +
+      (ev.start_time ? " timed from " + esc(ev.start_time) : "") + ', then change the times and titles.</span><div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-sample>Use a sample programme</button></div></div></div>' +
+      '<div class="days" data-days data-max-days="' + mf + '">' + blocks + "</div>" +
+      '<div class="row" style="gap:12px;flex-wrap:wrap"><button class="btn btn--secondary btn--sm" type="button" data-add-day>' + icon("calendar") + " Add another day</button>" +
+      '<p class="small muted" style="margin:0">' + (multi ? "Lobola, traditional and multi-day weddings often run over more than one day. Add each day and plan what happens on it. " : "") +
+      (mf > 1 ? "Your package includes up to " + mf + " days." : "") + "</p>" +
+      '<p class="small muted" data-day-limit hidden style="margin:0">' + (mf > 1 ? "You've reached the number of days your package includes." : "Events over more than one day are part of Premium and Signature. Choose one at the last step.") + "</p></div>";
+  }
+  function readIndexed(fd, prefix, fields) {
+    var idx = {}, re = new RegExp("^" + prefix + "-(\\d+)-");
+    fd.forEach(function (v, key) { var m = re.exec(key); if (m) idx[m[1]] = 1; });
+    return Object.keys(idx).map(Number).sort(function (a, b) { return a - b; }).map(function (n) {
+      var row = { _i: n }; fields.forEach(function (f) { row[f] = (fd.get(prefix + "-" + n + "-" + f) || "").toString().trim(); }); return row; });
   }
   function collect5(ev, fd) {
-    ev.functions = readRows(fd, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"]).map(function (r) {
-      return { id: r.id || uid("f"), name: r.name, func_date: r.date, start_time: r.start, end_time: r.end, venue_name: r.venue, address: r.address, map_url: r.map }; });
-    var ids = ev.functions.map(function (f) { return f.id; });
-    ev.schedule = readRows(fd, "si", ["time", "title", "description", "kind", "function"]).map(function (r) {
-      return { item_time: r.time, title: r.title, description: r.description, kind: r.kind || "other", function_id: ids.indexOf(r.function) > -1 ? r.function : "" }; });
+    var days = readIndexed(fd, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"]);
+    var items = readIndexed(fd, "si", ["time", "title", "description", "day"]).filter(function (r) { return r.time || r.title || r.description; });
+    var single = days.length <= 1 && !(days[0] && (days[0].name || days[0].date || days[0].venue || days[0].address || days[0].map));
+    var idFor = {};
+    ev.functions = single ? [] : days.map(function (r, n) {
+      var date = r.date;
+      if (!date && ev.event_date) { var dt = new Date(ev.event_date + "T12:00:00"); dt.setDate(dt.getDate() + n); date = dt.toISOString().slice(0, 10); }
+      var id = r.id || uid("f"); idFor[r._i] = id;
+      return { id: id, name: r.name || "Day " + (n + 1), func_date: date, start_time: r.start, end_time: r.end, venue_name: r.venue, address: r.address, map_url: r.map };
+    });
+    var first = ev.functions.length ? ev.functions[0].id : "";
+    ev.schedule = items.map(function (r) { return { item_time: r.time, title: r.title, description: r.description, kind: guessKind(r.title), function_id: idFor[r.day] || first }; });
   }
   function validate5(ev) {
     var e = {}, mf = maxFunctions(ev);
-    if (ev.functions.length > mf) e.functions = "Your package includes " + mf + " event function" + (mf === 1 ? "" : "s") + ". Upgrade in step 10 for more.";
-    if (ev.functions.some(function (f) { return !f.name; })) e.functions = "Each function needs a name, e.g. Ceremony or Reception.";
-    if (ev.schedule.some(function (s) { return !s.title; })) e.schedule = "Each programme item needs a title.";
+    if (ev.functions.length > mf) e.functions = "Your package includes " + plural(mf, "day") + ". Choose a bigger package at the last step for more.";
+    if (ev.schedule.some(function (s) { return !s.title; })) e.schedule = "Each programme item needs a short description of what happens, e.g. Ceremony or Dinner.";
     return e;
   }
+  function syncDays() {
+    var box = document.querySelector("#journey-root [data-days]");
+    if (!box) return;
+    var days = box.querySelectorAll(".day-block"), max = +box.getAttribute("data-max-days");
+    box.classList.toggle("is-single", days.length === 1);
+    days.forEach(function (d, n) { var t = d.querySelector("[data-day-title]"); if (t) t.textContent = "Day " + (n + 1); });
+    var add = document.querySelector("#journey-root [data-add-day]"), lock = document.querySelector("#journey-root [data-day-limit]");
+    if (add) add.hidden = days.length >= max;
+    if (lock) lock.hidden = days.length < max;
+  }
+  function nextIndex(form, prefix) {
+    var n = -1, re = new RegExp("^" + prefix + "-(\\d+)-");
+    form.querySelectorAll("input,select,textarea").forEach(function (i) { var m = re.exec(i.name || ""); if (m) n = Math.max(n, +m[1]); });
+    return n + 1;
+  }
 
-  // --- step 6 ---------------------------------------------------------------------------------------
+  // --- step 5: food and drinks ---------------------------------------------------------------------------------------
   function miRow(i, it) {
     it = it || {};
     return '<div class="repeat__row" style="--cols:140px minmax(0,1.2fr) minmax(0,1.6fr) minmax(0,1fr) 130px">' + miniSel("mi-" + i + "-course", D.courses.map(function (c) { return [c, c]; }), it.course || "Main", "Course") +
@@ -14873,33 +15294,55 @@ echo "Backed up to $DEST ($STAMP)"
   }
   function validate6(ev) { return ev.menu.items.some(function (i) { return !i.name; }) ? { menu: "Each menu item needs a name." } : {}; }
 
-  // --- step 7 ---------------------------------------------------------------------------------------
+  // --- step 6: seating layout ------------------------------------------------------------------------------
+  var TOP_CHOICES = { weddings: ["Where will the couple sit?", [["sweetheart", "Sweetheart table", "Just the two of you, facing your guests."],
+      ["head", "Head table", "The couple with the bridal party, along one side, facing guests."], ["none", "With your guests", "No top table. You sit at a table among family and friends."]]],
+    other: ["A top table for the hosts?", [["sweetheart", "Small top table", "For the hosts only, facing guests."], ["head", "Top table", "Hosts and special guests, along one side, facing the room."],
+      ["none", "No top table", "Hosts sit among their guests."]]] };
+  var GUEST_CHOICES = [["round", "Round tables", "Easy conversation. 8 to 10 per table."], ["long", "Long tables", "Family style, in rows. Seats more in the same space."],
+    ["mixed", "A mix", "Round tables with a few long ones for big families."]];
+  function layoutOf(ev) {
+    var t = ev.tables || {};
+    return { top: t.top || (groupOf(ev) === "weddings" ? "head" : "none"), guest: t.guest || "round", capacity: +t.capacity || 10, count: t.count };
+  }
+  function layoutChoices(name, options, value) {
+    return '<div class="choice-grid layout-choice" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">' + options.map(function (o) {
+      return '<label class="choice"><input type="radio" name="' + name + '" value="' + o[0] + '"' + (o[0] === value ? " checked" : "") + "><span>" +
+        (window.AureliaFloor ? AureliaFloor.icon(o[0]) : "") + "<b>" + esc(o[1]) + "</b><small>" + esc(o[2]) + "</small></span></label>"; }).join("") + "</div>";
+  }
+  function suggestedTables(ev, cap) { var est = +ev.guest_settings.estimated || (ev.guest_list || []).length || 0; return est ? Math.max(1, Math.ceil(est / (cap || 10))) : 10; }
   function step7(ev) {
-    var t = ev.tables, est = +ev.guest_settings.estimated || 0, sug = est ? Math.max(1, Math.ceil(est / 10)) : 10;
-    var now = !!t.plan_now;
+    var lay = layoutOf(ev), top = TOP_CHOICES[groupOf(ev) === "weddings" ? "weddings" : "other"], est = +ev.guest_settings.estimated || (ev.guest_list || []).length || 0;
+    var count = lay.count === undefined || lay.count === "" ? suggestedTables(ev, lay.capacity) : lay.count;
     return featureNote(ev, "seating", "The seating chart") +
       '<div class="notice">' + icon("seat") + "<span>Most hosts plan seating once replies are in. Then the seating editor in your dashboard can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>" +
-      check("plan_now", "Set up my tables now", now, { attrs: { "data-reveals": "#tables-now" } }) +
-      '<div id="tables-now" style="display:grid;gap:18px"' + (now ? "" : " hidden") + '><div class="form-row form-row--3">' +
-      field("table_count", "Number of tables", t.count === "" ? sug : t.count, { type: "number", attrs: { min: 0, max: 200 }, hint: est ? "About " + sug + " for " + est + " guests at 10 a table." : "" }) +
-      field("capacity", "Seats per table", t.capacity || 10, { type: "number", attrs: { min: 1, max: 40 } }) + select("shape", "Table shape", [["round", "Round"], ["long", "Long / banquet"]], t.shape || "round") + "</div>" +
-      field("table_names", "Table names (optional)", (t.names || []).join("\n"), { type: "textarea", attrs: { rows: 5, placeholder: "Head table\nProtea\nBaobab" }, hint: "One per line, in order. Leave blank for Table 1, Table 2 and so on." }) + "</div>" +
+      "<fieldset><legend>" + esc(top[0]) + "</legend>" + layoutChoices("top_table", top[1], lay.top) + "</fieldset>" +
+      "<fieldset><legend>Guest tables</legend>" + layoutChoices("guest_tables", GUEST_CHOICES, lay.guest) + "</fieldset>" +
+      '<div class="form-row form-row--2">' + field("capacity", "Seats per table", lay.capacity, { type: "number", attrs: { min: 2, max: 40 } }) +
+      field("table_count", "Number of guest tables", count, { type: "number", attrs: { min: 0, max: 120 }, hint: est ? "About " + suggestedTables(ev, lay.capacity) + " for " + est + " guests." : "We'll adjust this once you know your numbers." }) + "</div>" +
+      '<div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview>' + planSvg(ev) + "</div></div>" +
       field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } });
   }
+  function planSvg(ev) {
+    var lay = layoutOf(ev);
+    return window.AureliaFloor ? AureliaFloor.plan({ top: lay.top, guest: lay.guest, count: lay.count === undefined || lay.count === "" ? suggestedTables(ev, lay.capacity) : lay.count,
+      cap: lay.capacity, dance: ["weddings", "parties"].indexOf(groupOf(ev)) > -1 }) : "";
+  }
   function collect7(ev, fd) {
-    ev.tables = { count: val(fd, "table_count"), capacity: parseInt(val(fd, "capacity") || 10, 10) || 10, shape: val(fd, "shape") || "round",
-      names: val(fd, "table_names").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 200), plan_now: !!fd.get("plan_now") };
+    ev.tables = { top: val(fd, "top_table") || "none", guest: val(fd, "guest_tables") || "round", capacity: parseInt(val(fd, "capacity") || 10, 10) || 10,
+      count: val(fd, "table_count"), chosen: true };
     ev.info.seating_notes = val(fd, "seating_notes");
+    var box = document.querySelector("#journey-root [data-plan-preview]");
+    if (box) box.innerHTML = planSvg(ev);
   }
   function validate7(ev) {
     var e = {}, c = +ev.tables.count;
-    if (!ev.tables.plan_now) return e;
-    if (ev.tables.count !== "" && !(c >= 0 && c <= 200)) e.table_count = "Number of tables must be between 0 and 200.";
-    if (!(ev.tables.capacity >= 1 && ev.tables.capacity <= 40)) e.capacity = "Seats per table must be between 1 and 40.";
+    if (ev.tables.count !== "" && !(c >= 0 && c <= 120)) e.table_count = "Number of tables must be between 0 and 120.";
+    if (!(ev.tables.capacity >= 2 && ev.tables.capacity <= 40)) e.capacity = "Seats per table must be between 2 and 40.";
     return e;
   }
 
-  // --- step 8 ---------------------------------------------------------------------------------------
+  // --- step 7: extras ---------------------------------------------------------------------------------------
   function row3(prefix, i, it, fields) {
     it = it || {};
     return '<div class="repeat__row" style="--cols:repeat(3,minmax(0,1fr))">' + fields.map(function (f) {
@@ -14921,10 +15364,13 @@ echo "Backed up to $DEST ($STAMP)"
       field("dress_code_notes", "Dress code notes", info.dress_code_notes || "", { attrs: { placeholder: "Shades of emerald and gold; comfortable shoes for the lawn" } }) + "</div>" +
       "<fieldset><legend>Gift registry</legend>" + repeat("rg", (reg.length ? reg : [{}]).map(function (r, i) { return row3("rg", i, r, RG); }), null, "Add a registry", 10) +
       field("gift_note", "Gift preferences", info.gift_note || "", { type: "textarea", attrs: { rows: 2, placeholder: "Your presence is our present." } }) + "</fieldset>" +
-      "<fieldset><legend>Contacts for guests</legend>" + repeat("ct", (cts.length ? cts : [{}]).map(function (c, i) { return ctRow(i, c); }), null, "Add a contact", 8) + "</fieldset>" +
+      '<details class="box" style="padding:14px 16px"' + (cts.length ? " open" : "") + '><summary style="cursor:pointer;font-weight:500">Someone guests can call on the day (optional)</summary>' +
+      '<p class="hint" style="margin:10px 0 12px">For guests who are lost, running late or need help on the day, e.g. your planner, MC or a cousin. It shows on your website, so you\'re not the one answering calls. Leave it empty if you don\'t need it.</p>' +
+      repeat("ct", (cts.length ? cts : [{}]).map(function (c, i) { return ctRow(i, c); }), null, "Add a person", 8) + "</details>" +
       "<fieldset><legend>Accommodation</legend>" + repeat("ac", (acc.length ? acc : [{}]).map(function (a, i) { return row3("ac", i, a, AC); }), null, "Add a place to stay", 10) + "</fieldset>" +
       field("instructions", "Special instructions", info.instructions || "", { type: "textarea", attrs: { rows: 3, placeholder: "Unplugged ceremony: please keep phones away until the reception." } }) +
       "<fieldset><legend>Photo gallery</legend>" + featureNote(ev, "gallery", "The photo gallery") +
+      '<p class="hint" style="margin-bottom:12px">Add a few photos now, like your engagement shoot, or come back after the event and add photos from the day. Guests see them on the same link they already have.</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px">' + thumbs + "</div>" +
       (glimit ? '<label class="file-drop" style="position:relative">' + icon("image") + "<span>Add photos (" + gal.length + " of " + glimit + ')</span><span class="hint">JPG, PNG or WebP.</span>' +
         '<input type="file" data-gallery multiple accept="image/jpeg,image/png,image/webp,image/gif"></label>' : '<p class="hint">The Essential package has no gallery. Premium includes 40 photos.</p>') + "</fieldset>";
@@ -14944,26 +15390,36 @@ echo "Backed up to $DEST ($STAMP)"
     return e;
   }
 
-  // --- step 9: review --------------------------------------------------------------------------------
+  // --- step 8: review and pay ---------------------------------------------------------------------------------
+  function payOption(code) { return (D.payment_links || {})[code] || ""; }
   function step9(ev) {
-    var v = ev.venue, gs = ev.guest_settings, info = ev.info, t = tpl(ev.template) || {};
-    var w = ev.design.wording || {};
-    var needed = [[!!(ev.contact.name && ev.contact.email), "Your name and email", 1], [!!(ev.hosts && ev.event_date), "Names and date", 1], [!!(v.name && v.address), "Venue and address", 2]];
-    var nice = [[!!ev.images.hero, "A main photo", 3], [!!(w.welcome || w.invitation || w.rsvp_note || w.closing), "Your own wording (or keep the template's)", 3], [!!gs.rsvp_deadline, "An RSVP deadline", 4]];
-    if (feature(ev, "guest_management")) nice.push([!!(ev.guest_list || []).length, "Your guest list (you can send it later too)", 4]);
-    if (feature(ev, "programme")) nice.push([!!ev.schedule.length, "The programme", 5]);
-    if (feature(ev, "menu")) nice.push([!!ev.menu.items.length, "The menu", 6]);
-    nice.push([!!(info.dress_code || (info.contacts || []).length), "Dress code or contact people", 8]);
+    var v = ev.venue, gs = ev.guest_settings, info = ev.info, t = tpl(ev.template) || {}, w = ev.design.wording || {};
+    var needed = [[!!(ev.hosts && ev.event_date), "Names and date", 1], [!!(v.name && v.address), "Venue and address", 1]];
+    var nice = [[!!ev.images.hero, "A main photo", 2], [!!(w.welcome || w.invitation || w.rsvp_note || w.closing), "Your own wording (or keep the template's)", 2], [!!gs.rsvp_deadline, "An RSVP deadline", 3]];
+    if (feature(ev, "programme")) nice.push([!!ev.schedule.length, "The programme", 4]);
+    if (feature(ev, "menu")) nice.push([!!ev.menu.items.length, "The menu", 5]);
+    var missing = needed.filter(function (c) { return !c[0]; });
     function li(c, must) {
       return '<li class="' + (c[0] ? "is-done" : "") + '">' + icon(c[0] ? "check" : (must ? "alert" : "plus")) + "<span>" + (c[0] ? esc(c[1]) : '<a class="text-link" href="#setup-' + c[2] + '">' + esc(c[1]) + "</a>" + (must ? " <b>(needed)</b>" : "")) + "</span></li>";
     }
-    var g = gaps(ev, ev.selected_package || "premium");
-    var gapNote = g.length ? '<div class="notice notice--warn">' + icon("lock") + "<span>Your planned package, " + esc((pkg(ev.selected_package) || {}).name || "") + ", won't show " + esc(joinOr(g)) +
-      ". Choose a package that includes them in the next step, or remove them.</span></div>" : "";
-    var checklist = '<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3><ul class="checklist">' +
-      needed.map(function (c) { return li(c, true); }).join("") + nice.map(function (c) { return li(c, false); }).join("") +
-      '</ul><p class="tiny muted">Only the first three are needed. Everything else can be added later.</p></div>';
-    var share = '<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you book</h3>' +
+    var checklist = '<details class="box"' + (missing.length ? " open" : "") + ' style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">' +
+      (missing.length ? (missing.length === 2 ? "Two things are needed before you pay" : "One thing is needed before you pay") : "Ready to go. Optional extras you can still add") +
+      '</summary><ul class="checklist" style="margin-top:12px">' + needed.map(function (c) { return li(c, true); }).join("") + nice.map(function (c) { return li(c, false); }).join("") + "</ul></details>";
+    var c = ev.contact;
+    var contact = '<fieldset><legend>Your details</legend><div class="form-row form-row--3">' + field("contact_name", "Your name", c.name, { required: true, attrs: { autocomplete: "name" } }) +
+      field("contact_email", "Your email", c.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your receipt and website link go here." }) +
+      field("contact_phone", "Your mobile", c.phone, { type: "tel", attrs: { autocomplete: "tel" }, hint: "Optional. For quick questions." }) + "</div></fieldset>";
+    var cards = D.packages.map(function (p) {
+      var pg = gaps(ev, p.code);
+      return '<article class="price' + (p.highlight ? " price--highlight" : "") + '">' + (p.highlight ? '<span class="price__badge">Most chosen</span>' : "") +
+        "<div><h3>" + esc(p.name) + '</h3><p class="muted small" style="margin-top:6px">' + esc(p.tagline) + '</p></div><div class="price__amount">' + money(p.price_cents) + "<small>once-off, VAT incl.</small></div>" +
+        '<button class="btn ' + (p.highlight ? "btn--primary" : "btn--secondary") + ' btn--block" type="submit" name="nav" value="pay:' + p.code + '">' + icon("card") + " Pay " + money(p.price_cents) + "</button>" +
+        "<ul>" + p.bullets.map(function (b) { return "<li>" + icon("check") + "<span>" + esc(b) + "</span></li>"; }).join("") + "</ul>" +
+        '<details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">' +
+        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div></details>" +
+        (pg.length ? '<p class="small price__gap">' + icon("lock") + "<span>Won't show " + esc(joinOr(pg)) + ".</span></p>" : "") + "</article>";
+    }).join("");
+    var share = '<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>' +
       '<p class="small muted">Send a link to your partner or family. They see your website as it is now, without your contact details or guest list. Photos stay on this device.</p>' +
       '<div class="btn-row"><button class="btn btn--secondary btn--sm" type="button" data-share-preview>' + icon("link") + ' Copy a preview link</button>' +
       '<button class="btn btn--ghost btn--sm" type="button" data-share-preview="whatsapp">' + icon("chat") + " Send on WhatsApp</button></div></div>";
@@ -14971,38 +15427,27 @@ echo "Backed up to $DEST ($STAMP)"
       return '<div class="review-section"><div class="review-section__head"><h3>' + esc(title) + '</h3><a class="btn btn--sm btn--ghost" href="#setup-' + n + '">' + icon("edit") + ' Edit</a></div><dl class="dl">' +
         rows.map(function (r) { return "<dt>" + esc(r[0]) + "</dt><dd>" + (r[1] ? esc(r[1]) : '<span class="muted">Not added</span>') + "</dd>"; }).join("") + "</dl></div>";
     }
-    var tc = +ev.tables.count || 0;
-    return gapNote + checklist + share +
-      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aurelia.events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
-      '<div style="margin:18px 0">' + previewFrame(620) + "</div>" +
-      sec(1, "Event details", [["You", ev.contact.name + (ev.contact.email ? " · " + ev.contact.email : "")], ["Event", ev.name], ["Type", (cat(ev.category) || {}).name], ["Hosts", ev.hosts],
-        ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""], ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")]]) +
-      sec(2, "Venue", [["Venue", v.name], ["Address", v.address], ["Parking", v.parking], ["Directions", v.directions]]) +
-      sec(3, "Design", [["Template", t.name], ["Photos", String(["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).length + (ev.images.gallery || []).length) + " added"], ["Welcome", (ev.design.wording || {}).welcome]]) +
-      sec(4, "Guests", [["Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") : ""], ["Estimated", gs.estimated], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""],
-        ["Plus-ones", { none: "Not allowed", per_guest: "Set per guest", open: "Allowed" }[gs.plus_one_policy]], ["Children", gs.children_allowed ? "Welcome" : "Adults only"]]) +
-      sec(5, "Programme", [["Functions", ev.functions.map(function (f) { return f.name; }).join(", ")], ["Programme items", ev.schedule.length ? String(ev.schedule.length) : ""]]) +
-      sec(6, "Food and drinks", [["Menu items", ev.menu.items.length ? String(ev.menu.items.length) : ""], ["Dietary options", (info.dietary_options || []).join(", ")]]) +
-      sec(7, "Seating", [["Tables", ev.tables.plan_now ? (tc ? tc + " tables, " + tc * ev.tables.capacity + " seats" : "") : "Planned after RSVPs"]]) +
-      sec(8, "Extras", [["Dress code", info.dress_code], ["Registry", (info.registry || []).length ? String(info.registry.length) : ""], ["Contacts", (info.contacts || []).length ? String(info.contacts.length) : ""]]);
-  }
-
-  // --- step 10: package and booking ----------------------------------------------------------------------
-  function step10(ev) {
-    var cards = D.packages.map(function (p) {
-      var sel = (ev.selected_package || "premium") === p.code, pg = gaps(ev, p.code);
-      return '<label class="price' + (sel ? " price--highlight" : "") + '" style="cursor:pointer">' + (p.highlight ? '<span class="price__badge">Most chosen</span>' : "") +
-        '<div class="row row--between"><h3>' + esc(p.name) + '</h3><input type="radio" name="package" value="' + p.code + '"' + (sel ? " checked" : "") + ' aria-label="Choose ' + esc(p.name) + '" style="width:22px;height:22px;accent-color:var(--color-accent-dark)"></div>' +
-        '<p class="muted small">' + esc(p.tagline) + '</p><div class="price__amount">' + money(p.price_cents) + "<small>once-off, VAT incl.</small></div><ul>" +
-        p.bullets.map(function (b) { return "<li>" + icon("check") + "<span>" + esc(b) + "</span></li>"; }).join("") + '</ul><div class="price__limits">' +
-        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div>" +
-        (pg.length ? '<p class="small price__gap">' + icon("lock") + "<span>Won't show " + esc(joinOr(pg)) + ".</span></p>" : "") + "</label>";
-    }).join("");
-    return '<div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' + cards + "</div>" +
-      '<div data-field="accept">' + check("accept", 'I accept the <a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>. My website is published once payment is confirmed.', false) + "</div>" +
-      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-9">' + icon("arrow-left") + ' Back</a><div class="btn-row"><button class="btn btn--primary btn--lg" type="submit" name="nav" value="book">' +
-      (D.forms ? "Send my booking " : "Prepare my booking ") + icon("arrow") + "</button></div></div>" +
+    var lay = layoutOf(ev);
+    var review = sec(1, "Details", [["Names", ev.hosts], ["Occasion", (cat(ev.category) || {}).name], ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""],
+        ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")], ["Venue", v.name], ["Address", v.address]]) +
+      sec(2, "Design", [["Template", t.name], ["Photos", String(["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).length + (ev.images.gallery || []).length) + " added"], ["Welcome", w.welcome]]) +
+      sec(3, "Guests", [["Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") : ""], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""], ["Children", gs.children_allowed ? "Welcome" : "Adults only"]]) +
+      sec(4, "Programme", [["Days", ev.functions.length ? ev.functions.map(function (f) { return f.name; }).join(", ") : "One day"], ["Programme items", ev.schedule.length ? String(ev.schedule.length) : ""]]) +
+      sec(5, "Food and drinks", [["Menu items", ev.menu.items.length ? String(ev.menu.items.length) : ""], ["Dietary options", (info.dietary_options || []).join(", ")]]) +
+      sec(6, "Seating", [["Layout", ev.tables.chosen ? ({ sweetheart: "Sweetheart table", head: "Head table", none: "No top table" })[lay.top] + ", " + ({ round: "round", long: "long", mixed: "mixed" })[lay.guest] + " tables" : ""]]) +
+      sec(7, "Extras", [["Dress code", info.dress_code], ["Registry", (info.registry || []).length ? String(info.registry.length) : ""], ["Gallery", (ev.images.gallery || []).length ? plural(ev.images.gallery.length, "photo") : ""]]);
+    var connected = D.packages.some(function (p) { return payOption(p.code); });
+    return checklist + contact + '<div data-field="details"></div><div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' + cards + "</div>" +
+      '<p class="small muted">' + (connected ? "Secure payment with PayFast: card, instant EFT and more. " : "") + "Prices include 15% VAT. By paying, you accept the " +
+      '<a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>.</p>' + share +
+      '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">See everything you\'ve entered</summary><div style="display:grid;gap:16px;margin-top:16px">' +
+      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudio.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
+      previewFrame(560) + review + "</div></details>" +
+      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-7">' + icon("arrow-left") + ' Back</a><span></span></div>' +
       '<p class="small muted" style="margin-top:14px">Questions first, or rather have us finish the set-up? <a class="text-link" href="#help-me-set-up">Ask us to help</a>.</p>';
+  }
+  function collect9(ev, fd) {
+    ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
   }
 
   // --- booking confirmation ---------------------------------------------------------------------------
@@ -15025,16 +15470,19 @@ echo "Backed up to $DEST ($STAMP)"
     add("Family groups", (gs.family_groups || []).join(", ")); add("VIP note", gs.vip_note); add("Plus-one policy", gs.plus_one_policy + " (default " + (gs.plus_ones_default || 0) + ")");
     add("Children", gs.children_allowed ? "welcome, up to " + (gs.max_children || 0) + " per invitation" : "adults only");
     add("Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") + (D.forms ? " (attached)" : "") : ""); lines.push("");
-    if (!D.forms && (ev.guest_list || []).length) { lines.push("GUEST LIST"); ev.guest_list.forEach(function (x) { lines.push("- " + [x.name, x.phone, x.email].filter(Boolean).join(" | ")); }); lines.push(""); }
-    if (ev.functions.length) { lines.push("FUNCTIONS"); ev.functions.forEach(function (f) { lines.push("- " + [f.name, f.func_date, [f.start_time, f.end_time].filter(Boolean).join("-"), f.venue_name, f.address, f.map_url].filter(Boolean).join(" | ")); }); lines.push(""); }
-    if (ev.schedule.length) { lines.push("PROGRAMME"); ev.schedule.forEach(function (s) { lines.push("- " + [s.item_time, s.title, s.description, s.kind].filter(Boolean).join(" | ")); }); lines.push(""); }
+    if (!D.forms && (ev.guest_list || []).length) { lines.push("GUEST LIST"); ev.guest_list.forEach(function (x) { lines.push("- " + [x.name, x.phone, x.email, x.group].filter(Boolean).join(" | ")); }); lines.push(""); }
+    if (ev.functions.length) { lines.push("DAYS"); ev.functions.forEach(function (f) { lines.push("- " + [f.name, f.func_date, [f.start_time, f.end_time].filter(Boolean).join("-"), f.venue_name, f.address, f.map_url].filter(Boolean).join(" | ")); }); lines.push(""); }
+    var dayName = {}; ev.functions.forEach(function (f) { dayName[f.id] = f.name; });
+    if (ev.schedule.length) { lines.push("PROGRAMME"); ev.schedule.forEach(function (s) { lines.push("- " + [dayName[s.function_id], s.item_time, s.title, s.description].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.menu.items.length) { lines.push("MENU: " + ev.menu.name); ev.menu.items.forEach(function (i) { lines.push("- " + [i.course, i.name, i.description, (i.tags || []).join(", "), i.selectable ? "guests choose" : ""].filter(Boolean).join(" | ")); }); }
     add("Dietary options", (info.dietary_options || []).join(", ")); add("Drinks", info.drinks); add("Catering notes", info.catering_notes); lines.push("");
-    add("Tables", ev.tables.plan_now ? (ev.tables.count ? ev.tables.count + " x " + ev.tables.capacity + " seats, " + ev.tables.shape : "") : "plan after RSVPs"); add("Table names", (ev.tables.names || []).join(", ")); add("Seating notes", info.seating_notes); lines.push("");
+    var lay = layoutOf(ev);
+    add("Seating layout", ev.tables.chosen ? lay.top + " top table, " + lay.guest + " guest tables, " + (lay.count || suggestedTables(ev, lay.capacity)) + " x " + lay.capacity + " seats" : "not chosen yet");
+    add("Seating notes", info.seating_notes); lines.push("");
     add("Dress code", [info.dress_code, info.dress_code_notes].filter(Boolean).join(" - "));
     (info.registry || []).forEach(function (r) { add("Registry", [r.name, r.url, r.note].filter(Boolean).join(" | ")); });
     add("Gift note", info.gift_note);
-    (info.contacts || []).forEach(function (c) { add("Contact", [c.name, c.role, c.phone, c.email].filter(Boolean).join(" | ")); });
+    (info.contacts || []).forEach(function (c) { add("Day-of contact", [c.name, c.role, c.phone, c.email].filter(Boolean).join(" | ")); });
     (info.accommodation || []).forEach(function (a) { add("Stay", [a.name, a.url, a.note].filter(Boolean).join(" | ")); });
     add("Special instructions", info.instructions);
     return lines.join("\n").replace(/\n{3,}/g, "\n\n");
@@ -15050,6 +15498,8 @@ echo "Backed up to $DEST ($STAMP)"
       guests: String((ev.guest_list || []).length || ev.guest_settings.estimated || ""), details: summaryText(ev),
       guest_list: (ev.guest_list || []).length ? guestCsv(ev) : "", draft: JSON.stringify(Object.assign({}, ev, { images: undefined })) };
     var files = ["hero", "logo", "background"].map(function (k) { var b = dataUrlBlob(ev.images[k]); return [k, b, k + (b && b.type === "image/png" ? ".png" : ".jpg")]; });
+    fields.guest_list = (ev.guest_list || []).length ? ["Name,Mobile,Email,Group"].concat(ev.guest_list.map(function (g) {
+      return [g.name, g.phone, g.email, g.group].map(function (x) { return '"' + String(x || "").replace(/"/g, '""') + '"'; }).join(","); })).join("\n") : "";
     var gal = (ev.images.gallery || []).slice(0, 40), batches = [];
     for (var i = 0; i < gal.length; i += 8) batches.push(gal.slice(i, i + 8));
     return postForm("booking", fields, files).then(function () {
@@ -15062,56 +15512,55 @@ echo "Backed up to $DEST ($STAMP)"
     });
   }
   function startSend(ev, kind) {
-    ev.booking.status = "sending"; save(); viewBooked();
-    sendBooking(ev, kind).then(function () {
+    ev.booking.status = "sending"; save();
+    return sendBooking(ev, kind).then(function () {
       ev.booking.status = "sent"; ev.booking.sent_at = new Date().toISOString(); ev.booking.sent_version = ev.updated; save();
-      if (currentHash === "booked") viewBooked();
-      toast(kind === "update" ? "Your changes are sent." : "Your booking is sent.");
-    }, function () {
-      ev.booking.status = "failed"; save();
-      if (currentHash === "booked") viewBooked();
-    });
+    }, function () { ev.booking.status = "failed"; save(); });
+  }
+  function goPay(ev) {
+    var opt = payOption(ev.selected_package);
+    if (!opt) { location.hash = "#booked"; if (currentHash === "booked") viewBooked(); return; }
+    ev.booking.paying_at = new Date().toISOString(); save();
+    if (typeof opt === "object" && opt.action) {
+      var f = document.createElement("form");
+      f.method = "post"; f.action = opt.action;
+      Object.keys(opt.fields).forEach(function (k) { var i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = opt.fields[k]; f.appendChild(i); });
+      document.body.appendChild(f); f.submit();
+    } else location.href = opt;
   }
   function viewBooked() {
     var ev = cur();
     if (!ev || !ev.booking) { location.hash = "#my-events"; return; }
-    var p = pkg(ev.selected_package) || {}, link = (D.payment_links || {})[p.code] || "", text = summaryText(ev), email = D.email, b = ev.booking;
-    if (D.forms && !b.status) { startSend(ev, "new"); return; }
-    var subject = "Booking " + b.ref + ": " + ev.name;
-    var emailBox = '<div class="box" style="display:grid;gap:14px"><h2 style="font-size:1.25rem">' + (D.forms ? "Send it by email instead" : "Send your booking to us") + "</h2>" +
-      '<p class="muted small">Copy your booking details and email them to us' + (ev.images.hero || (ev.images.gallery || []).length ? ", with the photos you chose" : "") + ". We confirm within one working day.</p>" +
-      '<div class="notice">' + icon("mail") + '<div><span class="mono" style="user-select:all">' + esc(email) + "</span><br>" +
-      '<span class="tiny muted">Subject: <span style="user-select:all">' + esc(subject) + "</span></span></div></div>" +
-      '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + " Copy booking details</button>" +
-      '<button class="btn btn--secondary" type="button" data-copy="' + esc(email) + '" data-copied="Email address copied">Copy email address</button>' +
-      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello Aurelia,\n\nPlease find my booking request " + b.ref + " below.\n\n") + '">Open my email app</a></div>' +
-      '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>";
-    var status, showEmail = !D.forms || b.status === "failed";
-    if (!D.forms) status = '<p class="lead" style="font-size:1.0625rem">Your booking details are ready to send. Email them to us below and we\'ll take it from there.</p>';
-    else if (b.status === "sending") status = '<div class="notice" role="status">' + icon("clock") + "<span><b>Sending your booking" + ((ev.images.gallery || []).length ? " and photos" : "") + "…</b> Keep this page open for a moment.</span></div>";
-    else if (b.status === "failed") status = '<div class="notice notice--warn" role="alert">' + icon("alert") + '<div><b>We couldn\'t send it from here.</b> Check your connection and try again, or email it to us below.<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-resend>Try again</button></div></div></div>';
-    else {
-      var changed = b.sent_version && ev.updated > b.sent_version;
-      status = '<div class="notice notice--success" role="status">' + icon("check") + "<div><b>Sent. We have your booking.</b> We\'ll contact " + esc(ev.contact.email) + " within one working day." +
-        ((ev.images.gallery || []).length > 40 ? " Your first 40 gallery photos came through; email the rest to " + esc(email) + " with your reference." : "") + "</div></div>" +
-        (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you sent it.<div style="margin-top:10px"><button class="btn btn--primary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "");
+    var p = pkg(ev.selected_package) || {}, opt = payOption(p.code), b = ev.booking, email = D.email, text = summaryText(ev);
+    var first = (ev.contact.name || "").split(" ")[0];
+    var changed = b.status === "sent" && b.sent_version && ev.updated > b.sent_version;
+    var lead = opt
+      ? (b.paying_at ? "If your payment went through, PayFast emails you a receipt. We publish your website and send your link to " + esc(ev.contact.email) + " within one working day."
+        : "Pay with PayFast to confirm your booking.")
+      : "Your booking is in. We'll contact you on " + esc(ev.contact.phone || ev.contact.email) + " within one working day to take payment and publish your website.";
+    var pay = opt ? '<div><button class="btn ' + (b.paying_at ? "btn--secondary" : "btn--primary btn--lg") + '" type="button" data-pay-again>' + icon("card") + " " +
+      (b.paying_at ? "Didn't finish paying? Pay " : "Pay ") + money(p.price_cents) + "</button></div>" : "";
+    var problem = "";
+    if (!D.forms || b.status === "failed") {
+      var subject = "Booking " + b.ref + ": " + ev.name;
+      problem = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.125rem">' + (D.forms ? "One more thing" : "This preview can't send bookings") + "</h2>" +
+        '<p class="small muted">' + (D.forms ? "Your details didn't reach us automatically. Tap below to send them again, or email them, so we can build your website."
+          : "On your live website this happens by itself. Here, copy the details and email them to " + esc(email) + ".") + "</p>" +
+        '<div class="btn-row">' + (D.forms ? '<button class="btn btn--primary btn--sm" type="button" data-resend>Try sending again</button>' : "") +
+        '<a class="btn btn--secondary btn--sm" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(text.slice(0, 1800)) + '">' + icon("mail") + " Email the details</a>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-copy-booking>' + icon("copy") + ' Copy details</button></div><textarea data-booking-text hidden>' + esc(text) + "</textarea></div>";
     }
-    var payBtn = typeof link === "object" && link.action
-      ? '<form method="post" action="' + esc(link.action) + '" target="_blank">' + Object.keys(link.fields).map(function (k) { return '<input type="hidden" name="' + esc(k) + '" value="' + esc(link.fields[k]) + '">'; }).join("") +
-        '<button class="btn btn--primary btn--lg" type="submit">' + icon("card") + " Pay " + money(p.price_cents) + " securely</button></form>"
-      : '<a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a>";
-    var pay = link
-      ? '<div class="box" style="display:grid;gap:10px"><h2 style="font-size:1.25rem">Pay now</h2><p class="small muted">Pay securely with PayFast by card, instant EFT and more. If PayFast asks for a reference, use <b class="mono">' + esc(b.ref) + '</b>. Your website goes live once payment is confirmed.</p>' +
-        "<div>" + payBtn + "</div></div>"
-      : '<div class="notice">' + icon("card") + "<span><b>Payment:</b> we'll email you a secure PayFast payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
     var next = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.25rem">What happens next</h2><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:14px">' +
-      [["01", "We check your details", "Within one working day. If anything's missing, we ask you."], ["02", link ? "You pay" : "You get a payment link", link ? "Use the button above whenever you're ready." : "By email, for " + money(p.price_cents) + "."],
-        ["03", "Your website goes live", "We send you your link to share on WhatsApp, by email or as a QR code."]].map(function (x) {
+      [["01", "We build your website", "From everything you entered, within one working day. If anything's missing, we ask."],
+        ["02", "You get your link", "By email, ready to share on WhatsApp, by email or as a QR code."],
+        ["03", "Replies come in", "Guests RSVP on your website. You can keep adding guests, photos and details."]].map(function (x) {
         return '<li><span class="mono">' + x[0] + "</span><div><b>" + esc(x[1]) + '</b><p class="small muted" style="margin-top:4px">' + esc(x[2]) + "</p></div></li>"; }).join("") + "</ol></div>";
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 32px)"><div class="container container--narrow" style="display:grid;gap:var(--gap)">' +
       '<div class="glass glass--strong panel" style="display:grid;gap:14px;text-align:left"><span class="icon-tile icon-tile--soft">' + icon("check") + "</span>" +
-      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">' + (D.forms ? "Your booking" : "Booking request ready") + '</h1><p class="small muted">Reference <b class="mono">' + esc(b.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" + status + "</div>" +
-      pay + next + (showEmail ? emailBox : "") +
+      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">Thank you' + (first ? ", " + esc(first) : "") + '</h1><p class="small muted">Reference <b class="mono">' + esc(b.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" +
+      '<p class="lead" style="font-size:1.0625rem">' + lead + "</p>" + pay +
+      (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you booked.<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "") +
+      "</div>" + problem + next +
       '<div class="btn-row"><a class="btn btn--secondary" href="#preview-event">' + icon("eye") + ' Preview your website</a><a class="btn btn--ghost" href="#setup-1">Edit details</a><a class="btn btn--ghost" href="#my-events">My events</a></div></div></section>';
     window.scrollTo(0, 0);
   }
@@ -15133,7 +15582,7 @@ echo "Backed up to $DEST ($STAMP)"
         toast("Your draft is open on this device." + (ev.images.hero ? "" : " Photos stay on the device you added them on, so add them again in Design."));
       }
       state.current = ev.id; save();
-      history.replaceState(null, "", "#setup-" + Math.min(9, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1));
+      history.replaceState(null, "", "#setup-" + Math.min(LAST, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1));
       route(location.hash.slice(1));
     }, linkError);
   }
@@ -15142,7 +15591,7 @@ echo "Backed up to $DEST ($STAMP)"
       root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.hosts || ev.name) +
         '</h1><p>A draft of this event website, shared with you before it goes live. RSVPs open once it\'s published.</p></div>' +
         '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#create">Create your own event</a></div></div>' +
-        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aurelia.events/' + esc(slugOf(ev)) + "</span>" +
+        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(ev)) + "</span>" +
         '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
         '<div class="preview-frame__stage" style="height:' + Math.max(560, window.innerHeight - 220) + 'px"><iframe title="Shared draft of an event website" data-shared></iframe></div></div></div></section>';
       document.querySelector("iframe[data-shared]").srcdoc = R.render(ev, "preview");
@@ -15187,18 +15636,19 @@ echo "Backed up to $DEST ($STAMP)"
     if (!ev) { location.hash = "#my-events"; return; }
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.name) +
       "</h1><p>Your event website with the details you've entered. Guests see it once it's published.</p></div>" +
-      '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#setup-' + (ev.booking ? 10 : Math.min(10, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1)) + '">Continue set-up</a><a class="btn btn--ghost btn--sm" href="#my-events">My events</a></div></div>' +
+      '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#setup-' + (ev.booking ? LAST : Math.min(LAST, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1)) + '">Continue set-up</a><a class="btn btn--ghost btn--sm" href="#my-events">My events</a></div></div>' +
       previewFrame(Math.max(560, window.innerHeight - 220)) + "</div></section>";
     refreshPreview(true);
   }
 
   // --- step dispatch ------------------------------------------------------------------------------------
-  var STEP = { 1: [step1, collect1, validate1], 2: [step2, collect2, validate2], 3: [step3, collect3], 4: [step4, collect4, validate4], 5: [step5, collect5, validate5],
-    6: [step6, collect6, validate6], 7: [step7, collect7, validate7], 8: [step8, collect8, validate8], 9: [step9], 10: [step10] };
+  var STEP = { 1: [stepDetails, collectDetails, validateDetails], 2: [step3, collect3], 3: [step4, collect4, validate4], 4: [step5, collect5, validate5],
+    5: [step6, collect6, validate6], 6: [step7, collect7, validate7], 7: [step8, collect8, validate8], 8: [step9, collect9] };
   function viewStep(n) {
     var ev = cur();
     if (!ev) { location.hash = state.order.length ? "#my-events" : "#create"; return; }
-    frame(ev, n, STEP[n][0](ev), { preview: n === 3, nextLabel: n === 9 ? "Looks good, choose a package" : "" });
+    frame(ev, n, STEP[n][0](ev), { preview: n === 2 });
+    if (n === 4) syncDays();
   }
   function collectStep(form) {
     var n = +form.getAttribute("data-step"), ev = cur();
@@ -15209,21 +15659,25 @@ echo "Backed up to $DEST ($STAMP)"
   }
   function submitStep(form, nav) {
     var n = +form.getAttribute("data-step"), ev = collectStep(form);
-    if (n === 10) {
-      ev.selected_package = (new FormData(form)).get("package") || ev.selected_package;
-      var errs = {};
-      if (!form.querySelector("input[name=accept]").checked) errs.accept = "Please accept the terms and refund policy to continue.";
-      var need = [validate1(ev), validate2(ev)].reduce(function (a, b) { return Object.assign(a, b); }, {});
-      if (Object.keys(need).length) errs.details = "Some required details are missing in steps 1 and 2 (" + Object.keys(need).length + "). Go back and complete them.";
+    if (n === LAST) {
+      var code = String(nav || "").replace(/^pay:/, "");
+      if (pkg(code)) ev.selected_package = code;
+      var errs = Object.assign({}, validateContact(ev)), need = validateDetails(ev);
+      if (Object.keys(need).length) errs.details = "Your names, date and venue are needed first. Go back to Details (step 1) and add them.";
       if (showErrors(form, errs)) { save(); return; }
       ev.booking = ev.booking || { ref: "AUR-" + Math.random().toString(36).slice(2, 7).toUpperCase(), at: new Date().toISOString() };
       ev.booking.package = ev.selected_package;
-      if (ev.booking.status !== "sent") delete ev.booking.status;
-      if (ev.wizard_done.indexOf(10) < 0) ev.wizard_done.push(10);
-      save(); location.hash = "#booked"; return;
+      if (ev.wizard_done.indexOf(LAST) < 0) ev.wizard_done.push(LAST);
+      save();
+      var buttons = form.querySelectorAll("button[type=submit]");
+      buttons.forEach(function (b) { b.disabled = true; });
+      var sending = ev.booking.status === "sent" ? Promise.resolve() : startSend(ev, "new");
+      // give the details a few seconds to reach us, then go to payment either way
+      Promise.race([sending, new Promise(function (r) { setTimeout(r, 4000); })]).then(function () { goPay(ev); });
+      return;
     }
     var e = STEP[n][2] ? STEP[n][2](ev) : {}, added = -1;
-    if (n === 4) {
+    if (n === 3) {
       var people = parseGuests((new FormData(form)).get("guest_paste"));
       if (people.length) {
         var have = {}; (ev.guest_list || []).forEach(function (g) { have[g.name.toLowerCase()] = 1; if (g.email) have[g.email] = 1; if (g.phone) have[g.phone.replace(/\D/g, "")] = 1; });
@@ -15237,7 +15691,7 @@ echo "Backed up to $DEST ($STAMP)"
     save();
     if (added > -1) toast("Added " + plural(added, "guest") + " to your list.");
     if (nav === "next") location.hash = "#setup-" + (n + 1);
-    else if (nav === "review") location.hash = "#setup-9";
+    else if (nav === "review") location.hash = "#setup-" + LAST;
     else { if (added < 0) toast("Saved."); viewStep(n); }
   }
 
@@ -15262,6 +15716,35 @@ echo "Backed up to $DEST ($STAMP)"
     });
   }
 
+  // --- quick add guests --------------------------------------------------------------------------------------
+  function quickAdd() {
+    var nm = document.querySelector("#journey-root [data-qa-name]"), ph = document.querySelector("#journey-root [data-qa-phone]");
+    if (!nm || !nm.value.trim()) { if (nm) nm.focus(); return; }
+    var name = nm.value.trim(), n = addGuests([{ name: name, phone: saPhone(ph.value.trim()), email: "" }]);
+    if (!n) toast(name + " is already on your list.", "error");
+    nm.value = ""; ph.value = ""; nm.focus();
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" || !e.target.matches("#journey-root [data-qa-name], #journey-root [data-qa-phone]")) return;
+    e.preventDefault();
+    var ph = document.querySelector("#journey-root [data-qa-phone]");
+    if (e.target.hasAttribute("data-qa-name") && e.target.value.trim() && !ph.value.trim()) { quickAdd(); return; }
+    if (e.target.hasAttribute("data-qa-name")) { ph.focus(); return; }
+    quickAdd();
+  });
+  document.addEventListener("change", function (e) {
+    if (!e.target.matches("#journey-root [data-guest-file]")) return;
+    var file = e.target.files[0];
+    if (!file) return;
+    readSheetFile(file).then(function (rows) {
+      var people = parseSheet(rows);
+      if (!people.length) { toast("We couldn't find any names in that file. Check it has a Name column, or paste the names instead.", "error"); return; }
+      var n = addGuests(people);
+      toast("Added " + plural(n, "guest") + " from " + file.name + (n < people.length ? ". " + (people.length - n) + " were already on your list." : "."));
+    }).catch(function () { toast("We couldn't read that file. Save it as Excel (.xlsx) or CSV and try again, or paste the names instead.", "error"); });
+    e.target.value = "";
+  });
+
   // --- events ------------------------------------------------------------------------------------------
   document.addEventListener("submit", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
@@ -15269,14 +15752,6 @@ echo "Backed up to $DEST ($STAMP)"
     e.preventDefault();
     var nav = (e.submitter && e.submitter.value) || "next";
     submitStep(form, nav);
-  });
-  document.addEventListener("change", function (e) {
-    if (!e.target.matches("#journey-root [data-plan]")) return;
-    var f = document.querySelector("#journey-root form[data-step]"), ev = cur();
-    if (f) collectStep(f);
-    ev.selected_package = e.target.value; save();
-    toast("Now planning with " + pkg(ev.selected_package).name + ". You can change this until you book.");
-    route(currentHash);
   });
   document.addEventListener("change", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
@@ -15292,7 +15767,7 @@ echo "Backed up to $DEST ($STAMP)"
         .catch(function (err) { toast(err.message, "error"); });
       return;
     }
-    if (t.name === "guest_paste" || t.name === "menu_paste") return;
+    if (t.name === "guest_paste" || t.name === "menu_paste" || t.hasAttribute("data-guest-file") || t.hasAttribute("data-qa-name") || t.hasAttribute("data-qa-phone")) return;
     if (t.hasAttribute("data-gallery")) {
       var ev = cur(), lim = limit(ev, "gallery_photos"), files = Array.prototype.slice.call(t.files);
       collectStep(form);
@@ -15300,20 +15775,13 @@ echo "Backed up to $DEST ($STAMP)"
       if (files.length > room) toast("Your package includes " + lim + " gallery photos.", "error");
       Promise.all(files.slice(0, Math.max(0, room)).map(function (fl) { return shrink(fl, 1200).catch(function () { return null; }); })).then(function (urls) {
         ev.images.gallery = (ev.images.gallery || []).concat(urls.filter(Boolean).map(function (u) { return { url: u, caption: "" }; }));
-        save(); viewStep(8);
+        save(); viewStep(7);
       });
       return;
     }
     var n = +form.getAttribute("data-step");
-    if (n === 3 && t.name === "template") { collectStep(form); save(); viewStep(3); return; }
+    if (n === 2 && t.name === "template") { collectStep(form); save(); viewStep(2); return; }
     collectStep(form); save(); refreshPreview();
-    if (n === 5 && /^fn-\d+-name$/.test(t.name)) {
-      var opts = fnOptions(cur());
-      form.querySelectorAll('select[name$="-function"]').forEach(function (s) {
-        var v = s.value;
-        s.innerHTML = opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === v ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("");
-      });
-    }
   });
   document.addEventListener("input", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
@@ -15327,9 +15795,48 @@ echo "Backed up to $DEST ($STAMP)"
   });
   document.addEventListener("click", function (e) {
     var t = e.target.closest("#journey-root [data-add-row], #journey-root [data-remove-row], #journey-root [data-device], #journey-root [data-open], #journey-root [data-delete], #journey-root [data-remove-image], #journey-root [data-remove-gallery], #journey-root [data-copy-booking], " +
-      "#journey-root [data-fill], #journey-root [data-surprise], #journey-root [data-sample], #journey-root [data-menu-paste], #journey-root [data-clear-guests], #journey-root [data-continue-link], #journey-root [data-share-preview], #journey-root [data-resend]");
+      "#journey-root [data-fill], #journey-root [data-surprise], #journey-root [data-sample], #journey-root [data-menu-paste], #journey-root [data-clear-guests], #journey-root [data-continue-link], #journey-root [data-share-preview], #journey-root [data-resend], " +
+      "#journey-root [data-qa-add], #journey-root [data-pick-contacts], #journey-root [data-paste-add], #journey-root [data-remove-guest], #journey-root [data-add-day], #journey-root [data-add-item], " +
+      "#journey-root [data-remove-day], #journey-root [data-remove-item], #journey-root [data-pay-again]");
     if (!t) return;
     var form = t.closest("form[data-step]");
+    if (t.hasAttribute("data-qa-add")) { quickAdd(); return; }
+    if (t.hasAttribute("data-pick-contacts")) {
+      navigator.contacts.select(["name", "tel", "email"], { multiple: true }).then(function (list) {
+        var people = list.map(function (c) { return { name: (c.name && c.name[0]) || "", phone: saPhone((c.tel && c.tel[0]) || ""), email: ((c.email && c.email[0]) || "").toLowerCase() }; }).filter(function (x) { return x.name; });
+        if (people.length) toast("Added " + plural(addGuests(people), "guest") + " from your contacts.");
+      }).catch(function () {});
+      return;
+    }
+    if (t.hasAttribute("data-paste-add")) {
+      var pt = form.querySelector("[name=guest_paste]"), ppl = parseGuests(pt.value);
+      if (!ppl.length) { toast("Paste the names first, one per line.", "error"); return; }
+      var n1 = addGuests(ppl); pt.value = "";
+      toast("Added " + plural(n1, "guest") + (n1 < ppl.length ? ". " + (ppl.length - n1) + " were already on your list." : "."));
+      return;
+    }
+    if (t.hasAttribute("data-remove-guest")) {
+      var gl = cur().guest_list; gl.splice(+t.getAttribute("data-remove-guest"), 1); cur().updated = new Date().toISOString(); save();
+      document.querySelector("#journey-root [data-guest-list]").innerHTML = guestListHtml(cur()); return;
+    }
+    if (t.hasAttribute("data-add-day")) {
+      var box = form.querySelector("[data-days]"), d = nextIndex(form, "fn"), dk = nextIndex(form, "si");
+      if (d === 0 && box.querySelectorAll(".day-block").length) d = 1;
+      box.insertAdjacentHTML("beforeend", dayBlock(d, null, progRow(dk, d)));
+      syncDays(); var nm = box.lastElementChild.querySelector('input[name$="-name"]'); if (nm) nm.focus();
+      collectStep(form); save(); refreshPreview(); return;
+    }
+    if (t.hasAttribute("data-add-item")) {
+      var day = t.closest(".day-block"), list2 = day.querySelector("[data-items]");
+      list2.insertAdjacentHTML("beforeend", progRow(nextIndex(form, "si"), day.getAttribute("data-day")));
+      list2.lastElementChild.querySelector("input").focus(); return;
+    }
+    if (t.hasAttribute("data-remove-day")) {
+      if (!window.confirm("Remove this day and everything planned for it?")) return;
+      t.closest(".day-block").remove(); syncDays(); collectStep(form); save(); refreshPreview(); return;
+    }
+    if (t.hasAttribute("data-remove-item")) { t.closest(".prog-row").remove(); collectStep(form); save(); refreshPreview(); return; }
+    if (t.hasAttribute("data-pay-again")) { goPay(cur()); return; }
     if (t.hasAttribute("data-fill")) {
       var vals = JSON.parse(t.getAttribute("data-fill"));
       Object.keys(vals).forEach(function (k) { var el = form.querySelector('[name="' + k + '"]'); if (el) el.value = vals[k]; });
@@ -15343,23 +15850,27 @@ echo "Backed up to $DEST ($STAMP)"
     }
     if (t.hasAttribute("data-sample")) {
       collectStep(form);
-      if (cur().schedule.length && !window.confirm("This replaces your programme items with a sample. Continue?")) return;
-      cur().schedule = sampleProgramme(cur()); save(); viewStep(5); toast("Sample programme added. Change the times and titles to match your day."); return;
+      var sev = cur(), firstId = sev.functions.length ? sev.functions[0].id : "";
+      var mineFirst = sev.schedule.filter(function (x) { return (x.function_id || "") === firstId; });
+      if (mineFirst.length && !window.confirm("This replaces the items for the first day with a sample. Continue?")) return;
+      var sample = sampleProgramme(sev).map(function (x) { x.function_id = firstId; return x; });
+      sev.schedule = sample.concat(sev.schedule.filter(function (x) { return (x.function_id || "") !== firstId; }));
+      save(); viewStep(4); toast("Sample programme added. Change the times and titles to match your day."); return;
     }
     if (t.hasAttribute("data-menu-paste")) {
       var txt = form.querySelector("[name=menu_paste]"), dishes = parseMenu(txt ? txt.value : "");
       if (!dishes.length) { toast("Paste the menu first, one dish per line.", "error"); return; }
       collectStep(form);
-      var mev = cur(); mev.menu.items = mev.menu.items.filter(function (it) { return it.name; }).concat(dishes); save(); viewStep(6);
+      var mev = cur(); mev.menu.items = mev.menu.items.filter(function (it) { return it.name; }).concat(dishes); save(); viewStep(5);
       toast("Added " + plural(dishes.length, "dish", "dishes") + ". Check the courses."); return;
     }
     if (t.hasAttribute("data-clear-guests")) {
       if (!window.confirm("Remove everyone from your guest list?")) return;
-      collectStep(form); cur().guest_list = []; save(); viewStep(4); return;
+      collectStep(form); cur().guest_list = []; save(); viewStep(3); return;
     }
     if (t.hasAttribute("data-continue-link")) {
       var f0 = document.querySelector("#journey-root form[data-step]"); if (f0) { collectStep(f0); save(); }
-      pack(cur(), false).then(function (code) { shareOrCopy(pageUrl() + "#resume=" + code, "Continue my Aurelia event", "Link copied. Open it on your other device to carry on. Photos stay on this device."); });
+      pack(cur(), false).then(function (code) { shareOrCopy(pageUrl() + "#resume=" + code, "Continue my " + D.brand + " event", "Link copied. Open it on your other device to carry on. Photos stay on this device."); });
       return;
     }
     if (t.hasAttribute("data-share-preview")) {
@@ -15371,13 +15882,13 @@ echo "Backed up to $DEST ($STAMP)"
       });
       return;
     }
-    if (t.hasAttribute("data-resend")) { startSend(cur(), t.getAttribute("data-resend") || "new"); return; }
+    if (t.hasAttribute("data-resend")) { var rev = cur(); startSend(rev, t.getAttribute("data-resend") || "new").then(function () { viewBooked(); toast(rev.booking.status === "sent" ? "Sent." : "Still couldn't send. Please email the details.", rev.booking.status === "sent" ? "" : "error"); }); return; }
     if (t.hasAttribute("data-add-row")) {
       var wrap = t.closest("[data-repeat]"), list = wrap.querySelector("[data-rows]"), prefix = wrap.getAttribute("data-repeat"), max = +wrap.getAttribute("data-max");
       if (list.children.length >= max) { toast("Your package allows " + max + " here.", "error"); return; }
       var next = 0;
       list.querySelectorAll("input,select").forEach(function (i) { var m = new RegExp("^" + prefix + "-(\\d+)-").exec(i.name || ""); if (m) next = Math.max(next, +m[1] + 1); });
-      var ev = cur(), html = prefix === "fn" ? fnRow(next) : prefix === "si" ? siRow(next, null, ev) : prefix === "mi" ? miRow(next) : prefix === "ct" ? ctRow(next) : row3(prefix, next, null, prefix === "rg" ? RG : AC);
+      var html = prefix === "mi" ? miRow(next) : prefix === "ct" ? ctRow(next) : row3(prefix, next, null, prefix === "rg" ? RG : AC);
       list.insertAdjacentHTML("beforeend", html);
       var first = list.lastElementChild.querySelector("input:not([type=hidden]),select"); if (first) first.focus();
       return;
@@ -15396,12 +15907,12 @@ echo "Backed up to $DEST ($STAMP)"
       try { localStorage.removeItem(KEY + "-img-" + id); } catch (er) { /* ignore */ }
       save(); toast("Event deleted."); viewMyEvents(); return;
     }
-    if (t.hasAttribute("data-remove-image")) { if (form) collectStep(form); delete cur().images[t.getAttribute("data-remove-image")]; save(); viewStep(3); return; }
-    if (t.hasAttribute("data-remove-gallery")) { if (form) collectStep(form); cur().images.gallery.splice(+t.getAttribute("data-remove-gallery"), 1); save(); viewStep(8); return; }
+    if (t.hasAttribute("data-remove-image")) { if (form) collectStep(form); delete cur().images[t.getAttribute("data-remove-image")]; save(); viewStep(2); return; }
+    if (t.hasAttribute("data-remove-gallery")) { if (form) collectStep(form); cur().images.gallery.splice(+t.getAttribute("data-remove-gallery"), 1); save(); viewStep(7); return; }
     if (t.hasAttribute("data-copy-booking")) {
       var ta = document.querySelector("[data-booking-text]"), text = ta ? ta.value : "";
       var done = function () { toast("Booking details copied. Paste them into an email to " + D.email + "."); };
-      var fallback = function () { if (ta) { ta.closest("details").open = true; ta.focus(); ta.select(); } try { document.execCommand("copy"); done(); } catch (er) { toast("Select the text below and copy it.", "error"); } };
+      var fallback = function () { if (ta) { ta.hidden = false; var dt = ta.closest("details"); if (dt) dt.open = true; ta.focus(); ta.select(); } try { document.execCommand("copy"); done(); } catch (er) { toast("Select the text below and copy it.", "error"); } };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
     }
   });
@@ -15458,7 +15969,7 @@ echo "Backed up to $DEST ($STAMP)"
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=4378a7c96f2f0492e9a1239df54d600960072da10ac269967b8802f627bf4541 nl=1 -->
+<!-- FILE: static/css/app.css sha256=211d95b9450e1c4c1baa5d10ea9654b8055559c657b4969698d47ba30ff55612 nl=1 -->
 ```css
 /* Aurelia design system
    Built from docs/website-style-playbook.md (STS Holdings, Oct 2026): one gold accent used as a
@@ -16341,6 +16852,37 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 @media print { .wa-float { display: none; } }
 .price__gap { display: flex; gap: 8px; align-items: flex-start; margin: 0; } .price__gap .i { color: var(--warn); flex: none; margin-top: 2px; }
 .how-list li { display: flex; gap: 14px; align-items: flex-start; } .how-list .mono { flex: none; color: var(--color-accent-text); padding-top: 2px; }
+.brand__sub { font-family: var(--font-sans); font-style: normal; font-size: .6875rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--color-muted); margin-left: 2px; vertical-align: .32em; }
+/* Programme by day */
+.days { display: grid; gap: 16px; margin: 14px 0; }
+.day-block { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
+.day-head { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--color-line); }
+.days.is-single .day-head { display: none; }
+.days.is-single .day-block { padding: 0; border: 0; background: none; }
+.day-block h3 { font-size: 1.0625rem; }
+[data-items] { display: grid; gap: 8px; }
+.prog-row { display: grid; gap: 8px; grid-template-columns: 110px minmax(0, 1.2fr) minmax(0, 1.6fr) auto; align-items: end; }
+@media (max-width: 640px) { .prog-row { grid-template-columns: 96px minmax(0, 1fr) auto; } .prog-row > .field:nth-of-type(3) { grid-column: 1 / -1; grid-row: 2; } }
+/* Seating layout drawings */
+.fp { width: 100%; height: auto; display: block; color: var(--color-text); }
+.fp .fp-table { fill: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); stroke: currentColor; stroke-width: 1.2; }
+.fp .fp-table--top { fill: color-mix(in srgb, var(--color-accent) 45%, var(--color-surface)); }
+.fp .fp-chair { fill: var(--color-surface); stroke: currentColor; stroke-width: 1; opacity: .75; }
+.fp .fp-chair--couple { fill: var(--color-accent-dark, var(--color-accent)); opacity: 1; }
+.fp .fp-dance { fill: none; stroke: currentColor; stroke-dasharray: 4 3; opacity: .5; }
+.fp .fp-label { font: 500 9px var(--font-sans); fill: currentColor; opacity: .6; }
+.layout-choice .choice > span { display: grid; gap: 6px; }
+.layout-choice .fp { max-width: 140px; margin: 0 auto; }
+.fp-plan-box { padding: 16px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
+.fp--plan { max-width: 520px; margin: 0 auto; }
+/* Guest list: quick add and chips */
+.quick-add { display: grid; gap: 8px; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; margin-bottom: 8px; }
+@media (max-width: 560px) { .quick-add { grid-template-columns: minmax(0, 1fr) auto; } .quick-add [data-qa-phone] { grid-column: 1; grid-row: 2; } }
+.guest-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.guest-chips li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 12px; border: 1px solid var(--color-line); border-radius: 999px; background: var(--color-surface); font-size: .875rem; }
+.guest-chips button { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--color-muted); cursor: pointer; }
+.guest-chips button:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
+.guest-chips .i { width: 14px; height: 14px; }
 ```
 
 ### `static/css/eventsite.css`
@@ -17327,6 +17869,67 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 })();
 ```
 
+### `static/js/floorplan.js`
+
+<!-- FILE: static/js/floorplan.js sha256=fa9edab5632bf9f0452256fbe119c78757a2e2c17200c0c8e5e9e86ef700f9a5 nl=1 -->
+```javascript
+/* Table-type drawings and a floor-plan sketch for the seating step (app wizard and static site).
+   AureliaFloor.icon(kind) returns an SVG for one table type; AureliaFloor.plan(opts) returns a room sketch:
+   opts = { top: "sweetheart" | "head" | "none", guest: "round" | "long" | "mixed", count: n, cap: seats,
+            topLabel: "Couple", dance: true }. Colours use currentColor so light and dark themes both work. */
+(function () {
+  "use strict";
+  function chairsRound(cx, cy, r, n, rc) {
+    var out = "";
+    for (var k = 0; k < n; k++) {
+      var a = (Math.PI * 2 * k) / n - Math.PI / 2;
+      out += '<circle cx="' + (cx + Math.cos(a) * r).toFixed(1) + '" cy="' + (cy + Math.sin(a) * r).toFixed(1) + '" r="' + rc + '" class="fp-chair"/>';
+    }
+    return out;
+  }
+  function chairsLine(x1, x2, y, n, rc) {
+    var out = "", step = (x2 - x1) / (n - 1 || 1);
+    for (var k = 0; k < n; k++) out += '<circle cx="' + (x1 + step * k).toFixed(1) + '" cy="' + y + '" r="' + rc + '" class="fp-chair"/>';
+    return out;
+  }
+  function roundTable(cx, cy, r, seats) { return chairsRound(cx, cy, r + r * 0.42, seats, r * 0.26) + '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" class="fp-table"/>'; }
+  function longTable(cx, cy, w, h, perSide, oneSide) {
+    var x = cx - w / 2, y = cy - h / 2, rc = h * 0.32;
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (h * 0.18) + '" class="fp-table"/>' +
+      (oneSide ? "" : chairsLine(x + w * 0.1, x + w * 0.9, y - rc * 1.6, perSide, rc)) + chairsLine(x + w * 0.1, x + w * 0.9, y + h + rc * 1.6, perSide, rc);
+  }
+  var ICONS = {
+    sweetheart: function () { return '<rect x="34" y="30" width="52" height="18" rx="4" class="fp-table"/><circle cx="50" cy="60" r="6" class="fp-chair fp-chair--couple"/><circle cx="70" cy="60" r="6" class="fp-chair fp-chair--couple"/>'; },
+    head: function () { return '<rect x="8" y="26" width="104" height="18" rx="4" class="fp-table"/>' + chairsLine(16, 42, 56, 3, 5) + chairsLine(78, 104, 56, 3, 5) +
+      '<circle cx="54" cy="56" r="5" class="fp-chair fp-chair--couple"/><circle cx="66" cy="56" r="5" class="fp-chair fp-chair--couple"/>'; },
+    none: function () { return roundTable(60, 40, 16, 8) + '<circle cx="60" cy="17.5" r="4.2" class="fp-chair fp-chair--couple"/><circle cx="76" cy="24" r="4.2" class="fp-chair fp-chair--couple"/>'; },
+    round: function () { return roundTable(60, 40, 17, 10); },
+    long: function () { return longTable(60, 40, 96, 16, 6, false); },
+    mixed: function () { return roundTable(32, 40, 13, 8) + longTable(86, 40, 50, 12, 3, false); }
+  };
+  function icon(kind) {
+    return '<svg class="fp" viewBox="0 0 120 80" aria-hidden="true" focusable="false">' + (ICONS[kind] || ICONS.round)() + "</svg>";
+  }
+  function plan(o) {
+    var count = Math.max(1, Math.min(60, +o.count || 10)), cap = Math.max(2, Math.min(20, +o.cap || 10)), W = 320, svg = "", y = 22;
+    var cols = o.guest === "long" ? 2 : 4, rows = Math.ceil(count / cols), rowH = o.guest === "long" ? 46 : 54;
+    var H = y + (o.top === "none" ? 0 : 54) + (o.dance ? 52 : 6) + rows * rowH + 10;
+    svg += '<text x="' + W / 2 + '" y="12" class="fp-label" text-anchor="middle">' + (o.stage || "Front of the room") + "</text>";
+    if (o.top === "sweetheart") { svg += '<rect x="' + (W / 2 - 26) + '" y="' + y + '" width="52" height="14" rx="3" class="fp-table fp-table--top"/>' + chairsLine(W / 2 - 9, W / 2 + 9, y + 24, 2, 5).replace(/fp-chair/g, "fp-chair fp-chair--couple"); y += 54; }
+    else if (o.top === "head") { svg += '<rect x="' + (W / 2 - 90) + '" y="' + y + '" width="180" height="14" rx="3" class="fp-table fp-table--top"/>' + chairsLine(W / 2 - 80, W / 2 - 22, y + 24, 4, 4.6) + chairsLine(W / 2 + 22, W / 2 + 80, y + 24, 4, 4.6) +
+      chairsLine(W / 2 - 7, W / 2 + 7, y + 24, 2, 4.8).replace(/fp-chair/g, "fp-chair fp-chair--couple"); y += 54; }
+    if (o.dance) { svg += '<rect x="' + (W / 2 - 60) + '" y="' + (y - 2) + '" width="120" height="38" rx="6" class="fp-dance"/><text x="' + W / 2 + '" y="' + (y + 21) + '" class="fp-label" text-anchor="middle">Dance floor</text>'; y += 52; }
+    for (var k = 0; k < count; k++) {
+      var c = k % cols, r = Math.floor(k / cols), cx = (W / cols) * (c + 0.5), cy = y + r * rowH + rowH / 2 - 4;
+      var isLong = o.guest === "long" || (o.guest === "mixed" && (k % 3 === 2));
+      svg += isLong ? longTable(cx, cy, o.guest === "long" ? 120 : 52, 12, Math.min(8, Math.ceil(cap / 2)), false) : roundTable(cx, cy, 13, Math.min(cap, 12));
+    }
+    return '<svg class="fp fp--plan" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Sketch of your room layout">' + svg + "</svg>";
+  }
+  window.AureliaFloor = { icon: icon, plan: plan };
+})();
+```
+
 ### `static/js/seating.js`
 
 <!-- FILE: static/js/seating.js sha256=a03048ec579e913ea0d8a4c7d8c50b762a063b38f67ce7ab2b8930dc3d45ea3f nl=1 -->
@@ -17961,7 +18564,7 @@ if __name__ == "__main__":
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=3958059570da2b99166d0c35e9f74b56fd2f54beb4e7225e501a8c447d0aa11a nl=1 -->
+<!-- FILE: tests/test_core.py sha256=91161cebbf409fc23271dbc886955020d185f51b32a51a42ba8d42a33e5c2c92 nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -18049,30 +18652,39 @@ class WizardTest(unittest.TestCase):
         self.user = make_user()
         login(self.c)
 
-    def create(self, category="white-wedding", template="atelier"):
-        r = self.c.post("/create", {"category": category, "template": template, "name": "Our wedding"})
+    def create(self, category="white-wedding", template="atelier", hosts="Lerato & Sipho"):
+        r = self.c.post("/create", {"category": category, "template": template, "hosts": hosts})
         self.assertEqual(r.status, 303, r.text[:400])
         uid = find(r"/dashboard/events/([0-9a-f]+)/setup/1", r.location)
         return uid
 
+    def test_create_asks_for_names(self):
+        r = self.c.post("/create", {"category": "white-wedding", "template": "atelier"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("Add the names", r.text)
+        uid = self.create()
+        ev = events.get(uid)
+        self.assertEqual((ev["hosts"], ev["name"], ev["slug"]), ("Lerato & Sipho", "Lerato & Sipho's wedding", "lerato-and-sipho"))
+        self.assertNotIn("Which package", self.c.get("/create").text)
+
     def test_create_without_account_needs_only_name_and_email(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom"})
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle"})
         self.assertEqual(r.status, 200)
         self.assertIn("Your name", r.text)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "package": "essential",
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
         self.assertEqual(r.status, 303, r.text[:300])
         self.assertIn("/setup/1", r.location)
         user = db.one("SELECT * FROM users WHERE email = ?", ("amahle@example.com",))
         self.assertEqual(user["password_hash"], "")
         ev = db.one("SELECT * FROM events WHERE owner_id = ?", (user["id"],))
-        self.assertEqual(ev["selected_package"], "essential")
+        self.assertEqual((ev["selected_package"], ev["name"]), ("essential", "Amahle's baby shower"))
         self.assertEqual(anon.get(r.location).status, 200)      # signed in straight away
 
     def test_create_with_existing_email_sends_sign_in_link(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "birthday", "template": "pulse", "contact_name": "Thandi",
+        r = anon.post("/create", {"category": "birthday", "template": "pulse", "hosts": "Kagiso's 40th", "contact_name": "Thandi",
                                   "contact_email": "organiser@example.com", "terms": "1"})
         self.assertEqual(r.status, 200)
         self.assertIn("sign-in link", r.text)
@@ -18083,66 +18695,82 @@ class WizardTest(unittest.TestCase):
         uid = self.create()
         base = f"/dashboard/events/{uid}/setup"
         self.assertEqual(self.c.get(base + "/1").status, 200)
-        r = self.c.post(base + "/1", {"name": "Our wedding", "category": "white-wedding", "hosts": "Lerato & Sipho",
-                                      "event_date": "2027-03-14", "start_time": "14:00", "end_time": "23:00", "nav": "next"})
+        r = self.c.post(base + "/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "start_time": "14:00", "end_time": "23:00",
+                                      "venue_name": "Avianto", "address": "Muldersdrift, Gauteng", "nav": "next"})
         self.assertEqual(r.location, base + "/2")
         ev = events.get(uid)
-        self.assertEqual(ev["slug"], "lerato-and-sipho")
-        r = self.c.post(base + "/2", {"venue_name": "Avianto", "address": "Muldersdrift, Gauteng", "nav": "next"})
-        self.assertEqual(r.status, 303)
-        r = self.c.post(base + "/3", {"template": "atelier", "palette": "stone", "font_pair": "cormorant-jost", "background": "paper",
+        self.assertEqual((ev["slug"], ev["venue"]["name"]), ("lerato-and-sipho", "Avianto"))
+        r = self.c.post(base + "/2", {"template": "atelier", "palette": "stone", "font_pair": "cormorant-jost", "background": "paper",
                                       "monogram": "L&S", "w_welcome": "Together with their families", "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertEqual(events.get(uid)["design"]["palette"], "stone")
-        r = self.c.post(base + "/4", {"estimated": "150", "categories": ["Family", "Friends"], "categories_other": "Choir",
+        r = self.c.post(base + "/3", {"estimated": "150", "categories": ["Family", "Friends"], "categories_other": "Choir",
                                       "plus_one_policy": "per_guest", "plus_ones_default": "1", "rsvp_deadline": "2027-02-01",
                                       "children_allowed": "1", "max_children": "2", "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertIn("Choir", events.get(uid)["guest_settings"]["categories"])
-        r = self.c.post(base + "/5", {"fn-0-name": "Ceremony", "fn-0-start": "14:00", "fn-1-name": "Reception", "fn-1-start": "17:00",
-                                      "si-0-time": "14:00", "si-0-title": "Ceremony begins", "si-0-kind": "ceremony",
-                                      "si-1-time": "18:30", "si-1-title": "Dinner", "si-1-kind": "meal", "nav": "next"})
-        self.assertEqual(r.status, 303)
-        self.assertEqual(len(events.functions(events.get(uid)["id"])), 2)
-        self.assertEqual(len(events.schedule(events.get(uid)["id"])), 2)
-        r = self.c.post(base + "/6", {"menu_name": "Reception menu", "mi-0-course": "Main", "mi-0-name": "Lamb", "mi-0-selectable": "1",
+        # two days, each with its own items
+        r = self.c.post(base + "/4", {"fn-0-name": "Ceremony", "fn-0-start": "14:00", "fn-1-name": "Reception", "fn-1-date": "2027-03-15",
+                                      "si-0-time": "14:00", "si-0-title": "Ceremony begins", "si-0-day": "0",
+                                      "si-1-time": "18:30", "si-1-title": "Dinner", "si-1-day": "1", "nav": "next"})
+        self.assertEqual(r.status, 303, r.text[:500])
+        eid = events.get(uid)["id"]
+        funcs = events.functions(eid)
+        self.assertEqual([f["name"] for f in funcs], ["Ceremony", "Reception"])
+        self.assertEqual(funcs[0]["func_date"], "2027-03-14")                 # day 1 defaults to the event date
+        sched = events.schedule(eid)
+        self.assertEqual([(x["title"], x["function_name"], x["kind"]) for x in sched],
+                         [("Ceremony begins", "Ceremony", "ceremony"), ("Dinner", "Reception", "meal")])
+        r = self.c.post(base + "/5", {"menu_name": "Reception menu", "mi-0-course": "Main", "mi-0-name": "Lamb", "mi-0-selectable": "1",
                                       "mi-1-course": "Main", "mi-1-name": "Butternut risotto", "mi-1-tags": "Vegetarian", "mi-1-selectable": "1",
                                       "dietary_options": ["Vegetarian", "Halal"], "nav": "next"})
         self.assertEqual(r.status, 303)
-        self.assertEqual(len(events.meal_options(events.get(uid)["id"])), 2)
-        r = self.c.post(base + "/7", {"plan_now": "1", "table_count": "15", "capacity": "10", "shape": "round", "apply_capacity": "1",
-                                      "table_names": "Head table\nProtea", "nav": "next"})
+        self.assertEqual(len(events.meal_options(eid)), 2)
+        r = self.c.post(base + "/6", {"top_table": "head", "guest_tables": "mixed", "capacity": "10", "table_count": "15", "plan_now": "1", "nav": "next"})
         self.assertEqual(r.status, 303)
-        tables = events.tables(events.get(uid)["id"])
-        self.assertEqual(len(tables), 15)
-        self.assertEqual(tables[0]["name"], "Head table")
-        r = self.c.post(base + "/8", {"dress_code": "Black tie", "rg-0-name": "Yuppiechef", "rg-0-url": "yuppiechef.com",
+        tables = events.tables(eid)
+        self.assertEqual(len(tables), 16)
+        self.assertEqual((tables[0]["name"], tables[0]["shape"], tables[0]["notes"]), ("Head table", "long", "Top table"))
+        self.assertEqual(sum(1 for t in tables if t["shape"] == "long"), 6)  # head table + every third guest table
+        r = self.c.post(base + "/7", {"dress_code": "Black tie", "rg-0-name": "Yuppiechef", "rg-0-url": "yuppiechef.com",
                                       "ct-0-name": "Zanele", "ct-0-phone": "+27 82 000 0000", "nav": "next"})
         self.assertEqual(r.status, 303)
+        self.assertEqual(r.location, base + "/8")
         self.assertEqual(events.get(uid)["info"]["registry"][0]["url"], "https://yuppiechef.com")
-        self.assertEqual(self.c.get(base + "/9").status, 200)
-        self.assertEqual(self.c.get(base + "/10").status, 200)
-        self.assertEqual(set(events.get(uid)["wizard_done"]), set(range(1, 9)))
+        page8 = self.c.get(base + "/8").text
+        self.assertIn("Pay R12,999", page8)
+        self.assertIn("Show someone before you pay", page8)
+        self.assertEqual(self.c.get(base + "/10").location, base + "/8")       # old links still land on the last step
+        self.assertEqual(set(events.get(uid)["wizard_done"]), set(range(1, 8)))
+
+    def test_single_day_programme_has_no_days(self):
+        uid = self.create()
+        r = self.c.post(f"/dashboard/events/{uid}/setup/4", {"fn-0-id": "", "si-0-time": "14:00", "si-0-title": "Speeches", "si-0-day": "0",
+                                                             "si-1-time": "", "si-1-title": "", "si-1-day": "0", "nav": "next"})
+        self.assertEqual(r.status, 303, r.text[:400])
+        eid = events.get(uid)["id"]
+        self.assertEqual(events.functions(eid), [])
+        self.assertEqual([(x["title"], x["kind"], x["function_id"]) for x in events.schedule(eid)], [("Speeches", "speech", None)])
 
     def test_step1_validation(self):
         uid = self.create()
-        r = self.c.post(f"/dashboard/events/{uid}/setup/1", {"name": "", "category": "nope", "event_date": "2001-01-01", "nav": "next"})
+        r = self.c.post(f"/dashboard/events/{uid}/setup/1", {"hosts": "", "category": "nope", "event_date": "2001-01-01", "nav": "next"})
         self.assertEqual(r.status, 200)
         self.assertIn("form-errors", r.text)
 
-    def test_essential_limits_functions(self):
+    def test_essential_limits_days(self):
         uid = self.create()
         events.touch(events.get(uid)["id"], selected_package="essential")
-        r = self.c.post(f"/dashboard/events/{uid}/setup/5", {"fn-0-name": "A", "fn-1-name": "B", "nav": "next"})
-        self.assertIn("includes 1 event function", r.text)
+        r = self.c.post(f"/dashboard/events/{uid}/setup/4", {"fn-0-name": "A", "fn-1-name": "B", "nav": "next"})
+        self.assertIn("includes 1 day", r.text)
 
     def test_image_upload_checks_content(self):
         uid = self.create()
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/3", {"template": "atelier", "nav": "stay"},
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"},
                              {"hero": ("evil.png", b"<script>alert(1)</script>", "image/png")})
         self.assertIn("Upload a JPG, PNG, WebP or GIF", r.text)
         png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/3", {"template": "atelier", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
         self.assertEqual(r.status, 303)
         self.assertEqual(len(events.uploads(events.get(uid)["id"], "hero")), 1)
 
@@ -18172,7 +18800,7 @@ class PaymentsTest(unittest.TestCase):
 
     def test_checkout_requires_terms(self):
         r = self.c.post(f"/dashboard/events/{self.ev['uid']}/checkout", {"package": "premium"})
-        self.assertIn("/setup/10", r.location)
+        self.assertIn("/setup/8", r.location)
         self.assertEqual(db.val("SELECT COUNT(*) FROM orders"), 0)
 
     def test_return_page_alone_does_not_pay(self):
@@ -18233,7 +18861,7 @@ class PaymentsTest(unittest.TestCase):
         order_uid = self.checkout("signature")
         self.assertEqual(db.val("SELECT amount_cents FROM orders WHERE uid = ?", (order_uid,)), 1_799_900 - 899_900)
         r = self.c.post(f"/dashboard/events/{self.ev['uid']}/checkout", {"package": "essential", "accept": "1"})
-        self.assertIn("/setup/10", r.location)
+        self.assertIn("/setup/8", r.location)
 
     def test_payfast_signature(self):
         sig = payments.PayFastGateway.signature([("merchant_id", "10000100"), ("amount", "100.00"), ("item_name", "Test item"), ("empty", "")], "pass phrase")
@@ -18245,7 +18873,7 @@ class PaymentsTest(unittest.TestCase):
         config.ALLOW_SANDBOX_PAYMENTS = False
         try:
             r = self.c.post(f"/dashboard/events/{self.ev['uid']}/checkout", {"package": "premium", "accept": "1"})
-            self.assertIn("/setup/10", r.location)
+            self.assertIn("/setup/8", r.location)
             self.assertEqual(db.val("SELECT COUNT(*) FROM orders"), 0)
         finally:
             config.ALLOW_SANDBOX_PAYMENTS = old
@@ -18276,7 +18904,7 @@ class HostingRuleTest(unittest.TestCase):
 
 ### `tests/test_ease.py`
 
-<!-- FILE: tests/test_ease.py sha256=f132641d648f5c4ddf0174951ca8193a75f5ac0d536dd8da9bbd3af399e7b7e0 nl=1 -->
+<!-- FILE: tests/test_ease.py sha256=6ab535d4240fa6209bdfd6b5a73b76fd6898d88bedf3a09b3d127fab05488094 nl=1 -->
 ```python
 """Tests for the ease-of-use round (2026-11): sign-in links, draft previews, pasting guests and menus,
 sample programmes, package gaps, the WhatsApp queue, next steps and the set-up help request."""
@@ -18340,57 +18968,56 @@ class EaseTests(unittest.TestCase):
 
     # --- wizard helpers ----------------------------------------------------------------------------------
     def test_guest_paste_in_step_4(self):
-        r = self.client.post(self.base + "/setup/4", {"guest_paste": "Name\tPhone\nThandi Mokoena\t082 123 4567\nSipho Dlamini, sipho@example.com\nThandi Mokoena\t082 123 4567",
+        r = self.client.post(self.base + "/setup/3", {"guest_paste": "Name\tPhone\nThandi Mokoena\t082 123 4567\nSipho Dlamini, sipho@example.com\nThandi Mokoena\t082 123 4567",
                                                       "plus_one_policy": "per_guest", "nav": "stay"})
         self.assertEqual(r.status, 303, r.text[:300])
         names = [g["first_name"] + " " + g["last_name"] for g in db.q("SELECT * FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))]
         self.assertEqual(names, ["Thandi Mokoena", "Sipho Dlamini"])
         # pasting the same people again adds nobody
-        self.client.post(self.base + "/setup/4", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
+        self.client.post(self.base + "/setup/3", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
         self.assertEqual(db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (self.ev["id"],)), 2)
 
     def test_guest_paste_needs_premium(self):
         events.touch(self.ev["id"], selected_package="essential")
-        r = self.client.post(self.base + "/setup/4", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
+        r = self.client.post(self.base + "/setup/3", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
         self.assertEqual(r.status, 200)
         self.assertIn("part of the Premium package", r.text)
 
     def test_sample_programme_and_menu_paste(self):
-        r = self.client.post(self.base + "/setup/5", {"nav": "sample"})
+        r = self.client.post(self.base + "/setup/4", {"nav": "sample"})
         self.assertEqual(r.status, 303)
         items = events.schedule(self.ev["id"])
         self.assertEqual(items[1]["item_time"], "14:00")     # the ceremony starts at the event's start time
+        self.assertEqual(items[1]["kind"], "ceremony")
         self.assertEqual(items[1]["title"], "Ceremony")
-        r = self.client.post(self.base + "/setup/6", {"menu_name": "Reception menu", "menu_paste": "Starters\nSoup\nMain: Lamb - jus\nDessert: Malva pudding",
+        r = self.client.post(self.base + "/setup/5", {"menu_name": "Reception menu", "menu_paste": "Starters\nSoup\nMain: Lamb - jus\nDessert: Malva pudding",
                                                       "nav": "next"})
         self.assertEqual(r.status, 303)
         dishes = db.q("SELECT course, name, description FROM menu_items WHERE event_id = ? ORDER BY sort", (self.ev["id"],))
         self.assertEqual([(d["course"], d["name"]) for d in dishes], [("Starter", "Soup"), ("Main", "Lamb"), ("Dessert", "Malva pudding")])
 
     def test_blank_starter_rows_are_ignored(self):
-        r = self.client.post(self.base + "/setup/5", {"si-0-kind": "other", "si-1-kind": "other", "si-0-function": "", "nav": "next"})
+        r = self.client.post(self.base + "/setup/4", {"si-0-day": "0", "si-1-day": "0", "fn-0-id": "", "nav": "next"})
         self.assertEqual(r.status, 303, r.text[:400])
-        r = self.client.post(self.base + "/setup/6", {"mi-0-course": "Main", "mi-1-course": "Main", "nav": "next"})
+        r = self.client.post(self.base + "/setup/5", {"mi-0-course": "Main", "mi-1-course": "Main", "nav": "next"})
         self.assertEqual(r.status, 303, r.text[:400])
 
     def test_seating_step_can_wait_for_rsvps(self):
-        r = self.client.post(self.base + "/setup/7", {"table_count": "12", "capacity": "10", "nav": "next"})
+        r = self.client.post(self.base + "/setup/6", {"top_table": "head", "guest_tables": "round", "table_count": "12", "capacity": "10", "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertEqual(events.tables(self.ev["id"]), [])
+        self.assertEqual(events.seating_layout(events.by_id(self.ev["id"]))["top"], "head")
 
     def test_package_gaps_shown_on_review_and_package_steps(self):
-        self.client.post(self.base + "/setup/5", {"nav": "sample"})
+        self.client.post(self.base + "/setup/4", {"nav": "sample"})
         self.assertEqual(events.package_gaps(events.by_id(self.ev["id"]), "premium"), [])
         self.assertIn("your programme", events.package_gaps(events.by_id(self.ev["id"]), "essential")[0])
-        self.client.post(self.base + "/plan-package", {"package": "essential", "back": "9"})
-        r = self.client.get(self.base + "/setup/9")
-        self.assertIn("won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
+        r = self.client.get(self.base + "/setup/8")
         self.assertIn("Show someone before you pay", r.text)
-        r = self.client.get(self.base + "/setup/10")
         self.assertIn("Won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
 
     def test_event_name_follows_names(self):
-        r = self.client.post(self.base + "/setup/1", {"name": "", "category": "white-wedding", "hosts": "Lerato & Sipho", "event_date": "2027-03-14", "nav": "stay"})
+        r = self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
         self.assertEqual(r.status, 303)
         self.assertEqual(events.by_id(self.ev["id"])["name"], "Lerato & Sipho's wedding")
 
@@ -18455,6 +19082,37 @@ class SuggestionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GuestImportTests(unittest.TestCase):
+    def setUp(self):
+        self.app = fresh_app("guestimport")
+        self.owner = make_user()
+        self.client = Client(self.app)
+        session_for(self.client, self.owner)
+        self.ev = make_event(self.owner, package=None)
+        self.base = f"/dashboard/events/{self.ev['uid']}"
+
+    def test_upload_excel_and_family_headings(self):
+        import io
+        import zipfile
+        b = io.BytesIO()
+        with zipfile.ZipFile(b, "w") as z:
+            z.writestr("xl/sharedStrings.xml", '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Name</t></si>'
+                       '<si><t>Mobile</t></si><si><t>Family</t></si><si><t>Lerato Dube</t></si><si><t>Dube family</t></si></sst>')
+            z.writestr("xl/worksheets/sheet1.xml", '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+                       '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>'
+                       '<row r="2"><c r="A2" t="s"><v>3</v></c><c r="B2"><v>831112222</v></c><c r="C2" t="s"><v>4</v></c></row></sheetData></worksheet>')
+        r = self.client.multipart(self.base + "/setup/3", {"guest_paste": "Mokoena family:\nThandi Mokoena, 082 123 4567", "nav": "stay"},
+                                  {"guest_file": ("guests.xlsx", b.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
+        self.assertEqual(r.status, 303, r.text[:300])
+        rows = db.q("SELECT first_name, last_name, phone, family_group FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))
+        self.assertEqual([tuple(x) for x in rows], [("Thandi", "Mokoena", "082 123 4567", "Mokoena family"), ("Lerato", "Dube", "0831112222", "Dube family")])
+
+    def test_unreadable_file_explains(self):
+        r = self.client.multipart(self.base + "/setup/3", {"nav": "stay"}, {"guest_file": ("guests.xlsx", b"PK\x03\x04 broken", "application/octet-stream")})
+        self.assertEqual(r.status, 200)
+        self.assertIn("couldn", r.text)
 ```
 
 ### `tests/test_eventsite.py`
@@ -18711,7 +19369,7 @@ if __name__ == "__main__":
 
 ### `tests/test_manage.py`
 
-<!-- FILE: tests/test_manage.py sha256=8238a15eea1c6ba6186177c1176df65d3deeefed706830a05b3d4f946c45d3f6 nl=1 -->
+<!-- FILE: tests/test_manage.py sha256=8d8264fe33b048668fafd65ce3b5faffae5942df09d60649324d00401f80b899 nl=1 -->
 ```python
 """Organiser dashboard tests: guests, CSV import, access control, package gating, seating API,
 reports, QR codes and communications."""
@@ -18857,7 +19515,10 @@ class ManageTests(unittest.TestCase):
         dla = [add_guest(self.ev, n, family_group="Dlamini family") for n in ("Sipho", "Ayanda", "Zola")]  # 3 people
         add_guest(self.ev, "Pending Pat", status="pending")
         r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
-        self.assertIn("created 1 tables", r["message"])
+        self.assertIn("created", r["message"])
+        top = [t for t in r["state"]["tables"] if t["name"] == "Head table"]
+        self.assertEqual(len(top), 1)                         # a wedding gets a head table from the default layout
+        self.assertEqual(top[0]["seated"], 0)                 # and nobody is seated there automatically
         tables = {g["table"] for g in r["state"]["guests"] if g["name"].split()[0] in ("Thabo", "Lindi", "Sipho", "Ayanda", "Zola")}
         self.assertEqual(len(tables), 1)                      # 7 people fit one table of 10
         self.assertEqual(r["warning"], "")
@@ -19053,7 +19714,7 @@ if __name__ == "__main__":
 
 ### `tools/export_preview.py`
 
-<!-- FILE: tools/export_preview.py sha256=5e2e828516af4778dd325fd5d84163008cc93cc7319eb1e6896f291e2ff64896 nl=1 -->
+<!-- FILE: tools/export_preview.py sha256=f31aabdd7711069f53f8ff4d69812ed62b0a5c1c4ea3065214c76e4051df227c nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Build the shareable, server-free version of the Aurelia site (published as a Claude Artifact).
@@ -19095,7 +19756,7 @@ if os.path.isdir(OUT):
     shutil.rmtree(OUT)
 for d in ("static/css", "static/js", "static/img"):
     os.makedirs(os.path.join(OUT, d))
-for f in ["css/app.css", "css/icons.css", "css/eventsite.css", "js/eventsite.js", "img/favicon.svg"]:
+for f in ["css/app.css", "css/icons.css", "css/eventsite.css", "js/eventsite.js", "js/floorplan.js", "img/favicon.svg"]:
     shutil.copy(os.path.join(SRC, "static", f), os.path.join(OUT, "static", f))
 for f in ("eventrender.js", "journey.js"):
     shutil.copy(os.path.join(SRC, "preview_site", f), os.path.join(OUT, "static/js", f))
@@ -19202,7 +19863,7 @@ def route_for(href: str) -> str:
 
 
 def rewrite(html: str) -> str:
-    html = html.replace(config.BASE_URL + "/events/", "aurelia.events/").replace(config.BASE_URL, "")
+    html = html.replace(config.BASE_URL + "/events/", "aureliastudio.co.za/events/").replace(config.BASE_URL, "")
 
     def iframe(m):
         previews.add((m.group(1), m.group(2)))
@@ -19266,7 +19927,7 @@ views.forEach(function(v){v.hidden=v!==target;});window.scrollTo(0,0);
 navs.forEach(function(a){var on=a.getAttribute('href')==='#'+id||(id.indexOf('tpl-')===0&&a.getAttribute('href')==='#templates');if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
 var d=document.getElementById('drawer');if(d&&d.open)d.close();
 if(J&&J.handles(id)){J.route(id);}
-var t=target.querySelector('h1');document.title=(t?t.textContent.trim()+' · ':'')+'Aurelia';
+var t=target.querySelector('h1');document.title=(t?t.textContent.trim()+' · ':'')+'""" + config.BRAND_NAME + """';
 setTimeout(function(){window.dispatchEvent(new Event('resize'));target.querySelectorAll('[data-reveal]').forEach(function(e){e.classList.add('is-visible');});},60);}
 window.addEventListener('hashchange',show);show();})();</script>"""
 def _netlify_form(name: str, fields: list, files: list = ()) -> str:
@@ -19283,8 +19944,8 @@ netlify_forms = ('<div hidden aria-hidden="true">'
                  + _netlify_form("contact", ["name", "email", "topic", "~message"])
                  + _netlify_form("setup-help", ["name", "email", "phone", "reach", "occasion", "event_date", "package", "~message"])
                  + "</div>") if STANDALONE else ""
-scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "eventrender.js", "journey.js"))
-index = (f'<title>Aurelia</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
+scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "floorplan.js", "eventrender.js", "journey.js"))
+index = (f'<title>{config.BRAND_NAME}</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
          f'{rewrite(chrome_start)}<main id="main">{sections}</main>{rewrite(footer)}'
          f'<div class="toasts" aria-live="polite"></div>{netlify_forms}{scripts}{router}')
 index = index.replace("<body", "<div").replace("</body>", "")
@@ -19313,7 +19974,7 @@ print(f"{OUT}: {len(views)} pages + journey, {len(previews)} template samples, l
 
 ### `tools/make_bundle.py`
 
-<!-- FILE: tools/make_bundle.py sha256=bc66adcd4aa2fc7b87899ed20051b005fef89ab658dde99285cf96fa48a1f2fb nl=1 -->
+<!-- FILE: tools/make_bundle.py sha256=26527ae7ff1fa3d5594d10abf70950e338de4832ad54d597ca0251e99f6e8808 nl=1 -->
 ````python
 #!/usr/bin/env python3
 """Write AURELIA-COMPLETE.md: the whole project in one Markdown file.
@@ -19399,20 +20060,21 @@ print(f"Wrote {count} files to {dest}/")
 GUIDE = r"""
 ## 1. What this is
 
-**Aurelia** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
+**Aurelia Studio** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
 every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
   pricing with full comparison, how it works, FAQ, contact/support form, privacy (POPIA), terms, refunds.
 - **Accounts:** register with just a name and email (password optional), sign in with an emailed link
   or a password, password reset, email confirmation, profile, data download, account deletion.
-- **10-step event set-up wizard:** event details, venue, design (live preview), guests, programme,
-  food and drinks, seating, extras (dress code, registry, contacts, accommodation, gallery), review,
-  package and payment. Saved as a private draft at every step. Built to keep the client's work small:
-  package chosen up front with locked steps marked, steps 4 to 8 optional, ready-made wording and sample
-  programmes per occasion, guest lists and caterers' menus pasted in, seating left until RSVPs arrive,
-  a review checklist, a warning when a package wouldn't show something already filled in, and a
-  shareable draft preview link for family. "We'll set it up for you" request page.
+- **8-step event set-up:** details (names, date, venue), design (live preview), guests, programme,
+  food and drinks, seating, extras (dress code, registry, places to stay, gallery), then review and pay.
+  The create page asks three things: occasion, template and names. Saved as a private draft as you go.
+  Built to keep the client's work small: steps 3 to 7 optional, ready-made wording and sample
+  programmes per occasion, programmes split into days (lobola, traditional and multi-day events),
+  guests added by typing, phone contacts, Excel/CSV upload or pasting (family headings group them),
+  drawn seating layouts with a top table, a package-gap warning on each package, one Pay button per
+  package, and a shareable draft preview link for family. "We'll set it up for you" request page.
 - **Event website generator:** 11 templates with different layouts (Atelier, Folio, Bloom, Heritage,
   Champagne, Linea, Confetti, Pulse, Aurora, Laureate, Cradle), each with palettes, font pairs,
   backgrounds, photos and custom wording. One public link per event, plus a personal link per guest.
@@ -19595,7 +20257,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=invitesaurelia@gmail.com
 SMTP_PASSWORD=<the 16-character app password>
-EMAIL_FROM=Aurelia <invitesaurelia@gmail.com>
+EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
 ```
 
   Gmail allows about 500 messages a day, which suits launch volumes.
@@ -19606,7 +20268,7 @@ EMAIL_FROM=Aurelia <invitesaurelia@gmail.com>
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_...
-EMAIL_FROM=Aurelia <invites@your-domain.co.za>
+EMAIL_FROM=Aurelia Studio <invites@your-domain.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -19668,7 +20330,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 | `SECURE_COOKIES` | on if https | Secure flag on cookies |
 | `SESSION_DAYS` | 14 | Login lifetime |
 | `MAX_BODY_BYTES`, `MAX_UPLOAD_BYTES` | 25 MB, 6 MB | Request and image size limits |
-| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia | Name and tagline everywhere |
+| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studio | Name and tagline everywhere |
 | `SUPPORT_EMAIL` | invitesaurelia@gmail.com | Contact address on the site and in emails |
 | `COMPANY_ADDRESS`, `VAT_NUMBER`, `INFORMATION_OFFICER_EMAIL` | placeholders | Footer, receipts, POPIA |
 | `VAT_RATE` | 0.15 | VAT split on receipts (prices include VAT) |
@@ -19719,7 +20381,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 89 tests.
+- `tests/`: an in-process test client and 93 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 
@@ -19750,7 +20412,7 @@ is manual today, by design).
 
 def main():
     files = project_files()
-    parts = [f"# Aurelia: complete project and hosting guide\n\n"
+    parts = [f"# Aurelia Studio: complete project and hosting guide\n\n"
              f"Generated {date.today().isoformat()} from the working project. **{len(files)} files**, each included in full "
              f"under section 12, with a checksum. Nothing else is needed to rebuild and host the website.\n\n"
              "## Contents\n\n1. What this is\n2. Rebuild the project from this file\n3. Hosting\n4. Email\n5. Payments (PayFast)\n"

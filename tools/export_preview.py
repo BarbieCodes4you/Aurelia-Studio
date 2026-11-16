@@ -38,7 +38,7 @@ if os.path.isdir(OUT):
     shutil.rmtree(OUT)
 for d in ("static/css", "static/js", "static/img"):
     os.makedirs(os.path.join(OUT, d))
-for f in ["css/app.css", "css/icons.css", "css/eventsite.css", "js/eventsite.js", "img/favicon.svg"]:
+for f in ["css/app.css", "css/icons.css", "css/eventsite.css", "js/eventsite.js", "js/floorplan.js", "img/favicon.svg"]:
     shutil.copy(os.path.join(SRC, "static", f), os.path.join(OUT, "static", f))
 for f in ("eventrender.js", "journey.js"):
     shutil.copy(os.path.join(SRC, "preview_site", f), os.path.join(OUT, "static/js", f))
@@ -226,7 +226,7 @@ netlify_forms = ('<div hidden aria-hidden="true">'
                  + _netlify_form("contact", ["name", "email", "topic", "~message"])
                  + _netlify_form("setup-help", ["name", "email", "phone", "reach", "occasion", "event_date", "package", "~message"])
                  + "</div>") if STANDALONE else ""
-scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "eventrender.js", "journey.js"))
+scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "floorplan.js", "eventrender.js", "journey.js"))
 index = (f'<title>{config.BRAND_NAME}</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
          f'{rewrite(chrome_start)}<main id="main">{sections}</main>{rewrite(footer)}'
          f'<div class="toasts" aria-live="polite"></div>{netlify_forms}{scripts}{router}')

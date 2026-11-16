@@ -902,3 +902,11 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .layout-choice .fp { max-width: 140px; margin: 0 auto; }
 .fp-plan-box { padding: 16px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
 .fp--plan { max-width: 520px; margin: 0 auto; }
+/* Guest list: quick add and chips */
+.quick-add { display: grid; gap: 8px; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; margin-bottom: 8px; }
+@media (max-width: 560px) { .quick-add { grid-template-columns: minmax(0, 1fr) auto; } .quick-add [data-qa-phone] { grid-column: 1; grid-row: 2; } }
+.guest-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.guest-chips li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 12px; border: 1px solid var(--color-line); border-radius: 999px; background: var(--color-surface); font-size: .875rem; }
+.guest-chips button { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: var(--color-muted); cursor: pointer; }
+.guest-chips button:hover { background: color-mix(in srgb, var(--color-text) 8%, transparent); color: var(--color-text); }
+.guest-chips .i { width: 14px; height: 14px; }

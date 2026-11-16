@@ -6,6 +6,7 @@
   "use strict";
   var D = window.AURELIA_DATA, R = window.AureliaRender, esc = R.esc;
   var KEY = "aurelia-journey-v1";
+  var HOST = D.host_label;
   var root = function () { return document.getElementById("journey-root"); };
   var state = load();
   var currentHash = "";
@@ -20,6 +21,12 @@
       s.order.forEach(function (id) {
         var img = localStorage.getItem(KEY + "-img-" + id);
         if (img && s.events[id]) s.events[id].images = JSON.parse(img);
+        var e = s.events[id];
+        if (e && !e.v) {           // drafts from the 10-step version: map step numbers onto the 8 steps
+          var map = { 1: 1, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 8 };
+          e.wizard_done = (e.wizard_done || []).map(function (n) { return map[n] || n; }).filter(function (n, k, a) { return a.indexOf(n) === k; });
+          e.guest_list = e.guest_list || []; e.v = 2;
+        }
       });
     } catch (e) { /* storage unavailable: keep this visit in memory */ }
     return s;
@@ -72,6 +79,16 @@
     text = text.split("{hosts}").join(hosts || "the hosts");
     return deadline ? text.split("{deadline}").join(deadline) : text.replace(/\s*by \{deadline\}/g, "").split("{deadline}").join("");
   }
+  var KIND_WORDS = [["meal", ["dinner", "lunch", "breakfast", "brunch", "meal", "food", "starter", "main course", "dessert", "cake", "canap", "braai", "buffet", "tea", "supper", "snack"]],
+    ["ceremony", ["ceremony", "vows", "wedding", "negotiation", "lobola", "blessing", "prayer", "unveiling", "graduation", "church", "service", "ritual", "exchange of gifts", "umembeso", "umabo"]],
+    ["speech", ["speech", "toast", "welcome", "remarks", "introduction", "thanks", "keynote", "panel", "announcement"]],
+    ["entertainment", ["dance", "music", "dj", "band", "entertainment", "party", "reveal", "performance", "choir", "show"]],
+    ["reception", ["reception", "seated", "drinks", "cocktail", "arrival of the couple", "entrance"]], ["activity", ["photo", "games", "gift", "workshop", "registration", "tour"]]];
+  function guessKind(title) {
+    var t = (title || "").toLowerCase();
+    for (var i = 0; i < KIND_WORDS.length; i++) if (KIND_WORDS[i][1].some(function (w) { return t.indexOf(w) > -1; })) return KIND_WORDS[i][0];
+    return "other";
+  }
   function sampleProgramme(ev) {
     var key = SUG.programme_for[ev.category] || ev.category;
     if (!SUG.programmes[key]) key = "private-celebration";
@@ -84,11 +101,16 @@
   }
   var HEADER_WORDS = ["name", "names", "full name", "guest", "guests", "guest name", "first name", "surname", "last name", "phone", "mobile", "cell",
     "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"];
+  function saPhone(p) {
+    var d = String(p || "").replace(/\D/g, "");
+    return d.length === 9 && "678".indexOf(d[0]) > -1 && String(p).trim().charAt(0) !== "+" ? "0" + d : String(p || "").trim();
+  }
   function parseGuests(text) {
-    var out = [], seen = {};
+    var out = [], seen = {}, group = "";
     (text || "").split(/\r?\n/).forEach(function (raw) {
       var line = raw.trim().replace(/^[,;\t]+|[,;\t]+$/g, "");
       if (!line) return;
+      if (/:$/.test(line) && !/@/.test(line) && !/\d{6,}/.test(line.replace(/\D/g, ""))) { group = line.slice(0, -1).trim().slice(0, 60); return; }
       var cells = line.split(/[,;\t|]+/).map(function (c) { return c.trim().toLowerCase(); }).filter(Boolean);
       if (cells.length && cells.every(function (c) { return HEADER_WORDS.indexOf(c) > -1; })) return;
       var em = /[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}/.exec(line), rest = em ? line.replace(em[0], " ") : line;
@@ -99,9 +121,93 @@
       var key = name.toLowerCase() + "|" + (em ? em[0].toLowerCase() : "");
       if (seen[key]) return;
       seen[key] = 1;
-      out.push({ name: name.slice(0, 120), phone: ph ? ph[0].trim() : "", email: em ? em[0].toLowerCase() : "" });
+      out.push({ name: name.slice(0, 120), phone: ph ? saPhone(ph[0]) : "", email: em ? em[0].toLowerCase() : "", group: group });
     });
     return out.slice(0, 2000);
+  }
+  var COLS = { name: ["name", "full name", "guest", "guest name", "names", "guest names"], first: ["first name", "first", "firstname", "given name"],
+    last: ["surname", "last name", "last", "lastname", "family name"], phone: ["phone", "mobile", "cell", "cellphone", "whatsapp", "number", "phone number", "mobile number", "contact", "tel"],
+    email: ["email", "e-mail", "email address", "mail"], group: ["family", "family group", "group", "side", "household"] };
+  function parseSheet(rows) {
+    rows = rows.map(function (r) { return r.map(function (c) { return String(c == null ? "" : c).trim(); }); }).filter(function (r) { return r.some(Boolean); });
+    if (!rows.length) return [];
+    var head = rows[0].map(function (c) { return c.toLowerCase(); }), col = {};
+    Object.keys(COLS).forEach(function (k) { var at = head.findIndex(function (h) { return COLS[k].indexOf(h) > -1; }); col[k] = at < 0 ? null : at; });
+    if (col.name === null && col.first === null) return parseGuests(rows.map(function (r) { return r.filter(Boolean).join(", "); }).join("\n"));
+    var get = function (r, k) { return col[k] !== null && col[k] < r.length ? r[col[k]] : ""; }, out = [], seen = {};
+    rows.slice(1).forEach(function (r) {
+      var name = get(r, "name") || get(r, "first"), last = get(r, "last");
+      if (last && name.toLowerCase().indexOf(last.toLowerCase()) < 0) name = name + " " + last;
+      name = name.replace(/\s+/g, " ").trim();
+      if (!name) return;
+      var em = /[^@\s,;<>]+@[^@\s,;<>]+\.[A-Za-z]{2,}/.exec(get(r, "email")), key = name.toLowerCase() + "|" + (em ? em[0].toLowerCase() : "");
+      if (seen[key]) return;
+      seen[key] = 1;
+      out.push({ name: name.slice(0, 120), phone: saPhone(get(r, "phone")), email: em ? em[0].toLowerCase() : "", group: get(r, "group").slice(0, 60) });
+    });
+    return out.slice(0, 2000);
+  }
+  // Spreadsheets: .csv, or .xlsx (Excel and Google Sheets downloads) read with a small zip reader.
+  function parseCsv(text) {
+    var first = text.split(/\r?\n/)[0] || "", delim = [",", ";", "\t"].sort(function (a, b) { return first.split(b).length - first.split(a).length; })[0];
+    var rows = [], row = [], cell = "", q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === delim) { row.push(cell); cell = ""; }
+      else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  function readXlsx(buf) {
+    var u8 = new Uint8Array(buf), dv = new DataView(buf), i, files = {};
+    for (i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) break;
+    if (i < 0) return Promise.reject(new Error("bad zip"));
+    var count = dv.getUint16(i + 10, true), p = dv.getUint32(i + 16, true), td = new TextDecoder();
+    for (var k = 0; k < count && dv.getUint32(p, true) === 0x02014b50; k++) {
+      var nlen = dv.getUint16(p + 28, true), name = td.decode(u8.subarray(p + 46, p + 46 + nlen));
+      files[name] = { method: dv.getUint16(p + 10, true), size: dv.getUint32(p + 20, true), at: dv.getUint32(p + 42, true) };
+      p += 46 + nlen + dv.getUint16(p + 30, true) + dv.getUint16(p + 32, true);
+    }
+    function read(name) {
+      var f = files[name];
+      if (!f) return Promise.resolve("");
+      var start = f.at + 30 + dv.getUint16(f.at + 26, true) + dv.getUint16(f.at + 28, true), data = u8.subarray(start, start + f.size);
+      return (f.method === 0 ? Promise.resolve(data) : through(data, new DecompressionStream("deflate-raw"))).then(function (b) { return td.decode(b); });
+    }
+    var sheet = files["xl/worksheets/sheet1.xml"] ? "xl/worksheets/sheet1.xml" : Object.keys(files).filter(function (n) { return /^xl\/worksheets\/sheet\d+\.xml$/.test(n); }).sort()[0];
+    if (!sheet) return Promise.reject(new Error("no sheet"));
+    return Promise.all([read("xl/sharedStrings.xml"), read(sheet)]).then(function (x) {
+      var dp = new DOMParser(), shared = [];
+      if (x[0]) Array.prototype.forEach.call(dp.parseFromString(x[0], "application/xml").getElementsByTagName("si"), function (si) {
+        shared.push(Array.prototype.map.call(si.getElementsByTagName("t"), function (t) { return t.textContent; }).join("")); });
+      return Array.prototype.map.call(dp.parseFromString(x[1], "application/xml").getElementsByTagName("row"), function (row) {
+        var out = [];
+        Array.prototype.forEach.call(row.getElementsByTagName("c"), function (c) {
+          var ref = /^([A-Z]+)/.exec(c.getAttribute("r") || "A")[1], n = 0;
+          for (var j = 0; j < ref.length; j++) n = n * 26 + ref.charCodeAt(j) - 64;
+          var t = c.getAttribute("t"), v = c.getElementsByTagName("v")[0], value;
+          if (t === "s") value = shared[+(v ? v.textContent : -1)] || "";
+          else if (t === "inlineStr") value = Array.prototype.map.call(c.getElementsByTagName("t"), function (e) { return e.textContent; }).join("");
+          else value = v ? v.textContent.replace(/\.0$/, "") : "";
+          out[n - 1] = value;
+        });
+        return Array.from(out, function (c) { return c || ""; });
+      });
+    });
+  }
+  function readSheetFile(file) {
+    return file.arrayBuffer().then(function (buf) {
+      var head = new Uint8Array(buf.slice(0, 2));
+      if (head[0] === 0x50 && head[1] === 0x4b) {
+        if (!window.DecompressionStream) throw new Error("old browser");
+        return readXlsx(buf);
+      }
+      return parseCsv(new TextDecoder().decode(buf).replace(/^\ufeff/, ""));
+    });
   }
   var COURSE_WORDS = {
     "Canapés": ["canapé", "canape", "canapés", "canapes", "snacks", "hors d'oeuvres", "on arrival"],
@@ -141,7 +247,7 @@
     var has = function (k) { return feats.indexOf(k) > -1; };
     n = ev.schedule.length; if (n && !has("programme")) out.push("your programme (" + plural(n, "item") + ")");
     n = ev.menu.items.length; if (n && !has("menu")) out.push("your menu (" + plural(n, "dish", "dishes") + ")");
-    if (ev.tables.plan_now && +ev.tables.count > 0 && !has("seating")) out.push("the seating chart");
+    if (ev.tables.chosen && !has("seating")) out.push("your seating layout");
     n = (ev.images.gallery || []).length; allowed = has("gallery") ? (lim.gallery_photos || 0) : 0;
     if (n > allowed) out.push(allowed ? (n - allowed) + " of your " + n + " gallery photos" : "your photo gallery (" + plural(n, "photo") + ")");
     n = ev.functions.length; allowed = has("multi_functions") ? (lim.functions || 1) : 1;
@@ -269,7 +375,7 @@
     if (feature(ev, key)) return "";
     var need = D.packages.filter(function (p) { return p.features.indexOf(key) > -1; })[0];
     return '<div class="notice notice--warn">' + icon("lock") + "<span>" + esc(what) + " shows on your website with the " + esc(need ? need.name : "a higher package") +
-      ". You can fill it in now and choose your package in step 10.</span></div>";
+      ". You can fill it in now and choose your package at the last step.</span></div>";
   }
 
   // --- new event model --------------------------------------------------------------------------
@@ -283,16 +389,10 @@
       hosts: "", description: "", event_date: "", start_time: "", end_time: "", contact: { name: "", email: "", phone: "" },
       venue: {}, design: {}, images: { gallery: [] }, guest_settings: gs, functions: [], schedule: [], menu: { name: "Reception menu", items: [] },
       info: { dietary_options: ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"] }, tables: { count: "", capacity: 10, shape: "round", names: [], plan_now: false },
-      guest_list: [], selected_package: "premium", wizard_done: [], booking: null };
+      guest_list: [], selected_package: "premium", wizard_done: [], booking: null, v: 2 };
   }
 
   // --- views: create ------------------------------------------------------------------------------
-  function packagePicker(selected) {
-    return '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">' + D.packages.map(function (p) {
-      return '<label class="choice"><input type="radio" name="pkg" value="' + p.code + '"' + (p.code === selected ? " checked" : "") + "><span>" + esc(p.name) + " · " + money(p.price_cents) +
-        "<small>" + esc(p.tagline) + "</small></span></label>"; }).join("") + "</div>" +
-      '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, so you don\'t fill in anything your package won\'t show. <a class="text-link" href="#pricing">Compare packages</a></p>';
-  }
   function viewCreate(param) {
     var pre = { category: "", template: "", group: "", pkg: "" };
     var m = /^create-(tpl|cat|grp|pkg)-(.+)$/.exec(param || "");
@@ -311,14 +411,15 @@
         '<span><span class="row row--between" style="gap:8px"><b>' + esc(t.name) + '</b><span class="palette-swatches">' + sw + "</span></span><small>" + esc(t.direction) + "</small></span></label>";
     }).join("");
     root().innerHTML = '<section class="page-hero"><div class="grid-texture"></div><div class="container"><nav class="breadcrumbs" aria-label="Breadcrumb"><a href="#home">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>' +
-      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Everything is saved in this browser as you go, and nothing is charged until you\'re ready.</p>' +
+      '<h1>Let\'s create your <span class="serif grad">event</span></h1><p class="lead">Three quick questions, then we build your website as you go. Everything is saved in this browser, and nothing is charged until you\'re ready.</p>' +
       '<p class="small" style="margin-top:14px">' + (state.order.length ? '<a class="text-link" href="#my-events">Continue an event you started</a> · ' : "") + 'Rather have us do it? <a class="text-link" href="#help-me-set-up">We can set it up for you</a>.</p></div></section>' +
       '<section class="section"><div class="container"><form class="form" data-create data-no-busy novalidate><div data-errors></div>' +
       '<div class="box" data-field="category"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>' + groups + "</div>" +
       '<div class="box" data-field="template"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step. <a class="text-link" href="#templates">Preview the templates</a></p>' +
       '<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>' + tpls + "</div>" +
       '<button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>' +
-      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>' + packagePicker(pkg(pre.pkg) ? pre.pkg : "premium") + "</div>" +
+      '<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Whose celebration is it?</h2>' + field("hosts", (HOST[pre.group || "weddings"] || ["Names"])[0], "", { required: true,
+        attrs: { placeholder: (HOST[pre.group || "weddings"] || ["", "e.g. Lerato & Sipho"])[1] }, hint: "Shown large on your website and used for your link. You can change it later." }) + "</div>" +
       '<div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up ' + icon("arrow") + "</button></div></form></div></section>";
     var form = root().querySelector("[data-create]"), grid = form.querySelector("[data-tpl-grid]"), more = form.querySelector("[data-show-all]"), all = false;
     function sync(auto) {
@@ -333,7 +434,12 @@
       var picked = grid.querySelector("input[name=template]:checked");
       if (auto && first && (!picked || picked.closest(".choice").hidden)) first.querySelector("input").checked = true;
     }
-    form.addEventListener("change", function (e) { if (e.target.name === "category") sync(true); });
+    form.addEventListener("change", function (e) {
+      if (e.target.name !== "category") return;
+      sync(true);
+      var L = HOST[e.target.getAttribute("data-group")], h = form.querySelector("[name=hosts]");
+      if (L && h) { form.querySelector("label[for=f-hosts]").firstChild.textContent = L[0]; h.placeholder = L[1]; }
+    });
     more.addEventListener("click", function () { all = true; sync(false); });
     sync(false);
     form.addEventListener("submit", function (e) {
@@ -341,9 +447,11 @@
       var fd = new FormData(form), errs = {};
       if (!fd.get("category")) errs.category = "Choose the type of event.";
       if (!fd.get("template")) errs.template = "Choose a template. You can change it later.";
+      if (!val(fd, "hosts")) errs.hosts = "Add the names to show on your website, e.g. Lerato & Sipho.";
       if (showErrors(form, errs)) return;
-      var ev = newEvent(fd.get("category"), fd.get("template"), cat(fd.get("category")).name);
-      if (pkg(fd.get("pkg"))) ev.selected_package = fd.get("pkg");
+      var ev = newEvent(fd.get("category"), fd.get("template"), autoName(fd.get("category"), val(fd, "hosts")) || cat(fd.get("category")).name);
+      ev.hosts = val(fd, "hosts");
+      if (pkg(pre.pkg)) ev.selected_package = pre.pkg;
       state.events[ev.id] = ev; state.order.unshift(ev.id); state.current = ev.id; save();
       toast("Your event is saved in this browser as a private draft. Let's add the details.");
       location.hash = "#setup-1";
@@ -371,13 +479,13 @@
   function viewMyEvents() {
     var cards = state.order.map(function (id) {
       var ev = state.events[id]; if (!ev) return "";
-      var pct = Math.round(100 * ev.wizard_done.filter(function (n) { return n <= 9; }).length / 9);
+      var pct = Math.round(100 * ev.wizard_done.filter(function (n) { return n < LAST; }).length / (LAST - 1));
       var c = cat(ev.category), status = !ev.booking ? '<span class="pill pill--draft">Draft</span>'
         : (ev.booking.status === "sent" || !D.forms ? '<span class="pill pill--ok">' + (D.forms ? "Booking sent" : "Booking ready") + "</span>" : '<span class="pill pill--draft">Booking not sent yet</span>');
       return '<article class="box event-card"><div class="event-card__top"><div><h2 style="font-size:1.25rem">' + esc(ev.name) + '</h2><div class="event-card__meta"><span>' + esc(c ? c.name : "") + "</span>" +
         (ev.event_date ? "<span>" + esc(R.fmtDate(ev.event_date, false)) + "</span>" : "") + "<span>" + esc((tpl(ev.template) || {}).name || "") + " template</span></div></div>" + status + "</div>" +
         '<div class="progress"><span style="width:' + pct + '%"></span></div><div class="btn-row">' +
-        '<button class="btn btn--primary btn--sm" type="button" data-open="' + id + '" data-to="' + (ev.booking ? "booked" : "setup-" + Math.min(10, (Math.max.apply(null, [0].concat(ev.wizard_done)) + 1))) + '">' + (ev.booking ? "View booking" : "Continue set-up") + "</button>" +
+        '<button class="btn btn--primary btn--sm" type="button" data-open="' + id + '" data-to="' + (ev.booking ? "booked" : "setup-" + Math.min(LAST, (Math.max.apply(null, [0].concat(ev.wizard_done)) + 1))) + '">' + (ev.booking ? "View booking" : "Continue set-up") + "</button>" +
         '<button class="btn btn--secondary btn--sm" type="button" data-open="' + id + '" data-to="preview-event">' + icon("eye") + " Preview website</button>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-delete="' + id + '">' + icon("trash") + " Delete</button></div></article>";
     }).join("");
@@ -389,13 +497,14 @@
   }
 
   // --- wizard frame -------------------------------------------------------------------------------
-  var STEPS = [[1, "Event details", "calendar"], [2, "Venue", "pin"], [3, "Design", "palette"], [4, "Guests", "users"], [5, "Programme", "list"],
-    [6, "Food and drinks", "dish"], [7, "Seating", "seat"], [8, "Extras", "gift"], [9, "Review", "eye"], [10, "Package", "card"]];
-  var INTROS = { 1: "The essentials guests see first, and how we reach you.", 2: "Where it's happening and how to get there.", 3: "Make the template yours. The preview updates as you go.",
-    4: "Your guest list and how replies work.", 5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-    7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.", 9: "Check everything before you choose a package.",
-    10: "Choose your package and send us your booking." };
-  var OPTIONAL = [4, 5, 6, 7, 8], STEP_FEATURE = { 5: "programme", 6: "menu", 7: "seating" };
+  var STEPS = [[1, "Details", "calendar"], [2, "Design", "palette"], [3, "Guests", "users"], [4, "Programme", "list"], [5, "Food and drinks", "dish"],
+    [6, "Seating", "seat"], [7, "Extras", "gift"], [8, "Review and pay", "card"]];
+  var LAST = 8;
+  var INTROS = { 1: "Who, when and where. The essentials guests see first.", 2: "Make the template yours. The preview updates as you go.",
+    3: "Who's coming. Add them however suits you, or skip and let guests reply through your link.", 4: "The running order of your day, or of each day.",
+    5: "Menus, meal choices and dietary needs.", 6: "Choose your table layout. You seat guests once replies are in.", 7: "Dress code, gifts, places to stay and photos.",
+    8: "Check what's left, choose your package and pay." };
+  var OPTIONAL = [3, 4, 5, 6, 7], STEP_FEATURE = { 4: "programme", 5: "menu", 6: "seating" };
 
   function frame(ev, n, inner, opts) {
     opts = opts || {};
@@ -405,24 +514,21 @@
         : (OPTIONAL.indexOf(s[0]) > -1 ? '<span class="stepper__tag">optional</span>' : "");
       return '<li><a href="#setup-' + s[0] + '" class="' + (done.indexOf(s[0]) > -1 ? "is-done" : "") + '"' + (s[0] === n ? ' aria-current="step"' : "") + '><span class="n">' +
         (done.indexOf(s[0]) > -1 && s[0] !== n ? "✓" : s[0]) + "</span>" + esc(s[1]) + tag + "</a></li>"; }).join("");
-    var pct = Math.round(100 * done.filter(function (x) { return x <= 10; }).length / 10);
-    var nav = n < 10 ? '<div class="wizard-actions">' + (n > 1 ? '<a class="btn btn--ghost" href="#setup-' + (n - 1) + '">' + icon("arrow-left") + " Back</a>" : "<span></span>") +
-      '<div class="btn-row">' + (n >= 3 && n <= 7 ? '<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' : "") +
-      (OPTIONAL.indexOf(n) > -1 ? '<a class="btn btn--ghost" href="#setup-' + (n + 1) + '">Skip for now</a>' : "") +
-      '<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button><button class="btn btn--primary" type="submit" name="nav" value="next">' +
-      esc(opts.nextLabel || "Save and continue") + " " + icon("arrow") + "</button></div></div>" : "";
-    var optional = OPTIONAL.indexOf(n) > -1 ? '<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time before you send your booking, or ask us to add it later.</p>' : "";
+    var pct = Math.round(100 * done.filter(function (x) { return x <= LAST; }).length / LAST);
+    var nav = n < LAST ? '<div class="wizard-actions">' + (n > 1 ? '<a class="btn btn--ghost" href="#setup-' + (n - 1) + '">' + icon("arrow-left") + " Back</a>" : "<span></span>") +
+      '<div class="btn-row">' + (n >= 2 && n <= 6 ? '<button class="btn btn--ghost" type="submit" name="nav" value="review">Skip to review and pay</button>' : "") +
+      (OPTIONAL.indexOf(n) > -1 ? '<a class="btn btn--ghost" href="#setup-' + (n + 1) + '">Skip this step</a>' : "") +
+      '<button class="btn btn--primary" type="submit" name="nav" value="next">' + esc(opts.nextLabel || "Continue") + " " + icon("arrow") + "</button></div></div>" : "";
+    var optional = OPTIONAL.indexOf(n) > -1 ? '<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time, before or after you pay.</p>' : "";
     var card = '<div class="glass glass--strong wizard-card"><div class="row" style="gap:14px;margin-bottom:6px"><span class="icon-tile icon-tile--soft">' + icon(STEPS[n - 1][2]) +
       '</span><div><span class="tiny muted mono">STEP ' + n + "</span><h2>" + esc(STEPS[n - 1][1]) + '</h2></div></div><p class="lead">' + INTROS[n] + "</p>" + optional + "<hr>" +
       '<form class="form" data-step="' + n + '" data-no-busy novalidate><div data-errors></div>' + inner + nav + "</form></div>";
     var preview = opts.preview ? '<div class="wizard-split">' + card + previewFrame() + "</div>" : card;
-    var plan = '<div class="plan-package"><label class="tiny muted" for="plan-pkg">Planning with</label><select class="select select--sm" id="plan-pkg" data-plan>' +
-      D.packages.map(function (p) { return '<option value="' + p.code + '"' + ((ev.selected_package || "premium") === p.code ? " selected" : "") + ">" + esc(p.name) + " · " + money(p.price_cents) + "</option>"; }).join("") + "</select></div>";
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 28px)"><div class="container">' +
-      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft, saved in this browser as you go. Nothing is shared until you send your booking.</p></div>" +
-      '<div class="btn-row">' + plan + '<button class="btn btn--ghost btn--sm" type="button" data-continue-link>' + icon("link") + ' Continue on another device</button>' +
+      '<div class="page-head"><div><h1>Set up ' + esc(ev.name) + "</h1><p>Private draft. Everything saves as you type; nothing is shared until you pay.</p></div>" +
+      '<div class="btn-row"><button class="btn btn--ghost btn--sm" type="button" data-continue-link>' + icon("link") + ' Continue on another device</button>' +
       '<a class="btn btn--secondary btn--sm" href="#preview-event">' + icon("eye") + " Full preview</a></div></div>" +
-      '<div class="wizard-progress"><span>' + pct + '% complete</span><div class="progress"><span style="width:' + pct + '%"></span></div><span class="mono">Step ' + n + ' of 10</span></div>' +
+      '<div class="wizard-progress"><span>' + pct + '% complete</span><div class="progress"><span style="width:' + pct + '%"></span></div><span class="mono">Step ' + n + " of " + LAST + '</span></div>' +
       '<div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">' + stepper + "</ol></nav><div>" + preview + "</div></div></div></section>";
     refreshPreview(true);
   }
@@ -444,64 +550,55 @@
     }, now ? 0 : 350);
   }
 
-  // --- step 1 ---------------------------------------------------------------------------------------
-  var HOST = D.host_label;
-  function step1(ev) {
-    var g = groupOf(ev), hl = HOST[g] || ["Hosts", ""];
+  // --- step 1: details (names, date, venue) ---------------------------------------------------------
+  function stepDetails(ev) {
+    var g = groupOf(ev), hl = HOST[g] || ["Hosts", ""], v = ev.venue;
     var cats = D.categories.map(function (c) { return [c.slug, D.groups[c.group].name + ": " + c.name]; });
-    return '<fieldset><legend>About you</legend><div class="form-row form-row--3">' + field("contact_name", "Your name", ev.contact.name, { required: true, attrs: { autocomplete: "name" } }) +
-      field("contact_email", "Your email", ev.contact.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your booking confirmation and payment link go here." }) +
-      field("contact_phone", "Your mobile (optional)", ev.contact.phone, { type: "tel", attrs: { autocomplete: "tel" } }) + "</div></fieldset>" +
-      field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
-      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name || ev.name === autoName(ev.category, ev.hosts)) ? "1" : "0" },
-        hint: "Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above." }) + select("category", "Type of event", cats, ev.category, { required: true }) + "</div>" +
-      field("description", "A short welcome or description", ev.description, { type: "textarea", hint: "Optional. One or two sentences guests read first." }) +
+    var more = !!(v.map_url || v.parking || v.directions || ev.description);
+    return field("hosts", hl[0], ev.hosts, { required: true, attrs: { placeholder: hl[1] }, hint: "Shown large on your website and used for your link." }) +
       '<div class="form-row form-row--3">' + field("event_date", "Date", ev.event_date, { type: "date", required: true, attrs: { min: todayIso() } }) +
       field("start_time", "Starts", ev.start_time, { type: "time" }) + field("end_time", "Ends", ev.end_time, { type: "time" }) + "</div>" +
-      check("ends_next_day", "Ends after midnight", !!ev.ends_next_day) + '<p class="tiny muted">Several ceremonies or days? Add each one in the Programme step.</p>';
+      check("ends_next_day", "Ends after midnight", !!ev.ends_next_day) +
+      '<div class="form-row form-row--2">' + field("venue_name", "Venue", v.name, { required: true, attrs: { placeholder: "Oakhaven Wine Estate" } }) +
+      field("address", "Address", v.address, { required: true, hint: "Guests get directions and a map from this." }) + "</div>" +
+      '<p class="tiny muted">More than one day, or a second venue? Add each day in the Programme step.</p>' +
+      '<details class="box" style="padding:14px 16px"' + (more ? " open" : "") + '><summary style="cursor:pointer;font-weight:500">More details (optional): map pin, parking, directions, a short welcome</summary><div style="display:grid;gap:16px;margin-top:16px">' +
+      field("map_url", "Google Maps link", v.map_url, { type: "url", hint: "For an exact pin, e.g. a farm gate. Paste the share link from Google Maps." }) +
+      field("parking", "Parking", v.parking, { type: "textarea", attrs: { rows: 2 }, hint: "Where to park, security, drop-off." }) +
+      field("directions", "Directions", v.directions, { type: "textarea", attrs: { rows: 2 }, hint: "Landmarks, gate codes, the last turn GPS gets wrong." }) +
+      field("description", "A short welcome", ev.description, { type: "textarea", attrs: { rows: 2 }, hint: "One or two sentences guests read first." }) +
+      '<div class="form-row form-row--2">' + field("name", "Event name", ev.name, { attrs: { "data-autoname": (!ev.name || ev.name === ev.hosts || ev.name === (cat(ev.category) || {}).name || ev.name === autoName(ev.category, ev.hosts)) ? "1" : "0" },
+        hint: "Used in invitation messages. Filled in from your names." }) + select("category", "Occasion", cats, ev.category) + "</div></div></details>";
   }
-  function collect1(ev, fd) {
-    ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
+  function collectDetails(ev, fd) {
     ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
     ev.name = val(fd, "name") || autoName(ev.category, ev.hosts) || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
+    var url = val(fd, "map_url");
+    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
+    ev.venue = Object.assign(ev.venue || {}, { name: val(fd, "venue_name"), address: val(fd, "address"), map_url: url, parking: val(fd, "parking"), directions: val(fd, "directions") });
   }
-  function validate1(ev) {
+  function validateDetails(ev) {
     var e = {};
-    if (!ev.contact.name) e.contact_name = "Your name is required.";
-    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(ev.contact.email)) e.contact_email = "Enter a valid email address, like name@example.com.";
-    if (ev.contact.phone && !/^\+?[0-9 ()-]{7,20}$/.test(ev.contact.phone)) e.contact_phone = "Enter a phone number using digits, spaces and an optional +.";
-    if (!ev.hosts) e.hosts = (HOST[groupOf(ev)] || ["Hosts"])[0] + " is required.";
-    if (!ev.event_date) e.event_date = "Date is required.";
+    if (!ev.hosts) e.hosts = (HOST[groupOf(ev)] || ["Names"])[0] + " is needed.";
+    if (!ev.event_date) e.event_date = "Date is needed.";
     else if (ev.event_date < todayIso()) e.event_date = "Date can't be in the past.";
     if (ev.start_time && ev.end_time && ev.end_time <= ev.start_time && !ev.ends_next_day) e.end_time = "End time must be after the start time (tick “ends after midnight” if it does).";
+    if (!ev.venue.name) e.venue_name = "Venue is needed.";
+    if (!ev.venue.address) e.address = "Address is needed.";
+    if (ev.venue.map_url && !/^https?:\/\/[^\s<>"]+\.[^\s<>"]+/i.test(ev.venue.map_url)) e.map_url = "Map link must be a web address.";
+    return e;
+  }
+  function validateContact(ev) {
+    var e = {};
+    if (!ev.contact.name) e.contact_name = "Your name is needed.";
+    if (!/^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/.test(ev.contact.email)) e.contact_email = "Enter a valid email address, like name@example.com.";
+    if (ev.contact.phone && !/^\+?[0-9 ()-]{7,20}$/.test(ev.contact.phone)) e.contact_phone = "Enter a phone number using digits, spaces and an optional +.";
     return e;
   }
   function val(fd, k) { return (fd.get(k) || "").toString().trim(); }
 
-  // --- step 2 ---------------------------------------------------------------------------------------
-  function step2(ev) {
-    var v = ev.venue;
-    return '<div class="form-row form-row--2">' + field("venue_name", "Venue name", v.name, { required: true }) + field("address", "Street address", v.address, { required: true, hint: "Guests get a Google Maps link built from this." }) + "</div>" +
-      field("map_url", "Google Maps link (optional)", v.map_url, { type: "url", hint: "Paste a share link from Google Maps for an exact pin, e.g. a farm gate." }) +
-      field("parking", "Parking", v.parking, { type: "textarea", attrs: { rows: 3 }, hint: "Where to park, security, valet, drop-off." }) +
-      field("directions", "Directions", v.directions, { type: "textarea", attrs: { rows: 3 }, hint: "Landmarks, gate codes, the last turn GPS gets wrong." }) +
-      field("accommodation", "Accommodation nearby", v.accommodation, { type: "textarea", attrs: { rows: 3 }, hint: "Optional. Add specific places with links in the Extras step." });
-  }
-  function collect2(ev, fd) {
-    var url = val(fd, "map_url");
-    if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
-    ev.venue = { name: val(fd, "venue_name"), address: val(fd, "address"), map_url: url, parking: val(fd, "parking"), directions: val(fd, "directions"), accommodation: val(fd, "accommodation") };
-  }
-  function validate2(ev) {
-    var e = {};
-    if (!ev.venue.name) e.venue_name = "Venue name is required.";
-    if (!ev.venue.address) e.address = "Address is required.";
-    if (ev.venue.map_url && !/^https?:\/\/[^\s<>"]+\.[^\s<>"]+/i.test(ev.venue.map_url)) e.map_url = "Map link must be a web address.";
-    return e;
-  }
-
-  // --- step 3 ---------------------------------------------------------------------------------------
+  // --- step 2: design ---------------------------------------------------------------------------------------
   function step3(ev) {
     var g = groupOf(ev), t = tpl(ev.template) || D.templates[0], dsg = D.themes.designs[t.design], res = R.resolve(t.design, ev.design);
     var tplOpts = D.templates.slice().sort(function (a, b) { return (a.groups.indexOf(g) > -1 ? 0 : 1) - (b.groups.indexOf(g) > -1 ? 0 : 1); }).map(function (x) {
@@ -561,24 +658,58 @@
     ev.design = d;
   }
 
-  // --- step 4 ---------------------------------------------------------------------------------------
+  // --- step 3: guests --------------------------------------------------------------------------------------
+  function guestListHtml(ev) {
+    var list = ev.guest_list || [];
+    if (!list.length) return '<p class="small muted">No guests yet.</p>';
+    var groups = [];
+    list.forEach(function (g, k) { var name = g.group || ""; var grp = groups.filter(function (x) { return x[0] === name; })[0]; if (!grp) groups.push(grp = [name, []]); grp[1].push([g, k]); });
+    return '<p class="small"><b>' + plural(list.length, "guest") + '</b> on your list. <button class="btn btn--ghost btn--sm" type="button" data-clear-guests>Clear the list</button></p>' +
+      groups.map(function (grp) {
+        return (grp[0] ? '<p class="tiny muted mono" style="margin:10px 0 4px">' + esc(grp[0].toUpperCase()) + "</p>" : "") + '<ul class="guest-chips">' + grp[1].map(function (x) {
+          return '<li><span>' + esc(x[0].name) + (x[0].phone ? ' <span class="muted">' + esc(x[0].phone) + "</span>" : "") + '</span><button type="button" data-remove-guest="' + x[1] + '" aria-label="Remove ' + esc(x[0].name) + '">' + icon("close") + "</button></li>";
+        }).join("") + "</ul>";
+      }).join("");
+  }
+  function addGuests(people) {
+    var ev = cur(), have = {}, added = 0;
+    ev.guest_list = ev.guest_list || [];
+    ev.guest_list.forEach(function (g) { have[g.name.toLowerCase()] = 1; if (g.email) have[g.email] = 1; if (g.phone) have[g.phone.replace(/\D/g, "")] = 1; });
+    people.forEach(function (g) {
+      var d = (g.phone || "").replace(/\D/g, "");
+      if (have[g.name.toLowerCase()] || (g.email && have[g.email]) || (d && have[d])) return;
+      ev.guest_list.push({ name: g.name, phone: g.phone || "", email: g.email || "", group: g.group || "" });
+      have[g.name.toLowerCase()] = 1; added++;
+    });
+    ev.updated = new Date().toISOString(); save();
+    var box = document.querySelector("#journey-root [data-guest-list]");
+    if (box) box.innerHTML = guestListHtml(ev);
+    return added;
+  }
   function step4(ev) {
     var gs = ev.guest_settings, preset = ["Family", "Friends", "Colleagues", "VIP", "Church", "Neighbours", "Partners", "Clients"], chosen = gs.categories || [];
-    var sides = (gs.sides || ["", ""]).concat(["", ""]).slice(0, 2);
+    var sides = (gs.sides || ["", ""]).concat(["", ""]).slice(0, 2), paste;
     var pol = [["none", "No plus-ones", "Invitations are for the named guest only."], ["per_guest", "Set per guest", "You decide for each guest in your list."], ["open", "Everyone may bring", "Guests on the general link can add plus-ones."]];
-    var list = ev.guest_list || [], paste;
     if (feature(ev, "guest_management")) {
-      paste = "<fieldset><legend>Your guest list</legend>" + (list.length ? '<div class="row row--between" style="gap:10px;margin-bottom:10px;flex-wrap:wrap"><p class="small"><b>' + plural(list.length, "guest") + "</b> on your list.</p>" +
-        '<button class="btn btn--ghost btn--sm" type="button" data-clear-guests>' + icon("trash") + " Clear the list</button></div>" +
-        '<details style="margin-bottom:12px"><summary class="small" style="cursor:pointer">Show the names</summary><p class="small muted" style="margin-top:8px">' +
-        list.map(function (g) { return esc(g.name) + (g.phone ? " · " + esc(g.phone) : "") + (g.email ? " · " + esc(g.email) : ""); }).join("<br>") + "</p></details>" : "") +
-        field("guest_paste", list.length ? "Add more names (optional)" : "Paste names (optional)", "", { type: "textarea", attrs: { rows: 6, placeholder: "Thandi Mokoena, 082 123 4567\nSipho Dlamini, sipho@example.com\nGogo Nomsa" },
-          hint: "One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. We add them when you save, and each guest gets a personal RSVP link." }) + "</fieldset>";
+      var canPick = "contacts" in navigator && "ContactsManager" in window;
+      paste = '<fieldset><legend>Your guest list</legend>' +
+        '<div class="quick-add"><input class="input" data-qa-name placeholder="Guest\'s name" aria-label="Guest\'s name" autocomplete="off">' +
+        '<input class="input" data-qa-phone type="tel" placeholder="Mobile (optional)" aria-label="Guest\'s mobile" autocomplete="off">' +
+        '<button class="btn btn--secondary" type="button" data-qa-add>' + icon("plus") + " Add</button></div>" +
+        '<p class="tiny muted" style="margin:6px 0 10px">Type a name, press Enter, type the next one. Couples can go on one line, e.g. “Thabo & Lindi Mokoena”.</p>' +
+        '<div class="btn-row">' + (canPick ? '<button class="btn btn--ghost btn--sm" type="button" data-pick-contacts>' + icon("phone") + " Choose from my phone contacts</button>" : "") +
+        '<label class="btn btn--ghost btn--sm" style="position:relative">' + icon("upload") + ' Upload Excel or CSV<input type="file" data-guest-file accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></div>' +
+        '<details style="margin-top:10px"><summary class="small" style="cursor:pointer;font-weight:500">Paste a list</summary>' +
+        field("guest_paste", "Names to add", "", { type: "textarea", attrs: { rows: 6, placeholder: "Mokoena family:\nThandi Mokoena, 082 123 4567\nGogo Nomsa\nFriends:\nSipho Dlamini, sipho@example.com" },
+          hint: "One guest per line, with a mobile or email if you have it. A line ending in a colon, like “Mokoena family:”, groups the names below it. Copying a column from Excel, Google Sheets or your phone's notes works too." }) +
+        '<button class="btn btn--secondary btn--sm" type="button" data-paste-add>' + icon("plus") + " Add these names</button></details>" +
+        '<div data-guest-list style="margin-top:14px">' + guestListHtml(ev) + "</div>" +
+        '<p class="small muted" style="margin-top:10px">No list yet? That\'s fine. Skip this step: when guests reply through your link, they\'re added to your list for you.</p></fieldset>';
     } else {
       paste = '<div class="notice">' + icon("users") + "<span>With Essential, guests reply through your one link and appear in your dashboard as they do. Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>";
     }
-    return '<div class="form-row form-row--2">' + field("estimated", "Estimated number of guests", gs.estimated, { type: "number", attrs: { min: 0, max: 5000 } }) +
-      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" + paste +
+    return paste + '<div class="form-row form-row--2">' + field("estimated", "Roughly how many guests?", gs.estimated, { type: "number", attrs: { min: 0, max: 5000 } }) +
+      field("rsvp_deadline", "RSVP deadline", gs.rsvp_deadline, { type: "date", hint: "Replies close at the end of this day." }) + "</div>" +
       '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">More options: plus-ones, children, families and guest groups</summary><div style="display:grid;gap:18px;margin-top:16px">' +
       "<fieldset><legend>Guest categories</legend>" + featureNote(ev, "guest_categories", "Using several guest categories") + '<div class="choice-grid">' +
       preset.map(function (c) { return '<label class="choice"><input type="checkbox" name="categories" value="' + c + '"' + (chosen.indexOf(c) > -1 ? " checked" : "") + "><span>" + c + "</span></label>"; }).join("") + "</div>" +
@@ -611,51 +742,93 @@
     return e;
   }
 
-  // --- step 5 ---------------------------------------------------------------------------------------
+  // --- step 4: programme, one block per day -----------------------------------------------------------------
   function maxFunctions(ev) { return feature(ev, "multi_functions") ? (limit(ev, "functions") || 1) : 1; }
-  function fnOptions(ev) { return [["", "Whole event"]].concat(ev.functions.filter(function (f) { return f.name; }).map(function (f) { return [f.id, f.name]; })); }
-  function fnRow(i, f) {
-    f = f || {};
-    return '<div class="repeat__row" style="--cols:repeat(4,minmax(0,1fr))"><input type="hidden" name="fn-' + i + '-id" value="' + esc(f.id || uid("f")) + '">' +
-      mini("fn-" + i + "-name", f.name, "text", "Ceremony", "Name") + mini("fn-" + i + "-date", f.func_date, "date", "", "Date") + mini("fn-" + i + "-start", f.start_time, "time", "", "Starts") +
-      mini("fn-" + i + "-end", f.end_time, "time", "", "Ends") + mini("fn-" + i + "-venue", f.venue_name, "text", "Venue (if different)", "Venue") + mini("fn-" + i + "-address", f.address, "text", "Address", "Address") +
-      mini("fn-" + i + "-map", f.map_url, "url", "Map link", "Map link") + "<span></span>" + rm() + "</div>";
+  function progRow(k, d, it) {
+    it = it || {};
+    return '<div class="prog-row"><input type="hidden" name="si-' + k + '-day" value="' + d + '">' + mini("si-" + k + "-time", it.item_time, "time", "", "Time") +
+      mini("si-" + k + "-title", it.title, "text", "Ceremony", "What happens") + mini("si-" + k + "-description", it.description, "text", "Optional detail", "Detail") +
+      '<button class="btn btn--ghost btn--icon" type="button" data-remove-item aria-label="Remove item">' + icon("trash") + "</button></div>";
   }
-  var KINDS = D.kinds;
-  function siRow(i, s, ev) {
-    s = s || {};
-    return '<div class="repeat__row" style="--cols:110px minmax(0,1.3fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)">' + mini("si-" + i + "-time", s.item_time, "time", "", "Time") +
-      mini("si-" + i + "-title", s.title, "text", "Arrival and welcome drinks", "Title") + mini("si-" + i + "-description", s.description, "text", "Optional detail", "Detail") +
-      miniSel("si-" + i + "-kind", KINDS, s.kind || "other", "Type") + miniSel("si-" + i + "-function", fnOptions(ev), s.function_id || "", "Part of") + rm() + "</div>";
+  function dayBlock(d, fn, rowsHtml) {
+    fn = fn || {};
+    var place = !!(fn.venue_name || fn.address || fn.map_url);
+    return '<section class="day-block" data-day="' + d + '"><input type="hidden" name="fn-' + d + '-id" value="' + esc(fn.id || "") + '">' +
+      '<div class="day-head"><div class="row row--between"><h3 data-day-title>Day</h3><button class="btn btn--ghost btn--sm" type="button" data-remove-day>' + icon("trash") + " Remove day</button></div>" +
+      '<div class="form-row form-row--4">' + mini("fn-" + d + "-name", fn.name, "text", "e.g. Negotiations, or Ceremony", "What's on this day") + mini("fn-" + d + "-date", fn.func_date, "date", "", "Date") +
+      mini("fn-" + d + "-start", fn.start_time, "time", "", "Starts") + mini("fn-" + d + "-end", fn.end_time, "time", "", "Ends") + "</div>" +
+      "<details" + (place ? " open" : "") + '><summary class="small" style="cursor:pointer">Different venue for this day?</summary><div class="form-row form-row--3" style="margin-top:10px">' +
+      mini("fn-" + d + "-venue", fn.venue_name, "text", "Leave empty for the main venue", "Venue") + mini("fn-" + d + "-address", fn.address, "text", "Address", "Address") +
+      mini("fn-" + d + "-map", fn.map_url, "url", "Google Maps link", "Map link") + "</div></details></div>" +
+      '<div data-items>' + rowsHtml + '</div><div><button class="btn btn--sm btn--secondary" type="button" data-add-item>' + icon("plus") + " Add to this day</button></div></section>";
   }
   function step5(ev) {
-    var mf = maxFunctions(ev), multi = ((cat(ev.category) || {}).features || []).indexOf("multi_function") > -1;
-    var fr = ev.functions.length ? ev.functions.map(function (f, i) { return fnRow(i, f); }) : [fnRow(0)];
-    var sr = ev.schedule.length ? ev.schedule.map(function (s, i) { return siRow(i, s, ev); }) : [siRow(0, null, ev), siRow(1, null, ev)];
-    return featureNote(ev, "programme", "The programme") + '<fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">' +
-      (multi ? "Traditional and multi-day events often have several parts, each with its own venue. " : "") + "Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows " + mf + ".</p>" +
-      repeat("fn", fr, null, "Add a function", mf) + "</fieldset>" +
-      '<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>' +
-      '<div class="notice" style="margin-bottom:14px">' + icon("wand") + "<div><span>Start from a typical " + esc(((cat(ev.category) || {}).name || "event").toLowerCase()) + " programme" +
-      (ev.start_time ? " timed from " + esc(ev.start_time) : "") + ', then adjust it.</span><div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-sample>Use a sample programme</button></div></div></div>' +
-      repeat("si", sr, null, "Add an item") + "</fieldset>";
+    var mf = maxFunctions(ev), k = 0, blocks;
+    var multi = ((cat(ev.category) || {}).features || []).indexOf("multi_function") > -1 || ev.category === "lobola";
+    if (ev.functions.length) {
+      var ids = ev.functions.map(function (f) { return f.id; });
+      blocks = ev.functions.map(function (fn, d) {
+        var mine = ev.schedule.filter(function (x) { return x.function_id === fn.id || (d === 0 && ids.indexOf(x.function_id) < 0); });
+        var rows = mine.map(function (it) { return progRow(k++, d, it); }).join("") || progRow(k++, d);
+        return dayBlock(d, fn, rows);
+      }).join("");
+    } else {
+      var rows = ev.schedule.map(function (it) { return progRow(k++, 0, it); }).join("");
+      if (!rows) { rows = progRow(0, 0) + progRow(1, 0); k = 2; }
+      blocks = dayBlock(0, null, rows);
+    }
+    return featureNote(ev, "programme", "The programme") +
+      '<div class="notice" style="margin-bottom:6px">' + icon("wand") + "<div><span>Start from a typical " + esc(((cat(ev.category) || {}).name || "event").toLowerCase()) + " programme" +
+      (ev.start_time ? " timed from " + esc(ev.start_time) : "") + ', then change the times and titles.</span><div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-sample>Use a sample programme</button></div></div></div>' +
+      '<div class="days" data-days data-max-days="' + mf + '">' + blocks + "</div>" +
+      '<div class="row" style="gap:12px;flex-wrap:wrap"><button class="btn btn--secondary btn--sm" type="button" data-add-day>' + icon("calendar") + " Add another day</button>" +
+      '<p class="small muted" style="margin:0">' + (multi ? "Lobola, traditional and multi-day weddings often run over more than one day. Add each day and plan what happens on it. " : "") +
+      (mf > 1 ? "Your package includes up to " + mf + " days." : "") + "</p>" +
+      '<p class="small muted" data-day-limit hidden style="margin:0">' + (mf > 1 ? "You've reached the number of days your package includes." : "Events over more than one day are part of Premium and Signature. Choose one at the last step.") + "</p></div>";
+  }
+  function readIndexed(fd, prefix, fields) {
+    var idx = {}, re = new RegExp("^" + prefix + "-(\\d+)-");
+    fd.forEach(function (v, key) { var m = re.exec(key); if (m) idx[m[1]] = 1; });
+    return Object.keys(idx).map(Number).sort(function (a, b) { return a - b; }).map(function (n) {
+      var row = { _i: n }; fields.forEach(function (f) { row[f] = (fd.get(prefix + "-" + n + "-" + f) || "").toString().trim(); }); return row; });
   }
   function collect5(ev, fd) {
-    ev.functions = readRows(fd, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"]).map(function (r) {
-      return { id: r.id || uid("f"), name: r.name, func_date: r.date, start_time: r.start, end_time: r.end, venue_name: r.venue, address: r.address, map_url: r.map }; });
-    var ids = ev.functions.map(function (f) { return f.id; });
-    ev.schedule = readRows(fd, "si", ["time", "title", "description", "kind", "function"]).map(function (r) {
-      return { item_time: r.time, title: r.title, description: r.description, kind: r.kind || "other", function_id: ids.indexOf(r.function) > -1 ? r.function : "" }; });
+    var days = readIndexed(fd, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"]);
+    var items = readIndexed(fd, "si", ["time", "title", "description", "day"]).filter(function (r) { return r.time || r.title || r.description; });
+    var single = days.length <= 1 && !(days[0] && (days[0].name || days[0].date || days[0].venue || days[0].address || days[0].map));
+    var idFor = {};
+    ev.functions = single ? [] : days.map(function (r, n) {
+      var date = r.date;
+      if (!date && ev.event_date) { var dt = new Date(ev.event_date + "T12:00:00"); dt.setDate(dt.getDate() + n); date = dt.toISOString().slice(0, 10); }
+      var id = r.id || uid("f"); idFor[r._i] = id;
+      return { id: id, name: r.name || "Day " + (n + 1), func_date: date, start_time: r.start, end_time: r.end, venue_name: r.venue, address: r.address, map_url: r.map };
+    });
+    var first = ev.functions.length ? ev.functions[0].id : "";
+    ev.schedule = items.map(function (r) { return { item_time: r.time, title: r.title, description: r.description, kind: guessKind(r.title), function_id: idFor[r.day] || first }; });
   }
   function validate5(ev) {
     var e = {}, mf = maxFunctions(ev);
-    if (ev.functions.length > mf) e.functions = "Your package includes " + mf + " event function" + (mf === 1 ? "" : "s") + ". Upgrade in step 10 for more.";
-    if (ev.functions.some(function (f) { return !f.name; })) e.functions = "Each function needs a name, e.g. Ceremony or Reception.";
-    if (ev.schedule.some(function (s) { return !s.title; })) e.schedule = "Each programme item needs a title.";
+    if (ev.functions.length > mf) e.functions = "Your package includes " + plural(mf, "day") + ". Choose a bigger package at the last step for more.";
+    if (ev.schedule.some(function (s) { return !s.title; })) e.schedule = "Each programme item needs a short description of what happens, e.g. Ceremony or Dinner.";
     return e;
   }
+  function syncDays() {
+    var box = document.querySelector("#journey-root [data-days]");
+    if (!box) return;
+    var days = box.querySelectorAll(".day-block"), max = +box.getAttribute("data-max-days");
+    box.classList.toggle("is-single", days.length === 1);
+    days.forEach(function (d, n) { var t = d.querySelector("[data-day-title]"); if (t) t.textContent = "Day " + (n + 1); });
+    var add = document.querySelector("#journey-root [data-add-day]"), lock = document.querySelector("#journey-root [data-day-limit]");
+    if (add) add.hidden = days.length >= max;
+    if (lock) lock.hidden = days.length < max;
+  }
+  function nextIndex(form, prefix) {
+    var n = -1, re = new RegExp("^" + prefix + "-(\\d+)-");
+    form.querySelectorAll("input,select,textarea").forEach(function (i) { var m = re.exec(i.name || ""); if (m) n = Math.max(n, +m[1]); });
+    return n + 1;
+  }
 
-  // --- step 6 ---------------------------------------------------------------------------------------
+  // --- step 5: food and drinks ---------------------------------------------------------------------------------------
   function miRow(i, it) {
     it = it || {};
     return '<div class="repeat__row" style="--cols:140px minmax(0,1.2fr) minmax(0,1.6fr) minmax(0,1fr) 130px">' + miniSel("mi-" + i + "-course", D.courses.map(function (c) { return [c, c]; }), it.course || "Main", "Course") +
@@ -686,33 +859,55 @@
   }
   function validate6(ev) { return ev.menu.items.some(function (i) { return !i.name; }) ? { menu: "Each menu item needs a name." } : {}; }
 
-  // --- step 7 ---------------------------------------------------------------------------------------
+  // --- step 6: seating layout ------------------------------------------------------------------------------
+  var TOP_CHOICES = { weddings: ["Where will the couple sit?", [["sweetheart", "Sweetheart table", "Just the two of you, facing your guests."],
+      ["head", "Head table", "The couple with the bridal party, along one side, facing guests."], ["none", "With your guests", "No top table. You sit at a table among family and friends."]]],
+    other: ["A top table for the hosts?", [["sweetheart", "Small top table", "For the hosts only, facing guests."], ["head", "Top table", "Hosts and special guests, along one side, facing the room."],
+      ["none", "No top table", "Hosts sit among their guests."]]] };
+  var GUEST_CHOICES = [["round", "Round tables", "Easy conversation. 8 to 10 per table."], ["long", "Long tables", "Family style, in rows. Seats more in the same space."],
+    ["mixed", "A mix", "Round tables with a few long ones for big families."]];
+  function layoutOf(ev) {
+    var t = ev.tables || {};
+    return { top: t.top || (groupOf(ev) === "weddings" ? "head" : "none"), guest: t.guest || "round", capacity: +t.capacity || 10, count: t.count };
+  }
+  function layoutChoices(name, options, value) {
+    return '<div class="choice-grid layout-choice" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">' + options.map(function (o) {
+      return '<label class="choice"><input type="radio" name="' + name + '" value="' + o[0] + '"' + (o[0] === value ? " checked" : "") + "><span>" +
+        (window.AureliaFloor ? AureliaFloor.icon(o[0]) : "") + "<b>" + esc(o[1]) + "</b><small>" + esc(o[2]) + "</small></span></label>"; }).join("") + "</div>";
+  }
+  function suggestedTables(ev, cap) { var est = +ev.guest_settings.estimated || (ev.guest_list || []).length || 0; return est ? Math.max(1, Math.ceil(est / (cap || 10))) : 10; }
   function step7(ev) {
-    var t = ev.tables, est = +ev.guest_settings.estimated || 0, sug = est ? Math.max(1, Math.ceil(est / 10)) : 10;
-    var now = !!t.plan_now;
+    var lay = layoutOf(ev), top = TOP_CHOICES[groupOf(ev) === "weddings" ? "weddings" : "other"], est = +ev.guest_settings.estimated || (ev.guest_list || []).length || 0;
+    var count = lay.count === undefined || lay.count === "" ? suggestedTables(ev, lay.capacity) : lay.count;
     return featureNote(ev, "seating", "The seating chart") +
       '<div class="notice">' + icon("seat") + "<span>Most hosts plan seating once replies are in. Then the seating editor in your dashboard can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>" +
-      check("plan_now", "Set up my tables now", now, { attrs: { "data-reveals": "#tables-now" } }) +
-      '<div id="tables-now" style="display:grid;gap:18px"' + (now ? "" : " hidden") + '><div class="form-row form-row--3">' +
-      field("table_count", "Number of tables", t.count === "" ? sug : t.count, { type: "number", attrs: { min: 0, max: 200 }, hint: est ? "About " + sug + " for " + est + " guests at 10 a table." : "" }) +
-      field("capacity", "Seats per table", t.capacity || 10, { type: "number", attrs: { min: 1, max: 40 } }) + select("shape", "Table shape", [["round", "Round"], ["long", "Long / banquet"]], t.shape || "round") + "</div>" +
-      field("table_names", "Table names (optional)", (t.names || []).join("\n"), { type: "textarea", attrs: { rows: 5, placeholder: "Head table\nProtea\nBaobab" }, hint: "One per line, in order. Leave blank for Table 1, Table 2 and so on." }) + "</div>" +
+      "<fieldset><legend>" + esc(top[0]) + "</legend>" + layoutChoices("top_table", top[1], lay.top) + "</fieldset>" +
+      "<fieldset><legend>Guest tables</legend>" + layoutChoices("guest_tables", GUEST_CHOICES, lay.guest) + "</fieldset>" +
+      '<div class="form-row form-row--2">' + field("capacity", "Seats per table", lay.capacity, { type: "number", attrs: { min: 2, max: 40 } }) +
+      field("table_count", "Number of guest tables", count, { type: "number", attrs: { min: 0, max: 120 }, hint: est ? "About " + suggestedTables(ev, lay.capacity) + " for " + est + " guests." : "We'll adjust this once you know your numbers." }) + "</div>" +
+      '<div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview>' + planSvg(ev) + "</div></div>" +
       field("seating_notes", "Special seating requirements", ev.info.seating_notes || "", { type: "textarea", attrs: { rows: 3, placeholder: "Grandparents near the front and away from the speakers; wheelchair access at Table 3." } });
   }
+  function planSvg(ev) {
+    var lay = layoutOf(ev);
+    return window.AureliaFloor ? AureliaFloor.plan({ top: lay.top, guest: lay.guest, count: lay.count === undefined || lay.count === "" ? suggestedTables(ev, lay.capacity) : lay.count,
+      cap: lay.capacity, dance: ["weddings", "parties"].indexOf(groupOf(ev)) > -1 }) : "";
+  }
   function collect7(ev, fd) {
-    ev.tables = { count: val(fd, "table_count"), capacity: parseInt(val(fd, "capacity") || 10, 10) || 10, shape: val(fd, "shape") || "round",
-      names: val(fd, "table_names").split("\n").map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 200), plan_now: !!fd.get("plan_now") };
+    ev.tables = { top: val(fd, "top_table") || "none", guest: val(fd, "guest_tables") || "round", capacity: parseInt(val(fd, "capacity") || 10, 10) || 10,
+      count: val(fd, "table_count"), chosen: true };
     ev.info.seating_notes = val(fd, "seating_notes");
+    var box = document.querySelector("#journey-root [data-plan-preview]");
+    if (box) box.innerHTML = planSvg(ev);
   }
   function validate7(ev) {
     var e = {}, c = +ev.tables.count;
-    if (!ev.tables.plan_now) return e;
-    if (ev.tables.count !== "" && !(c >= 0 && c <= 200)) e.table_count = "Number of tables must be between 0 and 200.";
-    if (!(ev.tables.capacity >= 1 && ev.tables.capacity <= 40)) e.capacity = "Seats per table must be between 1 and 40.";
+    if (ev.tables.count !== "" && !(c >= 0 && c <= 120)) e.table_count = "Number of tables must be between 0 and 120.";
+    if (!(ev.tables.capacity >= 2 && ev.tables.capacity <= 40)) e.capacity = "Seats per table must be between 2 and 40.";
     return e;
   }
 
-  // --- step 8 ---------------------------------------------------------------------------------------
+  // --- step 7: extras ---------------------------------------------------------------------------------------
   function row3(prefix, i, it, fields) {
     it = it || {};
     return '<div class="repeat__row" style="--cols:repeat(3,minmax(0,1fr))">' + fields.map(function (f) {
@@ -734,10 +929,13 @@
       field("dress_code_notes", "Dress code notes", info.dress_code_notes || "", { attrs: { placeholder: "Shades of emerald and gold; comfortable shoes for the lawn" } }) + "</div>" +
       "<fieldset><legend>Gift registry</legend>" + repeat("rg", (reg.length ? reg : [{}]).map(function (r, i) { return row3("rg", i, r, RG); }), null, "Add a registry", 10) +
       field("gift_note", "Gift preferences", info.gift_note || "", { type: "textarea", attrs: { rows: 2, placeholder: "Your presence is our present." } }) + "</fieldset>" +
-      "<fieldset><legend>Contacts for guests</legend>" + repeat("ct", (cts.length ? cts : [{}]).map(function (c, i) { return ctRow(i, c); }), null, "Add a contact", 8) + "</fieldset>" +
+      '<details class="box" style="padding:14px 16px"' + (cts.length ? " open" : "") + '><summary style="cursor:pointer;font-weight:500">Someone guests can call on the day (optional)</summary>' +
+      '<p class="hint" style="margin:10px 0 12px">For guests who are lost, running late or need help on the day, e.g. your planner, MC or a cousin. It shows on your website, so you\'re not the one answering calls. Leave it empty if you don\'t need it.</p>' +
+      repeat("ct", (cts.length ? cts : [{}]).map(function (c, i) { return ctRow(i, c); }), null, "Add a person", 8) + "</details>" +
       "<fieldset><legend>Accommodation</legend>" + repeat("ac", (acc.length ? acc : [{}]).map(function (a, i) { return row3("ac", i, a, AC); }), null, "Add a place to stay", 10) + "</fieldset>" +
       field("instructions", "Special instructions", info.instructions || "", { type: "textarea", attrs: { rows: 3, placeholder: "Unplugged ceremony: please keep phones away until the reception." } }) +
       "<fieldset><legend>Photo gallery</legend>" + featureNote(ev, "gallery", "The photo gallery") +
+      '<p class="hint" style="margin-bottom:12px">Add a few photos now, like your engagement shoot, or come back after the event and add photos from the day. Guests see them on the same link they already have.</p>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px">' + thumbs + "</div>" +
       (glimit ? '<label class="file-drop" style="position:relative">' + icon("image") + "<span>Add photos (" + gal.length + " of " + glimit + ')</span><span class="hint">JPG, PNG or WebP.</span>' +
         '<input type="file" data-gallery multiple accept="image/jpeg,image/png,image/webp,image/gif"></label>' : '<p class="hint">The Essential package has no gallery. Premium includes 40 photos.</p>') + "</fieldset>";
@@ -757,26 +955,36 @@
     return e;
   }
 
-  // --- step 9: review --------------------------------------------------------------------------------
+  // --- step 8: review and pay ---------------------------------------------------------------------------------
+  function payOption(code) { return (D.payment_links || {})[code] || ""; }
   function step9(ev) {
-    var v = ev.venue, gs = ev.guest_settings, info = ev.info, t = tpl(ev.template) || {};
-    var w = ev.design.wording || {};
-    var needed = [[!!(ev.contact.name && ev.contact.email), "Your name and email", 1], [!!(ev.hosts && ev.event_date), "Names and date", 1], [!!(v.name && v.address), "Venue and address", 2]];
-    var nice = [[!!ev.images.hero, "A main photo", 3], [!!(w.welcome || w.invitation || w.rsvp_note || w.closing), "Your own wording (or keep the template's)", 3], [!!gs.rsvp_deadline, "An RSVP deadline", 4]];
-    if (feature(ev, "guest_management")) nice.push([!!(ev.guest_list || []).length, "Your guest list (you can send it later too)", 4]);
-    if (feature(ev, "programme")) nice.push([!!ev.schedule.length, "The programme", 5]);
-    if (feature(ev, "menu")) nice.push([!!ev.menu.items.length, "The menu", 6]);
-    nice.push([!!(info.dress_code || (info.contacts || []).length), "Dress code or contact people", 8]);
+    var v = ev.venue, gs = ev.guest_settings, info = ev.info, t = tpl(ev.template) || {}, w = ev.design.wording || {};
+    var needed = [[!!(ev.hosts && ev.event_date), "Names and date", 1], [!!(v.name && v.address), "Venue and address", 1]];
+    var nice = [[!!ev.images.hero, "A main photo", 2], [!!(w.welcome || w.invitation || w.rsvp_note || w.closing), "Your own wording (or keep the template's)", 2], [!!gs.rsvp_deadline, "An RSVP deadline", 3]];
+    if (feature(ev, "programme")) nice.push([!!ev.schedule.length, "The programme", 4]);
+    if (feature(ev, "menu")) nice.push([!!ev.menu.items.length, "The menu", 5]);
+    var missing = needed.filter(function (c) { return !c[0]; });
     function li(c, must) {
       return '<li class="' + (c[0] ? "is-done" : "") + '">' + icon(c[0] ? "check" : (must ? "alert" : "plus")) + "<span>" + (c[0] ? esc(c[1]) : '<a class="text-link" href="#setup-' + c[2] + '">' + esc(c[1]) + "</a>" + (must ? " <b>(needed)</b>" : "")) + "</span></li>";
     }
-    var g = gaps(ev, ev.selected_package || "premium");
-    var gapNote = g.length ? '<div class="notice notice--warn">' + icon("lock") + "<span>Your planned package, " + esc((pkg(ev.selected_package) || {}).name || "") + ", won't show " + esc(joinOr(g)) +
-      ". Choose a package that includes them in the next step, or remove them.</span></div>" : "";
-    var checklist = '<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3><ul class="checklist">' +
-      needed.map(function (c) { return li(c, true); }).join("") + nice.map(function (c) { return li(c, false); }).join("") +
-      '</ul><p class="tiny muted">Only the first three are needed. Everything else can be added later.</p></div>';
-    var share = '<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you book</h3>' +
+    var checklist = '<details class="box"' + (missing.length ? " open" : "") + ' style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">' +
+      (missing.length ? (missing.length === 2 ? "Two things are needed before you pay" : "One thing is needed before you pay") : "Ready to go. Optional extras you can still add") +
+      '</summary><ul class="checklist" style="margin-top:12px">' + needed.map(function (c) { return li(c, true); }).join("") + nice.map(function (c) { return li(c, false); }).join("") + "</ul></details>";
+    var c = ev.contact;
+    var contact = '<fieldset><legend>Your details</legend><div class="form-row form-row--3">' + field("contact_name", "Your name", c.name, { required: true, attrs: { autocomplete: "name" } }) +
+      field("contact_email", "Your email", c.email, { type: "email", required: true, attrs: { autocomplete: "email" }, hint: "Your receipt and website link go here." }) +
+      field("contact_phone", "Your mobile", c.phone, { type: "tel", attrs: { autocomplete: "tel" }, hint: "Optional. For quick questions." }) + "</div></fieldset>";
+    var cards = D.packages.map(function (p) {
+      var pg = gaps(ev, p.code);
+      return '<article class="price' + (p.highlight ? " price--highlight" : "") + '">' + (p.highlight ? '<span class="price__badge">Most chosen</span>' : "") +
+        "<div><h3>" + esc(p.name) + '</h3><p class="muted small" style="margin-top:6px">' + esc(p.tagline) + '</p></div><div class="price__amount">' + money(p.price_cents) + "<small>once-off, VAT incl.</small></div>" +
+        '<button class="btn ' + (p.highlight ? "btn--primary" : "btn--secondary") + ' btn--block" type="submit" name="nav" value="pay:' + p.code + '">' + icon("card") + " Pay " + money(p.price_cents) + "</button>" +
+        "<ul>" + p.bullets.map(function (b) { return "<li>" + icon("check") + "<span>" + esc(b) + "</span></li>"; }).join("") + "</ul>" +
+        '<details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">' +
+        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div></details>" +
+        (pg.length ? '<p class="small price__gap">' + icon("lock") + "<span>Won't show " + esc(joinOr(pg)) + ".</span></p>" : "") + "</article>";
+    }).join("");
+    var share = '<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>' +
       '<p class="small muted">Send a link to your partner or family. They see your website as it is now, without your contact details or guest list. Photos stay on this device.</p>' +
       '<div class="btn-row"><button class="btn btn--secondary btn--sm" type="button" data-share-preview>' + icon("link") + ' Copy a preview link</button>' +
       '<button class="btn btn--ghost btn--sm" type="button" data-share-preview="whatsapp">' + icon("chat") + " Send on WhatsApp</button></div></div>";
@@ -784,38 +992,27 @@
       return '<div class="review-section"><div class="review-section__head"><h3>' + esc(title) + '</h3><a class="btn btn--sm btn--ghost" href="#setup-' + n + '">' + icon("edit") + ' Edit</a></div><dl class="dl">' +
         rows.map(function (r) { return "<dt>" + esc(r[0]) + "</dt><dd>" + (r[1] ? esc(r[1]) : '<span class="muted">Not added</span>') + "</dd>"; }).join("") + "</dl></div>";
     }
-    var tc = +ev.tables.count || 0;
-    return gapNote + checklist + share +
+    var lay = layoutOf(ev);
+    var review = sec(1, "Details", [["Names", ev.hosts], ["Occasion", (cat(ev.category) || {}).name], ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""],
+        ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")], ["Venue", v.name], ["Address", v.address]]) +
+      sec(2, "Design", [["Template", t.name], ["Photos", String(["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).length + (ev.images.gallery || []).length) + " added"], ["Welcome", w.welcome]]) +
+      sec(3, "Guests", [["Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") : ""], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""], ["Children", gs.children_allowed ? "Welcome" : "Adults only"]]) +
+      sec(4, "Programme", [["Days", ev.functions.length ? ev.functions.map(function (f) { return f.name; }).join(", ") : "One day"], ["Programme items", ev.schedule.length ? String(ev.schedule.length) : ""]]) +
+      sec(5, "Food and drinks", [["Menu items", ev.menu.items.length ? String(ev.menu.items.length) : ""], ["Dietary options", (info.dietary_options || []).join(", ")]]) +
+      sec(6, "Seating", [["Layout", ev.tables.chosen ? ({ sweetheart: "Sweetheart table", head: "Head table", none: "No top table" })[lay.top] + ", " + ({ round: "round", long: "long", mixed: "mixed" })[lay.guest] + " tables" : ""]]) +
+      sec(7, "Extras", [["Dress code", info.dress_code], ["Registry", (info.registry || []).length ? String(info.registry.length) : ""], ["Gallery", (ev.images.gallery || []).length ? plural(ev.images.gallery.length, "photo") : ""]]);
+    var connected = D.packages.some(function (p) { return payOption(p.code); });
+    return checklist + contact + '<div data-field="details"></div><div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' + cards + "</div>" +
+      '<p class="small muted">' + (connected ? "Secure payment with PayFast: card, instant EFT and more. " : "") + "Prices include 15% VAT. By paying, you accept the " +
+      '<a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>.</p>' + share +
+      '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">See everything you\'ve entered</summary><div style="display:grid;gap:16px;margin-top:16px">' +
       '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudio.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
-      '<div style="margin:18px 0">' + previewFrame(620) + "</div>" +
-      sec(1, "Event details", [["You", ev.contact.name + (ev.contact.email ? " · " + ev.contact.email : "")], ["Event", ev.name], ["Type", (cat(ev.category) || {}).name], ["Hosts", ev.hosts],
-        ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""], ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")]]) +
-      sec(2, "Venue", [["Venue", v.name], ["Address", v.address], ["Parking", v.parking], ["Directions", v.directions]]) +
-      sec(3, "Design", [["Template", t.name], ["Photos", String(["hero", "logo", "background"].filter(function (k) { return ev.images[k]; }).length + (ev.images.gallery || []).length) + " added"], ["Welcome", (ev.design.wording || {}).welcome]]) +
-      sec(4, "Guests", [["Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") : ""], ["Estimated", gs.estimated], ["RSVP deadline", gs.rsvp_deadline ? R.fmtDate(gs.rsvp_deadline) : ""],
-        ["Plus-ones", { none: "Not allowed", per_guest: "Set per guest", open: "Allowed" }[gs.plus_one_policy]], ["Children", gs.children_allowed ? "Welcome" : "Adults only"]]) +
-      sec(5, "Programme", [["Functions", ev.functions.map(function (f) { return f.name; }).join(", ")], ["Programme items", ev.schedule.length ? String(ev.schedule.length) : ""]]) +
-      sec(6, "Food and drinks", [["Menu items", ev.menu.items.length ? String(ev.menu.items.length) : ""], ["Dietary options", (info.dietary_options || []).join(", ")]]) +
-      sec(7, "Seating", [["Tables", ev.tables.plan_now ? (tc ? tc + " tables, " + tc * ev.tables.capacity + " seats" : "") : "Planned after RSVPs"]]) +
-      sec(8, "Extras", [["Dress code", info.dress_code], ["Registry", (info.registry || []).length ? String(info.registry.length) : ""], ["Contacts", (info.contacts || []).length ? String(info.contacts.length) : ""]]);
-  }
-
-  // --- step 10: package and booking ----------------------------------------------------------------------
-  function step10(ev) {
-    var cards = D.packages.map(function (p) {
-      var sel = (ev.selected_package || "premium") === p.code, pg = gaps(ev, p.code);
-      return '<label class="price' + (sel ? " price--highlight" : "") + '" style="cursor:pointer">' + (p.highlight ? '<span class="price__badge">Most chosen</span>' : "") +
-        '<div class="row row--between"><h3>' + esc(p.name) + '</h3><input type="radio" name="package" value="' + p.code + '"' + (sel ? " checked" : "") + ' aria-label="Choose ' + esc(p.name) + '" style="width:22px;height:22px;accent-color:var(--color-accent-dark)"></div>' +
-        '<p class="muted small">' + esc(p.tagline) + '</p><div class="price__amount">' + money(p.price_cents) + "<small>once-off, VAT incl.</small></div><ul>" +
-        p.bullets.map(function (b) { return "<li>" + icon("check") + "<span>" + esc(b) + "</span></li>"; }).join("") + '</ul><div class="price__limits">' +
-        Object.keys(D.limit_labels).map(function (k) { return "<div><span>" + esc(D.limit_labels[k]) + "</span><b>" + (p.limits[k] || "—") + "</b></div>"; }).join("") + "</div>" +
-        (pg.length ? '<p class="small price__gap">' + icon("lock") + "<span>Won't show " + esc(joinOr(pg)) + ".</span></p>" : "") + "</label>";
-    }).join("");
-    return '<div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">' + cards + "</div>" +
-      '<div data-field="accept">' + check("accept", 'I accept the <a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>. My website is published once payment is confirmed.', false) + "</div>" +
-      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-9">' + icon("arrow-left") + ' Back</a><div class="btn-row"><button class="btn btn--primary btn--lg" type="submit" name="nav" value="book">' +
-      (D.forms ? "Send my booking " : "Prepare my booking ") + icon("arrow") + "</button></div></div>" +
+      previewFrame(560) + review + "</div></details>" +
+      '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-7">' + icon("arrow-left") + ' Back</a><span></span></div>' +
       '<p class="small muted" style="margin-top:14px">Questions first, or rather have us finish the set-up? <a class="text-link" href="#help-me-set-up">Ask us to help</a>.</p>';
+  }
+  function collect9(ev, fd) {
+    ev.contact = { name: val(fd, "contact_name"), email: val(fd, "contact_email").toLowerCase(), phone: val(fd, "contact_phone") };
   }
 
   // --- booking confirmation ---------------------------------------------------------------------------
@@ -838,16 +1035,19 @@
     add("Family groups", (gs.family_groups || []).join(", ")); add("VIP note", gs.vip_note); add("Plus-one policy", gs.plus_one_policy + " (default " + (gs.plus_ones_default || 0) + ")");
     add("Children", gs.children_allowed ? "welcome, up to " + (gs.max_children || 0) + " per invitation" : "adults only");
     add("Guest list", (ev.guest_list || []).length ? plural(ev.guest_list.length, "guest") + (D.forms ? " (attached)" : "") : ""); lines.push("");
-    if (!D.forms && (ev.guest_list || []).length) { lines.push("GUEST LIST"); ev.guest_list.forEach(function (x) { lines.push("- " + [x.name, x.phone, x.email].filter(Boolean).join(" | ")); }); lines.push(""); }
-    if (ev.functions.length) { lines.push("FUNCTIONS"); ev.functions.forEach(function (f) { lines.push("- " + [f.name, f.func_date, [f.start_time, f.end_time].filter(Boolean).join("-"), f.venue_name, f.address, f.map_url].filter(Boolean).join(" | ")); }); lines.push(""); }
-    if (ev.schedule.length) { lines.push("PROGRAMME"); ev.schedule.forEach(function (s) { lines.push("- " + [s.item_time, s.title, s.description, s.kind].filter(Boolean).join(" | ")); }); lines.push(""); }
+    if (!D.forms && (ev.guest_list || []).length) { lines.push("GUEST LIST"); ev.guest_list.forEach(function (x) { lines.push("- " + [x.name, x.phone, x.email, x.group].filter(Boolean).join(" | ")); }); lines.push(""); }
+    if (ev.functions.length) { lines.push("DAYS"); ev.functions.forEach(function (f) { lines.push("- " + [f.name, f.func_date, [f.start_time, f.end_time].filter(Boolean).join("-"), f.venue_name, f.address, f.map_url].filter(Boolean).join(" | ")); }); lines.push(""); }
+    var dayName = {}; ev.functions.forEach(function (f) { dayName[f.id] = f.name; });
+    if (ev.schedule.length) { lines.push("PROGRAMME"); ev.schedule.forEach(function (s) { lines.push("- " + [dayName[s.function_id], s.item_time, s.title, s.description].filter(Boolean).join(" | ")); }); lines.push(""); }
     if (ev.menu.items.length) { lines.push("MENU: " + ev.menu.name); ev.menu.items.forEach(function (i) { lines.push("- " + [i.course, i.name, i.description, (i.tags || []).join(", "), i.selectable ? "guests choose" : ""].filter(Boolean).join(" | ")); }); }
     add("Dietary options", (info.dietary_options || []).join(", ")); add("Drinks", info.drinks); add("Catering notes", info.catering_notes); lines.push("");
-    add("Tables", ev.tables.plan_now ? (ev.tables.count ? ev.tables.count + " x " + ev.tables.capacity + " seats, " + ev.tables.shape : "") : "plan after RSVPs"); add("Table names", (ev.tables.names || []).join(", ")); add("Seating notes", info.seating_notes); lines.push("");
+    var lay = layoutOf(ev);
+    add("Seating layout", ev.tables.chosen ? lay.top + " top table, " + lay.guest + " guest tables, " + (lay.count || suggestedTables(ev, lay.capacity)) + " x " + lay.capacity + " seats" : "not chosen yet");
+    add("Seating notes", info.seating_notes); lines.push("");
     add("Dress code", [info.dress_code, info.dress_code_notes].filter(Boolean).join(" - "));
     (info.registry || []).forEach(function (r) { add("Registry", [r.name, r.url, r.note].filter(Boolean).join(" | ")); });
     add("Gift note", info.gift_note);
-    (info.contacts || []).forEach(function (c) { add("Contact", [c.name, c.role, c.phone, c.email].filter(Boolean).join(" | ")); });
+    (info.contacts || []).forEach(function (c) { add("Day-of contact", [c.name, c.role, c.phone, c.email].filter(Boolean).join(" | ")); });
     (info.accommodation || []).forEach(function (a) { add("Stay", [a.name, a.url, a.note].filter(Boolean).join(" | ")); });
     add("Special instructions", info.instructions);
     return lines.join("\n").replace(/\n{3,}/g, "\n\n");
@@ -863,6 +1063,8 @@
       guests: String((ev.guest_list || []).length || ev.guest_settings.estimated || ""), details: summaryText(ev),
       guest_list: (ev.guest_list || []).length ? guestCsv(ev) : "", draft: JSON.stringify(Object.assign({}, ev, { images: undefined })) };
     var files = ["hero", "logo", "background"].map(function (k) { var b = dataUrlBlob(ev.images[k]); return [k, b, k + (b && b.type === "image/png" ? ".png" : ".jpg")]; });
+    fields.guest_list = (ev.guest_list || []).length ? ["Name,Mobile,Email,Group"].concat(ev.guest_list.map(function (g) {
+      return [g.name, g.phone, g.email, g.group].map(function (x) { return '"' + String(x || "").replace(/"/g, '""') + '"'; }).join(","); })).join("\n") : "";
     var gal = (ev.images.gallery || []).slice(0, 40), batches = [];
     for (var i = 0; i < gal.length; i += 8) batches.push(gal.slice(i, i + 8));
     return postForm("booking", fields, files).then(function () {
@@ -875,56 +1077,55 @@
     });
   }
   function startSend(ev, kind) {
-    ev.booking.status = "sending"; save(); viewBooked();
-    sendBooking(ev, kind).then(function () {
+    ev.booking.status = "sending"; save();
+    return sendBooking(ev, kind).then(function () {
       ev.booking.status = "sent"; ev.booking.sent_at = new Date().toISOString(); ev.booking.sent_version = ev.updated; save();
-      if (currentHash === "booked") viewBooked();
-      toast(kind === "update" ? "Your changes are sent." : "Your booking is sent.");
-    }, function () {
-      ev.booking.status = "failed"; save();
-      if (currentHash === "booked") viewBooked();
-    });
+    }, function () { ev.booking.status = "failed"; save(); });
+  }
+  function goPay(ev) {
+    var opt = payOption(ev.selected_package);
+    if (!opt) { location.hash = "#booked"; if (currentHash === "booked") viewBooked(); return; }
+    ev.booking.paying_at = new Date().toISOString(); save();
+    if (typeof opt === "object" && opt.action) {
+      var f = document.createElement("form");
+      f.method = "post"; f.action = opt.action;
+      Object.keys(opt.fields).forEach(function (k) { var i = document.createElement("input"); i.type = "hidden"; i.name = k; i.value = opt.fields[k]; f.appendChild(i); });
+      document.body.appendChild(f); f.submit();
+    } else location.href = opt;
   }
   function viewBooked() {
     var ev = cur();
     if (!ev || !ev.booking) { location.hash = "#my-events"; return; }
-    var p = pkg(ev.selected_package) || {}, link = (D.payment_links || {})[p.code] || "", text = summaryText(ev), email = D.email, b = ev.booking;
-    if (D.forms && !b.status) { startSend(ev, "new"); return; }
-    var subject = "Booking " + b.ref + ": " + ev.name;
-    var emailBox = '<div class="box" style="display:grid;gap:14px"><h2 style="font-size:1.25rem">' + (D.forms ? "Send it by email instead" : "Send your booking to us") + "</h2>" +
-      '<p class="muted small">Copy your booking details and email them to us' + (ev.images.hero || (ev.images.gallery || []).length ? ", with the photos you chose" : "") + ". We confirm within one working day.</p>" +
-      '<div class="notice">' + icon("mail") + '<div><span class="mono" style="user-select:all">' + esc(email) + "</span><br>" +
-      '<span class="tiny muted">Subject: <span style="user-select:all">' + esc(subject) + "</span></span></div></div>" +
-      '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + " Copy booking details</button>" +
-      '<button class="btn btn--secondary" type="button" data-copy="' + esc(email) + '" data-copied="Email address copied">Copy email address</button>' +
-      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello " + D.brand + ",\n\nPlease find my booking request " + b.ref + " below.\n\n") + '">Open my email app</a></div>' +
-      '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>";
-    var status, showEmail = !D.forms || b.status === "failed";
-    if (!D.forms) status = '<p class="lead" style="font-size:1.0625rem">Your booking details are ready to send. Email them to us below and we\'ll take it from there.</p>';
-    else if (b.status === "sending") status = '<div class="notice" role="status">' + icon("clock") + "<span><b>Sending your booking" + ((ev.images.gallery || []).length ? " and photos" : "") + "…</b> Keep this page open for a moment.</span></div>";
-    else if (b.status === "failed") status = '<div class="notice notice--warn" role="alert">' + icon("alert") + '<div><b>We couldn\'t send it from here.</b> Check your connection and try again, or email it to us below.<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-resend>Try again</button></div></div></div>';
-    else {
-      var changed = b.sent_version && ev.updated > b.sent_version;
-      status = '<div class="notice notice--success" role="status">' + icon("check") + "<div><b>Sent. We have your booking.</b> We\'ll contact " + esc(ev.contact.email) + " within one working day." +
-        ((ev.images.gallery || []).length > 40 ? " Your first 40 gallery photos came through; email the rest to " + esc(email) + " with your reference." : "") + "</div></div>" +
-        (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you sent it.<div style="margin-top:10px"><button class="btn btn--primary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "");
+    var p = pkg(ev.selected_package) || {}, opt = payOption(p.code), b = ev.booking, email = D.email, text = summaryText(ev);
+    var first = (ev.contact.name || "").split(" ")[0];
+    var changed = b.status === "sent" && b.sent_version && ev.updated > b.sent_version;
+    var lead = opt
+      ? (b.paying_at ? "If your payment went through, PayFast emails you a receipt. We publish your website and send your link to " + esc(ev.contact.email) + " within one working day."
+        : "Pay with PayFast to confirm your booking.")
+      : "Your booking is in. We'll contact you on " + esc(ev.contact.phone || ev.contact.email) + " within one working day to take payment and publish your website.";
+    var pay = opt ? '<div><button class="btn ' + (b.paying_at ? "btn--secondary" : "btn--primary btn--lg") + '" type="button" data-pay-again>' + icon("card") + " " +
+      (b.paying_at ? "Didn't finish paying? Pay " : "Pay ") + money(p.price_cents) + "</button></div>" : "";
+    var problem = "";
+    if (!D.forms || b.status === "failed") {
+      var subject = "Booking " + b.ref + ": " + ev.name;
+      problem = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.125rem">' + (D.forms ? "One more thing" : "This preview can't send bookings") + "</h2>" +
+        '<p class="small muted">' + (D.forms ? "Your details didn't reach us automatically. Tap below to send them again, or email them, so we can build your website."
+          : "On your live website this happens by itself. Here, copy the details and email them to " + esc(email) + ".") + "</p>" +
+        '<div class="btn-row">' + (D.forms ? '<button class="btn btn--primary btn--sm" type="button" data-resend>Try sending again</button>' : "") +
+        '<a class="btn btn--secondary btn--sm" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(text.slice(0, 1800)) + '">' + icon("mail") + " Email the details</a>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-copy-booking>' + icon("copy") + ' Copy details</button></div><textarea data-booking-text hidden>' + esc(text) + "</textarea></div>";
     }
-    var payBtn = typeof link === "object" && link.action
-      ? '<form method="post" action="' + esc(link.action) + '" target="_blank">' + Object.keys(link.fields).map(function (k) { return '<input type="hidden" name="' + esc(k) + '" value="' + esc(link.fields[k]) + '">'; }).join("") +
-        '<button class="btn btn--primary btn--lg" type="submit">' + icon("card") + " Pay " + money(p.price_cents) + " securely</button></form>"
-      : '<a class="btn btn--primary btn--lg" href="' + esc(link) + '" target="_blank" rel="noopener">' + icon("card") + " Pay " + money(p.price_cents) + " securely</a>";
-    var pay = link
-      ? '<div class="box" style="display:grid;gap:10px"><h2 style="font-size:1.25rem">Pay now</h2><p class="small muted">Pay securely with PayFast by card, instant EFT and more. If PayFast asks for a reference, use <b class="mono">' + esc(b.ref) + '</b>. Your website goes live once payment is confirmed.</p>' +
-        "<div>" + payBtn + "</div></div>"
-      : '<div class="notice">' + icon("card") + "<span><b>Payment:</b> we'll email you a secure PayFast payment link for " + money(p.price_cents) + ". Your website goes live as soon as payment is confirmed.</span></div>";
     var next = '<div class="box" style="display:grid;gap:12px"><h2 style="font-size:1.25rem">What happens next</h2><ol class="how-list" style="list-style:none;margin:0;padding:0;display:grid;gap:14px">' +
-      [["01", "We check your details", "Within one working day. If anything's missing, we ask you."], ["02", link ? "You pay" : "You get a payment link", link ? "Use the button above whenever you're ready." : "By email, for " + money(p.price_cents) + "."],
-        ["03", "Your website goes live", "We send you your link to share on WhatsApp, by email or as a QR code."]].map(function (x) {
+      [["01", "We build your website", "From everything you entered, within one working day. If anything's missing, we ask."],
+        ["02", "You get your link", "By email, ready to share on WhatsApp, by email or as a QR code."],
+        ["03", "Replies come in", "Guests RSVP on your website. You can keep adding guests, photos and details."]].map(function (x) {
         return '<li><span class="mono">' + x[0] + "</span><div><b>" + esc(x[1]) + '</b><p class="small muted" style="margin-top:4px">' + esc(x[2]) + "</p></div></li>"; }).join("") + "</ol></div>";
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 32px)"><div class="container container--narrow" style="display:grid;gap:var(--gap)">' +
       '<div class="glass glass--strong panel" style="display:grid;gap:14px;text-align:left"><span class="icon-tile icon-tile--soft">' + icon("check") + "</span>" +
-      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">' + (D.forms ? "Your booking" : "Booking request ready") + '</h1><p class="small muted">Reference <b class="mono">' + esc(b.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" + status + "</div>" +
-      pay + next + (showEmail ? emailBox : "") +
+      '<h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">Thank you' + (first ? ", " + esc(first) : "") + '</h1><p class="small muted">Reference <b class="mono">' + esc(b.ref) + "</b> · " + esc(p.name || "") + " · " + money(p.price_cents || 0) + " (VAT incl.)</p>" +
+      '<p class="lead" style="font-size:1.0625rem">' + lead + "</p>" + pay +
+      (changed ? '<div class="notice">' + icon("edit") + '<div>You\'ve changed your event since you booked.<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="button" data-resend="update">Send my changes</button></div></div></div>' : "") +
+      "</div>" + problem + next +
       '<div class="btn-row"><a class="btn btn--secondary" href="#preview-event">' + icon("eye") + ' Preview your website</a><a class="btn btn--ghost" href="#setup-1">Edit details</a><a class="btn btn--ghost" href="#my-events">My events</a></div></div></section>';
     window.scrollTo(0, 0);
   }
@@ -946,7 +1147,7 @@
         toast("Your draft is open on this device." + (ev.images.hero ? "" : " Photos stay on the device you added them on, so add them again in Design."));
       }
       state.current = ev.id; save();
-      history.replaceState(null, "", "#setup-" + Math.min(9, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1));
+      history.replaceState(null, "", "#setup-" + Math.min(LAST, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1));
       route(location.hash.slice(1));
     }, linkError);
   }
@@ -1000,18 +1201,19 @@
     if (!ev) { location.hash = "#my-events"; return; }
     root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.name) +
       "</h1><p>Your event website with the details you've entered. Guests see it once it's published.</p></div>" +
-      '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#setup-' + (ev.booking ? 10 : Math.min(10, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1)) + '">Continue set-up</a><a class="btn btn--ghost btn--sm" href="#my-events">My events</a></div></div>' +
+      '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#setup-' + (ev.booking ? LAST : Math.min(LAST, Math.max.apply(null, [0].concat(ev.wizard_done)) + 1)) + '">Continue set-up</a><a class="btn btn--ghost btn--sm" href="#my-events">My events</a></div></div>' +
       previewFrame(Math.max(560, window.innerHeight - 220)) + "</div></section>";
     refreshPreview(true);
   }
 
   // --- step dispatch ------------------------------------------------------------------------------------
-  var STEP = { 1: [step1, collect1, validate1], 2: [step2, collect2, validate2], 3: [step3, collect3], 4: [step4, collect4, validate4], 5: [step5, collect5, validate5],
-    6: [step6, collect6, validate6], 7: [step7, collect7, validate7], 8: [step8, collect8, validate8], 9: [step9], 10: [step10] };
+  var STEP = { 1: [stepDetails, collectDetails, validateDetails], 2: [step3, collect3], 3: [step4, collect4, validate4], 4: [step5, collect5, validate5],
+    5: [step6, collect6, validate6], 6: [step7, collect7, validate7], 7: [step8, collect8, validate8], 8: [step9, collect9] };
   function viewStep(n) {
     var ev = cur();
     if (!ev) { location.hash = state.order.length ? "#my-events" : "#create"; return; }
-    frame(ev, n, STEP[n][0](ev), { preview: n === 3, nextLabel: n === 9 ? "Looks good, choose a package" : "" });
+    frame(ev, n, STEP[n][0](ev), { preview: n === 2 });
+    if (n === 4) syncDays();
   }
   function collectStep(form) {
     var n = +form.getAttribute("data-step"), ev = cur();
@@ -1022,21 +1224,25 @@
   }
   function submitStep(form, nav) {
     var n = +form.getAttribute("data-step"), ev = collectStep(form);
-    if (n === 10) {
-      ev.selected_package = (new FormData(form)).get("package") || ev.selected_package;
-      var errs = {};
-      if (!form.querySelector("input[name=accept]").checked) errs.accept = "Please accept the terms and refund policy to continue.";
-      var need = [validate1(ev), validate2(ev)].reduce(function (a, b) { return Object.assign(a, b); }, {});
-      if (Object.keys(need).length) errs.details = "Some required details are missing in steps 1 and 2 (" + Object.keys(need).length + "). Go back and complete them.";
+    if (n === LAST) {
+      var code = String(nav || "").replace(/^pay:/, "");
+      if (pkg(code)) ev.selected_package = code;
+      var errs = Object.assign({}, validateContact(ev)), need = validateDetails(ev);
+      if (Object.keys(need).length) errs.details = "Your names, date and venue are needed first. Go back to Details (step 1) and add them.";
       if (showErrors(form, errs)) { save(); return; }
       ev.booking = ev.booking || { ref: "AUR-" + Math.random().toString(36).slice(2, 7).toUpperCase(), at: new Date().toISOString() };
       ev.booking.package = ev.selected_package;
-      if (ev.booking.status !== "sent") delete ev.booking.status;
-      if (ev.wizard_done.indexOf(10) < 0) ev.wizard_done.push(10);
-      save(); location.hash = "#booked"; return;
+      if (ev.wizard_done.indexOf(LAST) < 0) ev.wizard_done.push(LAST);
+      save();
+      var buttons = form.querySelectorAll("button[type=submit]");
+      buttons.forEach(function (b) { b.disabled = true; });
+      var sending = ev.booking.status === "sent" ? Promise.resolve() : startSend(ev, "new");
+      // give the details a few seconds to reach us, then go to payment either way
+      Promise.race([sending, new Promise(function (r) { setTimeout(r, 4000); })]).then(function () { goPay(ev); });
+      return;
     }
     var e = STEP[n][2] ? STEP[n][2](ev) : {}, added = -1;
-    if (n === 4) {
+    if (n === 3) {
       var people = parseGuests((new FormData(form)).get("guest_paste"));
       if (people.length) {
         var have = {}; (ev.guest_list || []).forEach(function (g) { have[g.name.toLowerCase()] = 1; if (g.email) have[g.email] = 1; if (g.phone) have[g.phone.replace(/\D/g, "")] = 1; });
@@ -1050,7 +1256,7 @@
     save();
     if (added > -1) toast("Added " + plural(added, "guest") + " to your list.");
     if (nav === "next") location.hash = "#setup-" + (n + 1);
-    else if (nav === "review") location.hash = "#setup-9";
+    else if (nav === "review") location.hash = "#setup-" + LAST;
     else { if (added < 0) toast("Saved."); viewStep(n); }
   }
 
@@ -1075,6 +1281,35 @@
     });
   }
 
+  // --- quick add guests --------------------------------------------------------------------------------------
+  function quickAdd() {
+    var nm = document.querySelector("#journey-root [data-qa-name]"), ph = document.querySelector("#journey-root [data-qa-phone]");
+    if (!nm || !nm.value.trim()) { if (nm) nm.focus(); return; }
+    var name = nm.value.trim(), n = addGuests([{ name: name, phone: saPhone(ph.value.trim()), email: "" }]);
+    if (!n) toast(name + " is already on your list.", "error");
+    nm.value = ""; ph.value = ""; nm.focus();
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" || !e.target.matches("#journey-root [data-qa-name], #journey-root [data-qa-phone]")) return;
+    e.preventDefault();
+    var ph = document.querySelector("#journey-root [data-qa-phone]");
+    if (e.target.hasAttribute("data-qa-name") && e.target.value.trim() && !ph.value.trim()) { quickAdd(); return; }
+    if (e.target.hasAttribute("data-qa-name")) { ph.focus(); return; }
+    quickAdd();
+  });
+  document.addEventListener("change", function (e) {
+    if (!e.target.matches("#journey-root [data-guest-file]")) return;
+    var file = e.target.files[0];
+    if (!file) return;
+    readSheetFile(file).then(function (rows) {
+      var people = parseSheet(rows);
+      if (!people.length) { toast("We couldn't find any names in that file. Check it has a Name column, or paste the names instead.", "error"); return; }
+      var n = addGuests(people);
+      toast("Added " + plural(n, "guest") + " from " + file.name + (n < people.length ? ". " + (people.length - n) + " were already on your list." : "."));
+    }).catch(function () { toast("We couldn't read that file. Save it as Excel (.xlsx) or CSV and try again, or paste the names instead.", "error"); });
+    e.target.value = "";
+  });
+
   // --- events ------------------------------------------------------------------------------------------
   document.addEventListener("submit", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
@@ -1082,14 +1317,6 @@
     e.preventDefault();
     var nav = (e.submitter && e.submitter.value) || "next";
     submitStep(form, nav);
-  });
-  document.addEventListener("change", function (e) {
-    if (!e.target.matches("#journey-root [data-plan]")) return;
-    var f = document.querySelector("#journey-root form[data-step]"), ev = cur();
-    if (f) collectStep(f);
-    ev.selected_package = e.target.value; save();
-    toast("Now planning with " + pkg(ev.selected_package).name + ". You can change this until you book.");
-    route(currentHash);
   });
   document.addEventListener("change", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
@@ -1105,7 +1332,7 @@
         .catch(function (err) { toast(err.message, "error"); });
       return;
     }
-    if (t.name === "guest_paste" || t.name === "menu_paste") return;
+    if (t.name === "guest_paste" || t.name === "menu_paste" || t.hasAttribute("data-guest-file") || t.hasAttribute("data-qa-name") || t.hasAttribute("data-qa-phone")) return;
     if (t.hasAttribute("data-gallery")) {
       var ev = cur(), lim = limit(ev, "gallery_photos"), files = Array.prototype.slice.call(t.files);
       collectStep(form);
@@ -1113,20 +1340,13 @@
       if (files.length > room) toast("Your package includes " + lim + " gallery photos.", "error");
       Promise.all(files.slice(0, Math.max(0, room)).map(function (fl) { return shrink(fl, 1200).catch(function () { return null; }); })).then(function (urls) {
         ev.images.gallery = (ev.images.gallery || []).concat(urls.filter(Boolean).map(function (u) { return { url: u, caption: "" }; }));
-        save(); viewStep(8);
+        save(); viewStep(7);
       });
       return;
     }
     var n = +form.getAttribute("data-step");
-    if (n === 3 && t.name === "template") { collectStep(form); save(); viewStep(3); return; }
+    if (n === 2 && t.name === "template") { collectStep(form); save(); viewStep(2); return; }
     collectStep(form); save(); refreshPreview();
-    if (n === 5 && /^fn-\d+-name$/.test(t.name)) {
-      var opts = fnOptions(cur());
-      form.querySelectorAll('select[name$="-function"]').forEach(function (s) {
-        var v = s.value;
-        s.innerHTML = opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === v ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("");
-      });
-    }
   });
   document.addEventListener("input", function (e) {
     var form = e.target.closest("#journey-root form[data-step]");
@@ -1140,9 +1360,48 @@
   });
   document.addEventListener("click", function (e) {
     var t = e.target.closest("#journey-root [data-add-row], #journey-root [data-remove-row], #journey-root [data-device], #journey-root [data-open], #journey-root [data-delete], #journey-root [data-remove-image], #journey-root [data-remove-gallery], #journey-root [data-copy-booking], " +
-      "#journey-root [data-fill], #journey-root [data-surprise], #journey-root [data-sample], #journey-root [data-menu-paste], #journey-root [data-clear-guests], #journey-root [data-continue-link], #journey-root [data-share-preview], #journey-root [data-resend]");
+      "#journey-root [data-fill], #journey-root [data-surprise], #journey-root [data-sample], #journey-root [data-menu-paste], #journey-root [data-clear-guests], #journey-root [data-continue-link], #journey-root [data-share-preview], #journey-root [data-resend], " +
+      "#journey-root [data-qa-add], #journey-root [data-pick-contacts], #journey-root [data-paste-add], #journey-root [data-remove-guest], #journey-root [data-add-day], #journey-root [data-add-item], " +
+      "#journey-root [data-remove-day], #journey-root [data-remove-item], #journey-root [data-pay-again]");
     if (!t) return;
     var form = t.closest("form[data-step]");
+    if (t.hasAttribute("data-qa-add")) { quickAdd(); return; }
+    if (t.hasAttribute("data-pick-contacts")) {
+      navigator.contacts.select(["name", "tel", "email"], { multiple: true }).then(function (list) {
+        var people = list.map(function (c) { return { name: (c.name && c.name[0]) || "", phone: saPhone((c.tel && c.tel[0]) || ""), email: ((c.email && c.email[0]) || "").toLowerCase() }; }).filter(function (x) { return x.name; });
+        if (people.length) toast("Added " + plural(addGuests(people), "guest") + " from your contacts.");
+      }).catch(function () {});
+      return;
+    }
+    if (t.hasAttribute("data-paste-add")) {
+      var pt = form.querySelector("[name=guest_paste]"), ppl = parseGuests(pt.value);
+      if (!ppl.length) { toast("Paste the names first, one per line.", "error"); return; }
+      var n1 = addGuests(ppl); pt.value = "";
+      toast("Added " + plural(n1, "guest") + (n1 < ppl.length ? ". " + (ppl.length - n1) + " were already on your list." : "."));
+      return;
+    }
+    if (t.hasAttribute("data-remove-guest")) {
+      var gl = cur().guest_list; gl.splice(+t.getAttribute("data-remove-guest"), 1); cur().updated = new Date().toISOString(); save();
+      document.querySelector("#journey-root [data-guest-list]").innerHTML = guestListHtml(cur()); return;
+    }
+    if (t.hasAttribute("data-add-day")) {
+      var box = form.querySelector("[data-days]"), d = nextIndex(form, "fn"), dk = nextIndex(form, "si");
+      if (d === 0 && box.querySelectorAll(".day-block").length) d = 1;
+      box.insertAdjacentHTML("beforeend", dayBlock(d, null, progRow(dk, d)));
+      syncDays(); var nm = box.lastElementChild.querySelector('input[name$="-name"]'); if (nm) nm.focus();
+      collectStep(form); save(); refreshPreview(); return;
+    }
+    if (t.hasAttribute("data-add-item")) {
+      var day = t.closest(".day-block"), list2 = day.querySelector("[data-items]");
+      list2.insertAdjacentHTML("beforeend", progRow(nextIndex(form, "si"), day.getAttribute("data-day")));
+      list2.lastElementChild.querySelector("input").focus(); return;
+    }
+    if (t.hasAttribute("data-remove-day")) {
+      if (!window.confirm("Remove this day and everything planned for it?")) return;
+      t.closest(".day-block").remove(); syncDays(); collectStep(form); save(); refreshPreview(); return;
+    }
+    if (t.hasAttribute("data-remove-item")) { t.closest(".prog-row").remove(); collectStep(form); save(); refreshPreview(); return; }
+    if (t.hasAttribute("data-pay-again")) { goPay(cur()); return; }
     if (t.hasAttribute("data-fill")) {
       var vals = JSON.parse(t.getAttribute("data-fill"));
       Object.keys(vals).forEach(function (k) { var el = form.querySelector('[name="' + k + '"]'); if (el) el.value = vals[k]; });
@@ -1156,19 +1415,23 @@
     }
     if (t.hasAttribute("data-sample")) {
       collectStep(form);
-      if (cur().schedule.length && !window.confirm("This replaces your programme items with a sample. Continue?")) return;
-      cur().schedule = sampleProgramme(cur()); save(); viewStep(5); toast("Sample programme added. Change the times and titles to match your day."); return;
+      var sev = cur(), firstId = sev.functions.length ? sev.functions[0].id : "";
+      var mineFirst = sev.schedule.filter(function (x) { return (x.function_id || "") === firstId; });
+      if (mineFirst.length && !window.confirm("This replaces the items for the first day with a sample. Continue?")) return;
+      var sample = sampleProgramme(sev).map(function (x) { x.function_id = firstId; return x; });
+      sev.schedule = sample.concat(sev.schedule.filter(function (x) { return (x.function_id || "") !== firstId; }));
+      save(); viewStep(4); toast("Sample programme added. Change the times and titles to match your day."); return;
     }
     if (t.hasAttribute("data-menu-paste")) {
       var txt = form.querySelector("[name=menu_paste]"), dishes = parseMenu(txt ? txt.value : "");
       if (!dishes.length) { toast("Paste the menu first, one dish per line.", "error"); return; }
       collectStep(form);
-      var mev = cur(); mev.menu.items = mev.menu.items.filter(function (it) { return it.name; }).concat(dishes); save(); viewStep(6);
+      var mev = cur(); mev.menu.items = mev.menu.items.filter(function (it) { return it.name; }).concat(dishes); save(); viewStep(5);
       toast("Added " + plural(dishes.length, "dish", "dishes") + ". Check the courses."); return;
     }
     if (t.hasAttribute("data-clear-guests")) {
       if (!window.confirm("Remove everyone from your guest list?")) return;
-      collectStep(form); cur().guest_list = []; save(); viewStep(4); return;
+      collectStep(form); cur().guest_list = []; save(); viewStep(3); return;
     }
     if (t.hasAttribute("data-continue-link")) {
       var f0 = document.querySelector("#journey-root form[data-step]"); if (f0) { collectStep(f0); save(); }
@@ -1184,13 +1447,13 @@
       });
       return;
     }
-    if (t.hasAttribute("data-resend")) { startSend(cur(), t.getAttribute("data-resend") || "new"); return; }
+    if (t.hasAttribute("data-resend")) { var rev = cur(); startSend(rev, t.getAttribute("data-resend") || "new").then(function () { viewBooked(); toast(rev.booking.status === "sent" ? "Sent." : "Still couldn't send. Please email the details.", rev.booking.status === "sent" ? "" : "error"); }); return; }
     if (t.hasAttribute("data-add-row")) {
       var wrap = t.closest("[data-repeat]"), list = wrap.querySelector("[data-rows]"), prefix = wrap.getAttribute("data-repeat"), max = +wrap.getAttribute("data-max");
       if (list.children.length >= max) { toast("Your package allows " + max + " here.", "error"); return; }
       var next = 0;
       list.querySelectorAll("input,select").forEach(function (i) { var m = new RegExp("^" + prefix + "-(\\d+)-").exec(i.name || ""); if (m) next = Math.max(next, +m[1] + 1); });
-      var ev = cur(), html = prefix === "fn" ? fnRow(next) : prefix === "si" ? siRow(next, null, ev) : prefix === "mi" ? miRow(next) : prefix === "ct" ? ctRow(next) : row3(prefix, next, null, prefix === "rg" ? RG : AC);
+      var html = prefix === "mi" ? miRow(next) : prefix === "ct" ? ctRow(next) : row3(prefix, next, null, prefix === "rg" ? RG : AC);
       list.insertAdjacentHTML("beforeend", html);
       var first = list.lastElementChild.querySelector("input:not([type=hidden]),select"); if (first) first.focus();
       return;
@@ -1209,12 +1472,12 @@
       try { localStorage.removeItem(KEY + "-img-" + id); } catch (er) { /* ignore */ }
       save(); toast("Event deleted."); viewMyEvents(); return;
     }
-    if (t.hasAttribute("data-remove-image")) { if (form) collectStep(form); delete cur().images[t.getAttribute("data-remove-image")]; save(); viewStep(3); return; }
-    if (t.hasAttribute("data-remove-gallery")) { if (form) collectStep(form); cur().images.gallery.splice(+t.getAttribute("data-remove-gallery"), 1); save(); viewStep(8); return; }
+    if (t.hasAttribute("data-remove-image")) { if (form) collectStep(form); delete cur().images[t.getAttribute("data-remove-image")]; save(); viewStep(2); return; }
+    if (t.hasAttribute("data-remove-gallery")) { if (form) collectStep(form); cur().images.gallery.splice(+t.getAttribute("data-remove-gallery"), 1); save(); viewStep(7); return; }
     if (t.hasAttribute("data-copy-booking")) {
       var ta = document.querySelector("[data-booking-text]"), text = ta ? ta.value : "";
       var done = function () { toast("Booking details copied. Paste them into an email to " + D.email + "."); };
-      var fallback = function () { if (ta) { ta.closest("details").open = true; ta.focus(); ta.select(); } try { document.execCommand("copy"); done(); } catch (er) { toast("Select the text below and copy it.", "error"); } };
+      var fallback = function () { if (ta) { ta.hidden = false; var dt = ta.closest("details"); if (dt) dt.open = true; ta.focus(); ta.select(); } try { document.execCommand("copy"); done(); } catch (er) { toast("Select the text below and copy it.", "error"); } };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
     }
   });

@@ -132,9 +132,10 @@
     var start = ev.start_time || "12:00";
     var funcs = (ev.functions || []).filter(function (f) { return f.name; });
     var fnames = {};
-    funcs.forEach(function (f) { fnames[f.id] = f.name; });
+    var fdates = {};
+    funcs.forEach(function (f) { fnames[f.id] = f.name; fdates[f.id] = f.func_date || ""; });
     var schedule = (ev.schedule || []).filter(function (s) { return s.title; }).map(function (s) {
-      return Object.assign({}, s, { function_name: s.function_id ? (fnames[s.function_id] || "") : "" });
+      return Object.assign({}, s, { function_name: s.function_id ? (fnames[s.function_id] || "") : "", function_date: s.function_id ? (fdates[s.function_id] || "") : "" });
     });
     var menus = [];
     var items = ((ev.menu || {}).items || []).filter(function (it) { return it.name; });
@@ -240,11 +241,11 @@
     var groups = [];
     items.forEach(function (it) {
       var name = it.function_name || "";
-      if (!groups.length || groups[groups.length - 1][0] !== name) groups.push([name, []]);
+      if (!groups.length || groups[groups.length - 1][0] !== name) groups.push([name, [], it.function_date || ""]);
       groups[groups.length - 1][1].push(it);
     });
     return groups.map(function (g) {
-      return (g[0] && groups.length > 1 ? '<h3 class="ev-prog__group">' + esc(g[0]) + "</h3>" : "") + '<ol class="ev-prog">' + g[1].map(function (it) {
+      return (g[0] && groups.length > 1 ? '<h3 class="ev-prog__group">' + esc(g[0]) + (g[2] ? " <small>" + esc(fmtDate(g[2], false)) + "</small>" : "") + "</h3>" : "") + '<ol class="ev-prog">' + g[1].map(function (it) {
         return '<li class="ev-prog__item ev-kind-' + esc(it.kind || "other") + '"><time>' + esc(fmtTime(it.item_time)) + "</time><div><h4>" + esc(it.title) +
           "</h4>" + p(it.description || "", "ev-small") + "</div></li>"; }).join("") + "</ol>";
     }).join("");

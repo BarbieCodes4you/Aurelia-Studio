@@ -1,4 +1,4 @@
-# Aurelia — digital event experience platform
+# Aurelia Studio — digital event experience platform
 
 **One event. One platform. One link. Everything organised.**
 
@@ -7,7 +7,7 @@ A complete web application for creating, publishing and managing event websites 
 guest list, seating chart, menus, programme, emails, WhatsApp sharing, reports, payments and an admin
 dashboard.
 
-"Aurelia" is a working name. Change it with `BRAND_NAME` in `.env`.
+The brand is "Aurelia Studio". Change it with `BRAND_NAME` in `.env`.
 
 ## Run it
 
@@ -30,7 +30,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 89 tests
+python3 -m unittest discover -s tests -t .     # 93 tests
 ```
 
 ## The customer journey
@@ -78,7 +78,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 89 tests
+  tests/                      in-process test client and 93 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,

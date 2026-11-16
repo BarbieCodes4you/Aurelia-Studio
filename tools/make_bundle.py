@@ -89,13 +89,14 @@ every button and form works and saves data.
   pricing with full comparison, how it works, FAQ, contact/support form, privacy (POPIA), terms, refunds.
 - **Accounts:** register with just a name and email (password optional), sign in with an emailed link
   or a password, password reset, email confirmation, profile, data download, account deletion.
-- **10-step event set-up wizard:** event details, venue, design (live preview), guests, programme,
-  food and drinks, seating, extras (dress code, registry, contacts, accommodation, gallery), review,
-  package and payment. Saved as a private draft at every step. Built to keep the client's work small:
-  package chosen up front with locked steps marked, steps 4 to 8 optional, ready-made wording and sample
-  programmes per occasion, guest lists and caterers' menus pasted in, seating left until RSVPs arrive,
-  a review checklist, a warning when a package wouldn't show something already filled in, and a
-  shareable draft preview link for family. "We'll set it up for you" request page.
+- **8-step event set-up:** details (names, date, venue), design (live preview), guests, programme,
+  food and drinks, seating, extras (dress code, registry, places to stay, gallery), then review and pay.
+  The create page asks three things: occasion, template and names. Saved as a private draft as you go.
+  Built to keep the client's work small: steps 3 to 7 optional, ready-made wording and sample
+  programmes per occasion, programmes split into days (lobola, traditional and multi-day events),
+  guests added by typing, phone contacts, Excel/CSV upload or pasting (family headings group them),
+  drawn seating layouts with a top table, a package-gap warning on each package, one Pay button per
+  package, and a shareable draft preview link for family. "We'll set it up for you" request page.
 - **Event website generator:** 11 templates with different layouts (Atelier, Folio, Bloom, Heritage,
   Champagne, Linea, Confetti, Pulse, Aurora, Laureate, Cradle), each with palettes, font pairs,
   backgrounds, photos and custom wording. One public link per event, plus a personal link per guest.
@@ -402,7 +403,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 89 tests.
+- `tests/`: an in-process test client and 93 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 

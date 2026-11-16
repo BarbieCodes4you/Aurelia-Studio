@@ -277,7 +277,10 @@ def parse_sheet(rows: list, limit: int = 2000) -> list[dict]:
     out, seen = [], set()
     get = lambda r, k: r[col[k]] if col[k] is not None and col[k] < len(r) else ""
     for r in rows[1:]:
-        name = get(r, "name") or " ".join(x for x in (get(r, "first"), get(r, "last")) if x)
+        name = get(r, "name") or get(r, "first")
+        last = get(r, "last")
+        if last and last.lower() not in name.lower():          # "Name" + "Surname" columns
+            name = f"{name} {last}"
         name = re.sub(r"\s+", " ", name).strip()
         if not name:
             continue
