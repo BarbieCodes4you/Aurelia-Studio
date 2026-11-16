@@ -60,57 +60,56 @@ class EaseTests(unittest.TestCase):
 
     # --- wizard helpers ----------------------------------------------------------------------------------
     def test_guest_paste_in_step_4(self):
-        r = self.client.post(self.base + "/setup/4", {"guest_paste": "Name\tPhone\nThandi Mokoena\t082 123 4567\nSipho Dlamini, sipho@example.com\nThandi Mokoena\t082 123 4567",
+        r = self.client.post(self.base + "/setup/3", {"guest_paste": "Name\tPhone\nThandi Mokoena\t082 123 4567\nSipho Dlamini, sipho@example.com\nThandi Mokoena\t082 123 4567",
                                                       "plus_one_policy": "per_guest", "nav": "stay"})
         self.assertEqual(r.status, 303, r.text[:300])
         names = [g["first_name"] + " " + g["last_name"] for g in db.q("SELECT * FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))]
         self.assertEqual(names, ["Thandi Mokoena", "Sipho Dlamini"])
         # pasting the same people again adds nobody
-        self.client.post(self.base + "/setup/4", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
+        self.client.post(self.base + "/setup/3", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
         self.assertEqual(db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (self.ev["id"],)), 2)
 
     def test_guest_paste_needs_premium(self):
         events.touch(self.ev["id"], selected_package="essential")
-        r = self.client.post(self.base + "/setup/4", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
+        r = self.client.post(self.base + "/setup/3", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
         self.assertEqual(r.status, 200)
         self.assertIn("part of the Premium package", r.text)
 
     def test_sample_programme_and_menu_paste(self):
-        r = self.client.post(self.base + "/setup/5", {"nav": "sample"})
+        r = self.client.post(self.base + "/setup/4", {"nav": "sample"})
         self.assertEqual(r.status, 303)
         items = events.schedule(self.ev["id"])
         self.assertEqual(items[1]["item_time"], "14:00")     # the ceremony starts at the event's start time
+        self.assertEqual(items[1]["kind"], "ceremony")
         self.assertEqual(items[1]["title"], "Ceremony")
-        r = self.client.post(self.base + "/setup/6", {"menu_name": "Reception menu", "menu_paste": "Starters\nSoup\nMain: Lamb - jus\nDessert: Malva pudding",
+        r = self.client.post(self.base + "/setup/5", {"menu_name": "Reception menu", "menu_paste": "Starters\nSoup\nMain: Lamb - jus\nDessert: Malva pudding",
                                                       "nav": "next"})
         self.assertEqual(r.status, 303)
         dishes = db.q("SELECT course, name, description FROM menu_items WHERE event_id = ? ORDER BY sort", (self.ev["id"],))
         self.assertEqual([(d["course"], d["name"]) for d in dishes], [("Starter", "Soup"), ("Main", "Lamb"), ("Dessert", "Malva pudding")])
 
     def test_blank_starter_rows_are_ignored(self):
-        r = self.client.post(self.base + "/setup/5", {"si-0-kind": "other", "si-1-kind": "other", "si-0-function": "", "nav": "next"})
+        r = self.client.post(self.base + "/setup/4", {"si-0-day": "0", "si-1-day": "0", "fn-0-id": "", "nav": "next"})
         self.assertEqual(r.status, 303, r.text[:400])
-        r = self.client.post(self.base + "/setup/6", {"mi-0-course": "Main", "mi-1-course": "Main", "nav": "next"})
+        r = self.client.post(self.base + "/setup/5", {"mi-0-course": "Main", "mi-1-course": "Main", "nav": "next"})
         self.assertEqual(r.status, 303, r.text[:400])
 
     def test_seating_step_can_wait_for_rsvps(self):
-        r = self.client.post(self.base + "/setup/7", {"table_count": "12", "capacity": "10", "nav": "next"})
+        r = self.client.post(self.base + "/setup/6", {"top_table": "head", "guest_tables": "round", "table_count": "12", "capacity": "10", "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertEqual(events.tables(self.ev["id"]), [])
+        self.assertEqual(events.seating_layout(events.by_id(self.ev["id"]))["top"], "head")
 
     def test_package_gaps_shown_on_review_and_package_steps(self):
-        self.client.post(self.base + "/setup/5", {"nav": "sample"})
+        self.client.post(self.base + "/setup/4", {"nav": "sample"})
         self.assertEqual(events.package_gaps(events.by_id(self.ev["id"]), "premium"), [])
         self.assertIn("your programme", events.package_gaps(events.by_id(self.ev["id"]), "essential")[0])
-        self.client.post(self.base + "/plan-package", {"package": "essential", "back": "9"})
-        r = self.client.get(self.base + "/setup/9")
-        self.assertIn("won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
+        r = self.client.get(self.base + "/setup/8")
         self.assertIn("Show someone before you pay", r.text)
-        r = self.client.get(self.base + "/setup/10")
         self.assertIn("Won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
 
     def test_event_name_follows_names(self):
-        r = self.client.post(self.base + "/setup/1", {"name": "", "category": "white-wedding", "hosts": "Lerato & Sipho", "event_date": "2027-03-14", "nav": "stay"})
+        r = self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
         self.assertEqual(r.status, 303)
         self.assertEqual(events.by_id(self.ev["id"])["name"], "Lerato & Sipho's wedding")
 
@@ -175,3 +174,34 @@ class SuggestionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GuestImportTests(unittest.TestCase):
+    def setUp(self):
+        self.app = fresh_app("guestimport")
+        self.owner = make_user()
+        self.client = Client(self.app)
+        session_for(self.client, self.owner)
+        self.ev = make_event(self.owner, package=None)
+        self.base = f"/dashboard/events/{self.ev['uid']}"
+
+    def test_upload_excel_and_family_headings(self):
+        import io
+        import zipfile
+        b = io.BytesIO()
+        with zipfile.ZipFile(b, "w") as z:
+            z.writestr("xl/sharedStrings.xml", '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><si><t>Name</t></si>'
+                       '<si><t>Mobile</t></si><si><t>Family</t></si><si><t>Lerato Dube</t></si><si><t>Dube family</t></si></sst>')
+            z.writestr("xl/worksheets/sheet1.xml", '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+                       '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="s"><v>2</v></c></row>'
+                       '<row r="2"><c r="A2" t="s"><v>3</v></c><c r="B2"><v>831112222</v></c><c r="C2" t="s"><v>4</v></c></row></sheetData></worksheet>')
+        r = self.client.multipart(self.base + "/setup/3", {"guest_paste": "Mokoena family:\nThandi Mokoena, 082 123 4567", "nav": "stay"},
+                                  {"guest_file": ("guests.xlsx", b.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")})
+        self.assertEqual(r.status, 303, r.text[:300])
+        rows = db.q("SELECT first_name, last_name, phone, family_group FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))
+        self.assertEqual([tuple(x) for x in rows], [("Thandi", "Mokoena", "082 123 4567", "Mokoena family"), ("Lerato", "Dube", "0831112222", "Dube family")])
+
+    def test_unreadable_file_explains(self):
+        r = self.client.multipart(self.base + "/setup/3", {"nav": "stay"}, {"guest_file": ("guests.xlsx", b"PK\x03\x04 broken", "application/octet-stream")})
+        self.assertEqual(r.status, 200)
+        self.assertIn("couldn", r.text)

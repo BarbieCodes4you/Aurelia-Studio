@@ -483,7 +483,7 @@ def setup_help(req):
 <div class="notice">{i("info")}<span>We send you a quote for the set-up with your package. Asking costs nothing and doesn't commit you.</span></div></div>
 <div>{form_html}</div></div></div></section>"""
     return page(req, "We'll set it up for you", body, "/help-me-set-up",
-                description="Let the Aurelia team build your event website for you. Free request, quote within one working day.")
+                description=f"Let the {config.BRAND_NAME} team build your event website for you. Free request, quote within one working day.")
 
 
 @router.route("/contact", methods=("GET", "POST"))

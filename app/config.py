@@ -77,7 +77,7 @@ def _secret_key() -> str:
 
 
 # --- Brand ------------------------------------------------------------------------------
-BRAND_NAME = env("BRAND_NAME", "Aurelia")
+BRAND_NAME = env("BRAND_NAME", "Aurelia Studio")
 BRAND_TAGLINE = env("BRAND_TAGLINE", "Affordable luxury. Everything for your event in one place.")
 BRAND_LINE = "One event. One platform. One link. Everything organised."
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "invitesaurelia@gmail.com")

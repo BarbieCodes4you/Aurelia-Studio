@@ -142,7 +142,10 @@ class ManageTests(unittest.TestCase):
         dla = [add_guest(self.ev, n, family_group="Dlamini family") for n in ("Sipho", "Ayanda", "Zola")]  # 3 people
         add_guest(self.ev, "Pending Pat", status="pending")
         r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
-        self.assertIn("created 1 tables", r["message"])
+        self.assertIn("created", r["message"])
+        top = [t for t in r["state"]["tables"] if t["name"] == "Head table"]
+        self.assertEqual(len(top), 1)                         # a wedding gets a head table from the default layout
+        self.assertEqual(top[0]["seated"], 0)                 # and nobody is seated there automatically
         tables = {g["table"] for g in r["state"]["guests"] if g["name"].split()[0] in ("Thabo", "Lindi", "Sipho", "Ayanda", "Zola")}
         self.assertEqual(len(tables), 1)                      # 7 people fit one table of 10
         self.assertEqual(r["warning"], "")

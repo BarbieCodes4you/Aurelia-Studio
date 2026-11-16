@@ -104,7 +104,7 @@ def locked_panel(ev, feature: str, what: str) -> str:
     return (f'<div class="empty">{tile}'
             f'<h2 style="font-size:1.25rem">{esc(what)} is part of the {esc(name)}</h2>'
             f'<p>Upgrade this event to unlock it. You only pay the difference.</p>'
-            f'<a class="btn btn--primary" href="/dashboard/events/{ev["uid"]}/setup/10">See packages</a></div>')
+            f'<a class="btn btn--primary" href="/dashboard/events/{ev["uid"]}/setup/8">See packages</a></div>')
 
 
 def page_head(title: str, intro: str = "", actions: str = "") -> str:

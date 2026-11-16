@@ -25,16 +25,16 @@ def checkout(req, uid):
         raise HTTPError(403, "Only the event owner can make payments.")
     if not req.get("accept"):
         req.flash("error", "Please accept the terms and refund policy to continue.")
-        return redirect(f"/dashboard/events/{uid}/setup/10")
+        return redirect(f"/dashboard/events/{uid}/setup/8")
     if ev["status"] == "suspended":
         req.flash("error", "This event is suspended. Contact support.")
-        return redirect(f"/dashboard/events/{uid}/setup/10")
+        return redirect(f"/dashboard/events/{uid}/setup/8")
     try:
         order = payments.create_order(ev, req.user, req.get("package"))
         target = payments.gateway().checkout(order)
     except payments.PaymentError as e:
         req.flash("error", str(e))
-        return redirect(f"/dashboard/events/{uid}/setup/10")
+        return redirect(f"/dashboard/events/{uid}/setup/8")
     if "redirect" in target:
         return redirect(target["redirect"])
     inputs = "".join(f'<input type="hidden" name="{esc(k)}" value="{esc(v)}">' for k, v in target["fields"])
@@ -85,7 +85,7 @@ def pay_cancel(req, order_uid):
     if order["status"] == "pending" and not db.val("SELECT COUNT(*) FROM payments WHERE order_id = ?", (order["id"],), 0):
         db.run("UPDATE orders SET status = 'cancelled', updated_at = ? WHERE id = ?", (db.now(), order["id"]))
     req.flash("info", "Payment cancelled. Nothing was charged.")
-    return redirect(f"/dashboard/events/{ev['uid']}/setup/10")
+    return redirect(f"/dashboard/events/{ev['uid']}/setup/8")
 
 
 # --- webhooks (no CSRF: authenticated by signature) ---------------------------------------------------
@@ -134,15 +134,15 @@ def payment_return(req, uid, order_uid):
     elif st == "pending":
         inner = f"""<div class="empty" style="border-style:solid" data-poll="/api/orders/{order['uid']}/status"><span class="spinner" aria-hidden="true"></span>
 <h2>Waiting for the payment gateway</h2><p>We publish your website as soon as the gateway confirms payment. This page updates by itself; it usually takes a few seconds.</p>
-<a class="btn btn--ghost" href="/dashboard/events/{uid}/setup/10">Back to packages</a></div>
+<a class="btn btn--ghost" href="/dashboard/events/{uid}/setup/8">Back to packages</a></div>
 <script>(function(){{var box=document.querySelector('[data-poll]'),n=0;function tick(){{fetch(box.getAttribute('data-poll'),{{headers:{{Accept:'application/json'}},credentials:'same-origin'}}).then(function(r){{return r.json();}}).then(function(j){{if(j.status!=='pending'){{location.reload();}}else if(++n<45){{setTimeout(tick,2000);}}else{{box.querySelector('p').textContent='Still waiting. If you completed the payment, it will appear here shortly; you can safely leave this page.';}}}});}}setTimeout(tick,1500);}})();</script>"""
     else:
         inner = f"""<div class="empty" style="border-style:solid"><span class="icon-tile">{i("alert")}</span><h2>Payment {esc(st)}</h2>
 <p>Nothing was charged{f": {esc(order['failure_reason'])}" if order['failure_reason'] and order['failure_reason'] != st else ""}. Your event is saved; you can try again.</p>
-<a class="btn btn--primary" href="/dashboard/events/{uid}/setup/10">Try again</a></div>"""
+<a class="btn btn--primary" href="/dashboard/events/{uid}/setup/8">Try again</a></div>"""
     body = page_head("Payment", f"Order {esc(order['uid'])} · {catalog.money(order['amount_cents'], True)}"
                      + (' · <span class="pill pill--sandbox">sandbox</span>' if order["mode"] == "sandbox" else "")) + inner
-    return organiser_page(req, ev, "Payment", body, "/setup/10")
+    return organiser_page(req, ev, "Payment", body, "/setup/8")
 
 
 # --- billing & receipts ----------------------------------------------------------------------------------

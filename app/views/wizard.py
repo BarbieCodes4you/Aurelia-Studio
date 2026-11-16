@@ -6,6 +6,7 @@ anything; the event stays a private draft until a verified payment (step 10).
 from __future__ import annotations
 
 import json
+import re
 
 from .. import auth, catalog, config, db, events, suggestions
 from ..eventsite import themes
@@ -18,9 +19,8 @@ from .layout import page
 from .shell import organiser_page
 
 STEPS = [
-    (1, "Event details", "calendar"), (2, "Venue", "pin"), (3, "Design", "palette"), (4, "Guests", "users"),
-    (5, "Programme", "list"), (6, "Food and drinks", "dish"), (7, "Seating", "seat"), (8, "Extras", "gift"),
-    (9, "Review", "eye"), (10, "Package", "card"),
+    (1, "Details", "calendar"), (2, "Design", "palette"), (3, "Guests", "users"), (4, "Programme", "list"),
+    (5, "Food and drinks", "dish"), (6, "Seating", "seat"), (7, "Extras", "gift"), (8, "Review and pay", "card"),
 ]
 HOST_LABEL = {"weddings": ("Couple's names", "e.g. Lerato & Sipho"), "baby": ("Parents or honouree", "e.g. Naledi & Tumi"),
               "parties": ("Who are we celebrating?", "e.g. Kagiso's 40th"), "other": ("Host or organisation", "e.g. The Dlamini family")}
@@ -49,23 +49,22 @@ def feature_note(ev, feature: str, what: str) -> str:
 
 
 # --- /create -----------------------------------------------------------------------------------
-def _package_picker(selected: str) -> str:
-    opts = []
-    for p in catalog.packages():
-        opts.append(f'<label class="choice"><input type="radio" name="package" value="{esc(p["code"])}"{" checked" if p["code"] == selected else ""}>'
-                    f'<span>{esc(p["name"])} · {catalog.money(p["price_cents"])}<small>{esc(p["tagline"])}</small></span></label>')
-    return (f'<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">{"".join(opts)}</div>'
-            '<p class="hint" style="margin-top:8px">You can change this any time before you pay. As you set up, we show what each package includes, '
-            'so you don\'t fill in anything your package won\'t show. <a class="text-link" href="/pricing" target="_blank" rel="noopener">Compare packages</a></p>')
-
-
 CREATE_JS = """<script>(function(){var f=document.querySelector('[data-create]');if(!f)return;var grid=f.querySelector('[data-tpl-grid]'),more=f.querySelector('[data-show-all]'),all=false;
 function sync(auto){var c=f.querySelector('input[name=category]:checked');var g=c?c.getAttribute('data-group'):'';var first=null,shown=0;
 grid.querySelectorAll('.choice').forEach(function(l){var ok=!g||l.getAttribute('data-groups').split(' ').indexOf(g)>-1;l.hidden=!(ok||all);if(ok){shown++;if(!first)first=l;}});
 if(more){more.hidden=!g||all;more.textContent='Show all '+grid.querySelectorAll('.choice').length+' templates';}
 var picked=grid.querySelector('input[name=template]:checked');if(auto&&first&&(!picked||picked.closest('.choice').hidden)){first.querySelector('input').checked=true;}}
-f.addEventListener('change',function(e){if(e.target.name==='category')sync(true);});
+f.addEventListener('change',function(e){if(e.target.name==='category'){sync(true);var h=f.querySelector('[data-host-labels]');if(h){var g=e.target.getAttribute('data-group'),L=JSON.parse(h.getAttribute('data-host-labels'))[g];
+if(L){var lab=f.querySelector('label[for='+h.id+']');if(lab)lab.firstChild.textContent=L[0];h.placeholder=L[1];}}}});
 if(more)more.addEventListener('click',function(){all=true;sync(false);});sync(false);})();</script>"""
+
+
+def _new_event(user_id: int, cat, tpl, hosts: str, pkg: str):
+    hosts = (hosts or "").strip()[:120]
+    name = suggestions.auto_event_name(cat["slug"], hosts) or cat["name"]
+    ev = events.create(user_id, cat["slug"], tpl["slug"], name, hosts)
+    events.touch(ev["id"], selected_package=pkg)
+    return ev
 
 
 @router.route("/create", methods=("GET", "POST"))
@@ -89,6 +88,9 @@ def create(req):
             f.error("category", "Choose the type of event.")
         if not tpl or not tpl["active"]:
             f.error("template", "Choose a template. You can change it later.")
+        hosts = f.text("hosts", "Names", max=120)
+        if not hosts:
+            f.error("hosts", "Add the names to show on your website, e.g. Lerato & Sipho.")
         user = req.user
         if not user:
             if req.get("website"):                    # honeypot: bots fill every field
@@ -101,7 +103,7 @@ def create(req):
                 f.error("contact_email", "Too many new accounts from this connection. Try again in an hour.")
             if f.ok:
                 existing = db.one("SELECT * FROM users WHERE email = ?", (cemail,))
-                back = url("/create", category=cat_slug, template=tpl_slug, package=pkg, go="1")
+                back = url("/create", category=cat_slug, template=tpl_slug, package=get("package"), hosts=hosts, go="1")
                 if existing:
                     from .accounts import send_login_link
                     if existing["status"] == "active" and not auth.rate_limited(f"login-link:{cemail}", 5, 3600):
@@ -117,8 +119,7 @@ def create(req):
                     send_verification(user)
                     auth.audit(uid_, "user.register", cemail, via="create")
         if f.ok and user and not check_email:
-            ev = events.create(user["id"], cat["slug"], tpl["slug"], cat["name"])
-            events.touch(ev["id"], selected_package=pkg)
+            ev = _new_event(user["id"], cat, tpl, hosts, pkg)
             auth.audit(user["id"], "event.create", ev["uid"], template=tpl["slug"])
             req.flash("success", "Your event is saved as a private draft. Let's add the details.")
             resp = redirect(step_url(ev, 1))
@@ -128,8 +129,7 @@ def create(req):
             return resp
     elif req.user and get("go") == "1" and cat and tpl:
         # back from an emailed sign-in link: create the event the visitor had chosen
-        ev = events.create(req.user["id"], cat["slug"], tpl["slug"], cat["name"])
-        events.touch(ev["id"], selected_package=pkg)
+        ev = _new_event(req.user["id"], cat, tpl, get("hosts"), pkg)
         auth.audit(req.user["id"], "event.create", ev["uid"], template=tpl["slug"])
         req.flash("success", "You're signed in and your event is saved as a private draft. Let's add the details.")
         return redirect(step_url(ev, 1))
@@ -137,7 +137,7 @@ def create(req):
         body = f"""<section class="section" style="padding-top:calc(var(--header-h) + 48px)"><div class="container container--narrow"><div class="glass glass--strong panel" style="display:grid;gap:14px">
 <span class="icon-tile icon-tile--soft">{i("mail")}</span><h1 style="font-size:clamp(1.8rem,1.3rem + 2vw,2.6rem)">You already have an account</h1>
 <p class="lead" style="font-size:1.0625rem">We've emailed a sign-in link to <b>{esc(check_email)}</b>. Open it on this device and you'll come straight back here with your choices kept. The link expires in 2 hours.</p>
-<p class="small muted">Rather use your password? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg, go='1')))}">Log in</a>.</p></div></div></section>"""
+<p class="small muted">Rather use your password? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=get('package'), hosts=get('hosts'), go='1')))}">Log in</a>.</p></div></div></section>"""
         return page(req, "Check your email", body, "/create", noindex=True)
     # occasion picker
     cats_html = []
@@ -157,7 +157,7 @@ def create(req):
             f'<a class="text-link tiny" href="/templates/{esc(t["slug"])}" target="_blank" rel="noopener" style="position:relative;z-index:2">Preview</a></span></label>')
     about = ""
     if not req.user:
-        about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. About you</h2>
+        about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. Where should we save it?</h2>
 <p class="muted small" style="margin-bottom:16px">So your draft is saved and you can come back to it on any device. No password needed: we email you a sign-in link whenever you want one. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
 <div class="form-row form-row--2">{field("contact_name", "Your name", f.data.get("contact_name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("contact_email", "Your email", f.data.get("contact_email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
@@ -165,7 +165,7 @@ def create(req):
 {forms.honeypot()}</div>"""
     body = f"""<section class="page-hero"><div class="grid-texture"></div><div class="container">
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Create your event</span></nav>
-<h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Pick the occasion, a starting template and a package. Nothing is published or charged until you're ready.</p>
+<h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Three quick questions, then we build your website as you go. Nothing is published or charged until you're ready.</p>
 <p class="small" style="margin-top:14px">Rather have us do it? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>.</p></div></section>
 <section class="section"><div class="container"><form class="form" method="post" novalidate data-create>{csrf(req)}
 {errors_summary(f.errors)}
@@ -173,7 +173,8 @@ def create(req):
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step.</p>
 <div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
 <button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>
-<div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Which package are you thinking of?</h2>{_package_picker(pkg)}</div>
+<div class="box" data-field="hosts"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Whose celebration is it?</h2>
+{field("hosts", HOST_LABEL.get(group or "weddings", ("Names", ""))[0], f.data.get("hosts") or get("hosts"), required=True, errors=f.errors, attrs={"placeholder": HOST_LABEL.get(group or "weddings", ("", "e.g. Lerato & Sipho"))[1], "data-host-labels": esc(json.dumps({k: list(v) for k, v in HOST_LABEL.items()}))}, hint="Shown large on your website and used for your link. You can change it later.")}</div>
 {about}
 <div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up {i("arrow", "i--arrow")}</button></div></form></div></section>
 {CREATE_JS}"""
@@ -181,8 +182,9 @@ def create(req):
 
 
 # --- wizard shell -----------------------------------------------------------------------------
-OPTIONAL_STEPS = {4, 5, 6, 7, 8}
-STEP_FEATURE = {5: "programme", 6: "menu", 7: "seating"}
+LAST_STEP = 8
+OPTIONAL_STEPS = {3, 4, 5, 6, 7}
+STEP_FEATURE = {4: "programme", 5: "menu", 6: "seating"}
 
 
 def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctype: str = "") -> str:
@@ -195,14 +197,13 @@ def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctyp
     stepper = "".join(
         f'<li><a href="{step_url(ev, s)}" class="{"is-done" if s in done else ""}"{" aria-current=step" if s == n else ""} data-step-link>'
         f'<span class="n">{"✓" if s in done and s != n else s}</span>{esc(label)}{badge(s)}</a></li>' for s, label, _ in STEPS)
-    pct = round(100 * len(done & set(range(1, 11))) / 10)
+    pct = round(100 * len(done & set(range(1, LAST_STEP + 1))) / LAST_STEP)
     title, icon = STEPS[n - 1][1], STEPS[n - 1][2]
     skip = (f'<a class="btn btn--ghost" href="{step_url(ev, n + 1)}" data-step-link>Skip for now</a>' if n in OPTIONAL_STEPS else "")
-    to_review = (f'<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' if 3 <= n <= 7 else "")
+    to_review = (f'<button class="btn btn--ghost" type="submit" name="nav" value="review">Save and go to review</button>' if 2 <= n <= 6 else "")
     nav = f"""<div class="wizard-actions">{f'<a class="btn btn--ghost" href="{step_url(ev, n - 1)}">{i("arrow-left")} Back</a>' if n > 1 else '<span></span>'}
-<div class="btn-row">{to_review}{skip}<button class="btn btn--secondary" type="submit" name="nav" value="stay">Save draft</button>
-<button class="btn btn--primary" type="submit" name="nav" value="next">Save and continue {i("arrow", "i--arrow")}</button></div></div>"""
-    if n == 10:   # step 10 holds its own checkout form; forms can't be nested
+<div class="btn-row">{to_review}{skip}<button class="btn btn--primary" type="submit" name="nav" value="next">Save and continue {i("arrow", "i--arrow")}</button></div></div>"""
+    if n == LAST_STEP:   # the last step holds its own checkout form; forms can't be nested
         form = inner
     else:
         form = (f'<form class="form" method="post" novalidate data-wizard-form{(" enctype=" + chr(34) + enctype + chr(34)) if enctype else ""}>'
@@ -216,40 +217,20 @@ def wizard_frame(req, ev, n: int, inner: str, wide_preview: bool = False, enctyp
         content = f'<div class="wizard-split"><div class="glass wizard-card glass--strong">{_card_head(n, title, icon)}{form}</div>{preview}</div>'
     else:
         content = f'<div class="glass glass--strong wizard-card">{_card_head(n, title, icon)}{form}</div>'
-    plan = ""
-    if not ev["paid_package"]:
-        opts = "".join(f'<option value="{esc(p["code"])}"{" selected" if p["code"] == catalog.planning_package(ev) else ""}>{esc(p["name"])} · {catalog.money(p["price_cents"])}</option>'
-                       for p in catalog.packages())
-        plan = (f'<form class="plan-package" method="post" action="/dashboard/events/{ev["uid"]}/plan-package" data-plan-package>{csrf(req)}'
-                f'<input type="hidden" name="back" value="{n}"><label class="tiny muted" for="plan-pkg">Planning with</label>'
-                f'<select class="select select--sm" id="plan-pkg" name="package">{opts}</select>'
-                f'<button class="btn btn--ghost btn--sm" type="submit" data-plan-submit>Change</button></form>')
     body = f"""<div class="page-head"><div><h1>Set up {esc(ev['name'])}</h1><p>Private draft. Saved as you go; nothing is shared until you publish.</p></div>
-<div class="btn-row">{plan}<a class="btn btn--secondary btn--sm" href="/dashboard/events/{ev['uid']}/preview" target="_blank" rel="noopener">{i("eye")} Full preview</a></div></div>
-<div class="wizard-progress"><span>{pct}% complete</span><div class="progress"><span style="width:{pct}%"></span></div><span class="mono">Step {n} of 10</span></div>
+<a class="btn btn--secondary btn--sm" href="/dashboard/events/{ev['uid']}/preview" target="_blank" rel="noopener">{i("eye")} Full preview</a></div>
+<div class="wizard-progress"><span>{pct}% complete</span><div class="progress"><span style="width:{pct}%"></span></div><span class="mono">Step {n} of {LAST_STEP}</span></div>
 <div class="wizard"><nav aria-label="Set-up steps"><ol class="stepper">{stepper}</ol></nav><div>{content}</div></div>"""
     return organiser_page(req, ev, f"Set-up step {n}", body, f"/setup/{n}", extra_scripts=WIZARD_JS)
 
 
-@router.post("/dashboard/events/<uid>/plan-package")
-def plan_package(req, uid):
-    ev = events.parse(auth.event_for(req, uid))
-    code = req.get("package")
-    back = req.get("back")
-    n = int(back) if back.isdigit() and 1 <= int(back) <= 10 else 1
-    if catalog.package(code) and not ev["paid_package"]:
-        events.touch(ev["id"], selected_package=code)
-        req.flash("success", f"Now planning with {catalog.package(code)['name']}. You can change this until you pay.")
-    return redirect(step_url(ev, n))
-
-
 def _card_head(n, title, icon):
     intros = {
-        1: "The essentials guests see first.", 2: "Where it's happening and how to get there.",
-        3: "Make the template yours. Changes show in the preview as you go.", 4: "Your guest list and how replies work.",
-        5: "Ceremonies, receptions and the running order.", 6: "Menus, meal choices and dietary needs.",
-        7: "Decide when to plan your tables.", 8: "Dress code, gifts, contacts, accommodation and photos.",
-        9: "Check everything before you choose a package.", 10: "Choose a package. Your website goes live once payment is confirmed.",
+        1: "Who, when and where. The essentials guests see first.", 2: "Make the template yours. Changes show in the preview as you go.",
+        3: "Who's coming. Add them however suits you, or skip and let guests reply through your link.",
+        4: "The running order of your day, or of each day.", 5: "Menus, meal choices and dietary needs.",
+        6: "Choose your table layout. You seat guests once replies are in.", 7: "Dress code, gifts, places to stay and photos.",
+        8: "Check what's left, choose your package and pay. Your website goes live as soon as payment is confirmed.",
     }
     opt = ('<p class="small muted" style="margin-top:6px">Optional. Skip it now and add it any time, before or after your website is live.</p>'
            if n in OPTIONAL_STEPS else "")
@@ -283,7 +264,9 @@ fetch(location.pathname,{method:'POST',body:fd,credentials:'same-origin',headers
 def wizard(req, uid, n):
     row = auth.event_for(req, uid)
     ev = events.parse(row)
-    if n < 1 or n > 10:
+    if n in (9, 10):                    # old links, from when set-up had 10 steps
+        return redirect(step_url(ev, LAST_STEP))
+    if n < 1 or n > LAST_STEP:
         raise HTTPError(404)
     handler = STEP_HANDLERS[n]
     result = handler(req, ev)
@@ -298,64 +281,36 @@ def finish_step(req, ev, n: int, f: Form):
     done = set(ev["wizard_done"] or [])
     if f.ok:
         done.add(n)
-        events.touch(ev["id"], wizard_done=db.dumps(sorted(done)), wizard_step=max(ev["wizard_step"], min(n + 1, 10)))
+        events.touch(ev["id"], wizard_done=db.dumps(sorted(done)), wizard_step=max(ev["wizard_step"], min(n + 1, LAST_STEP)))
         if req.is_htmx:
             return json_response({"ok": True})
         if req.get("nav") == "next":
             return redirect(step_url(ev, n + 1))
         if req.get("nav") == "review":
-            return redirect(step_url(ev, 9))
+            return redirect(step_url(ev, LAST_STEP))
         req.flash("success", "Saved.")
         return redirect(step_url(ev, n))
     return None
 
 
-# --- step 1: event details ----------------------------------------------------------------------
-def step1(req, ev):
+# --- step 1: details (names, date, venue) -------------------------------------------------------
+def step_details(req, ev):
     f = Form(req)
     g = group_of(ev)
     if req.method == "POST":
-        name = f.text("name", "Event name", max=120)
-        cat = f.choice("category", [c["slug"] for c in catalog.categories()], "event types", required=True)
+        cat = f.choice("category", [c["slug"] for c in catalog.categories()], "occasions", default=ev["category"])
+        c_row = catalog.category(cat)
+        g = c_row["group_slug"] if c_row else g
         hosts = f.text("hosts", HOST_LABEL.get(g, ("Hosts",))[0], required=True, max=120)
-        name = name or suggestions.auto_event_name(cat or ev["category"], hosts) or catalog.category_name(cat or ev["category"])
+        name = f.text("name", "Event name", max=120) or suggestions.auto_event_name(cat, hosts) or catalog.category_name(cat)
+        if name == ev["name"] and ev["name"] in (suggestions.auto_event_name(ev["category"], ev["hosts"]), ev["hosts"], catalog.category_name(ev["category"])):
+            name = suggestions.auto_event_name(cat, hosts) or name           # keep the automatic name in step with the names
         desc = f.text("description", "Description", max=1500)
         d = f.date("event_date", "Event date", required=True, future=not ev["paid_package"])
         st = f.time("start_time", "Start time")
         et = f.time("end_time", "End time")
         if st and et and et <= st and not req.get("ends_next_day"):
             f.error("end_time", "End time must be after the start time (tick “ends after midnight” if it does).")
-        if f.ok:
-            events.touch(ev["id"], name=name, category=cat, hosts=hosts, description=desc, event_date=d,
-                         start_time=st, end_time=et)
-            if not ev["published_at"] and hosts and ev["slug"].startswith(forms.slugify(ev["name"], 50)):
-                events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
-            events.keep_online_past_event(events.by_id(ev["id"]))
-        r = finish_step(req, events.by_id(ev["id"]), 1, f)
-        if r:
-            return r
-    d = {**ev, **f.data}
-    label, ph = HOST_LABEL.get(g, ("Hosts", ""))
-    cats = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
-    auto = "1" if (not d.get("name") or d.get("name") in (d.get("hosts"), catalog.category_name(d.get("category")),
-                                                           suggestions.auto_event_name(d.get("category"), d.get("hosts")))) else "0"
-    nouns = esc(json.dumps(suggestions.NAME_NOUN))
-    inner = f"""{errors_summary(f.errors)}
-{field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph, "autofocus": not d.get("hosts")}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
-<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), errors=f.errors, attrs={"data-autoname": auto, "data-nouns": nouns}, hint="Used in your invitation messages, e.g. “You're invited to Lerato & Sipho's wedding”. Filled in from the names above.")}
-{select("category", "Type of event", cats, d.get("category"), required=True, errors=f.errors)}</div>
-{field("description", "A short welcome or description", d.get("description"), type="textarea", errors=f.errors, hint="Optional. One or two sentences guests read first.")}
-<div class="form-row form-row--3">{field("event_date", "Date", d.get("event_date"), type="date", required=True, errors=f.errors)}
-{field("start_time", "Starts", d.get("start_time"), type="time", errors=f.errors)}{field("end_time", "Ends", d.get("end_time"), type="time", errors=f.errors)}</div>
-{check("ends_next_day", "Ends after midnight", bool(req.get("ends_next_day")))}
-<p class="tiny muted">Several ceremonies or days? Add each one in the Programme step.</p>"""
-    return wizard_frame(req, ev, 1, inner)
-
-
-# --- step 2: venue -------------------------------------------------------------------------------
-def step2(req, ev):
-    f = Form(req)
-    if req.method == "POST":
         venue = {
             "name": f.text("venue_name", "Venue name", required=True, max=160),
             "address": f.text("address", "Address", required=True, max=300),
@@ -365,23 +320,39 @@ def step2(req, ev):
             "accommodation": f.text("accommodation", "Accommodation", max=2000),
         }
         if f.ok:
+            events.touch(ev["id"], name=name, category=cat, hosts=hosts, description=desc, event_date=d, start_time=st, end_time=et)
             events.save_json(ev["id"], "venue", venue)
-        r = finish_step(req, ev, 2, f)
+            if not ev["published_at"] and hosts and not ev["slug"].startswith(forms.slugify(hosts, 50)):
+                events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
+            events.keep_online_past_event(events.by_id(ev["id"]))
+        r = finish_step(req, events.by_id(ev["id"]), 1, f)
         if r:
             return r
-    v = {**(ev["venue"] or {}), **{k.replace("venue_name", "name"): val for k, val in f.data.items()}}
+    d = {**ev, **f.data}
+    v = {**(ev["venue"] or {}), **{k.replace("venue_name", "name"): val for k, val in f.data.items() if k in ("venue_name", "address", "map_url", "parking", "directions", "accommodation")}}
+    label, ph = HOST_LABEL.get(g, ("Hosts", ""))
+    cats = [(c["slug"], f'{catalog.GROUPS[c["group_slug"]]["name"]}: {c["name"]}') for c in catalog.categories()]
+    more_open = " open" if any(v.get(k) for k in ("parking", "directions", "accommodation")) or d.get("description") or (f.errors.keys() & {"map_url"}) else ""
     inner = f"""{errors_summary(f.errors)}
-<div class="form-row form-row--2">{field("venue_name", "Venue name", v.get("name"), required=True, errors=f.errors)}
-{field("address", "Street address", v.get("address"), required=True, errors=f.errors, hint="Guests get a Google Maps link built from this.")}</div>
-{field("map_url", "Google Maps link (optional)", v.get("map_url"), type="url", errors=f.errors, hint="Paste a share link from Google Maps for an exact pin, e.g. a farm gate or a specific entrance.")}
-{field("parking", "Parking", v.get("parking"), type="textarea", errors=f.errors, attrs={"rows": 3}, hint="Where to park, security, valet, drop-off.")}
-{field("directions", "Directions", v.get("directions"), type="textarea", errors=f.errors, attrs={"rows": 3}, hint="Landmarks, gate codes, the last turn that GPS gets wrong.")}
-{field("accommodation", "Accommodation nearby", v.get("accommodation"), type="textarea", errors=f.errors, attrs={"rows": 3}, hint="Optional. Add specific places with links in the Extras step.")}"""
-    return wizard_frame(req, ev, 2, inner)
+{field("hosts", label, d.get("hosts"), required=True, errors=f.errors, attrs={"placeholder": ph, "autofocus": not d.get("hosts")}, hint="Shown large on your website and used for your link, e.g. /events/lerato-and-sipho.")}
+<div class="form-row form-row--3">{field("event_date", "Date", d.get("event_date"), type="date", required=True, errors=f.errors)}
+{field("start_time", "Starts", d.get("start_time"), type="time", errors=f.errors)}{field("end_time", "Ends", d.get("end_time"), type="time", errors=f.errors)}</div>
+{check("ends_next_day", "Ends after midnight", bool(req.get("ends_next_day")))}
+<div class="form-row form-row--2">{field("venue_name", "Venue", v.get("name"), required=True, errors=f.errors, attrs={"placeholder": "Oakhaven Wine Estate"})}
+{field("address", "Address", v.get("address"), required=True, errors=f.errors, hint="Guests get directions and a map from this.")}</div>
+<p class="tiny muted">More than one day, or a second venue? Add each day in the Programme step.</p>
+<details class="box" style="padding:14px 16px"{more_open}><summary style="cursor:pointer;font-weight:500">More details (optional): map pin, parking, directions, a short welcome</summary><div style="display:grid;gap:16px;margin-top:16px">
+{field("map_url", "Google Maps link", v.get("map_url"), type="url", errors=f.errors, hint="For an exact pin, e.g. a farm gate. Paste the share link from Google Maps.")}
+{field("parking", "Parking", v.get("parking"), type="textarea", errors=f.errors, attrs={"rows": 2}, hint="Where to park, security, drop-off.")}
+{field("directions", "Directions", v.get("directions"), type="textarea", errors=f.errors, attrs={"rows": 2}, hint="Landmarks, gate codes, the last turn that GPS gets wrong.")}
+{field("description", "A short welcome", d.get("description"), type="textarea", errors=f.errors, attrs={"rows": 2}, hint="One or two sentences guests read first.")}
+<div class="form-row form-row--2">{field("name", "Event name", d.get("name"), errors=f.errors, hint="Used in invitation messages. Filled in from your names.")}
+{select("category", "Occasion", cats, d.get("category"), errors=f.errors)}</div></div></details>"""
+    return wizard_frame(req, ev, 1, inner)
 
 
-# --- step 3: design ------------------------------------------------------------------------------
-def step3(req, ev):
+# --- step 2: design ------------------------------------------------------------------------------
+def step_design(req, ev):
     f = Form(req)
     g = group_of(ev)
     upload_errors = []
@@ -430,8 +401,8 @@ def step3(req, ev):
             events.touch(ev["id"], template=tpl, design=db.dumps(design))
         if rm.isdigit() and f.ok:
             req.flash("success", "Image removed.")
-            return redirect(step_url(ev, 3))
-        r = finish_step(req, ev, 3, f)
+            return redirect(step_url(ev, 2))
+        r = finish_step(req, ev, 2, f)
         if r:
             return r
         ev = events.get(ev["uid"])
@@ -491,12 +462,26 @@ def step3(req, ev):
 {field("w_invitation", "Invitation wording", w.get("invitation", ""), type="textarea", attrs={"rows": 4, "placeholder": "Request the pleasure of your company as they celebrate their marriage."})}
 <div class="form-row form-row--2">{field("w_rsvp_note", "RSVP note", w.get("rsvp_note", ""), attrs={"placeholder": "Kindly reply by 1 February."})}
 {field("w_closing", "Closing line", w.get("closing", ""), attrs={"placeholder": "We can't wait to celebrate with you."})}</div></div></fieldset>"""
-    html = wizard_frame(req, ev, 3, inner, wide_preview=True, enctype="multipart/form-data")
+    html = wizard_frame(req, ev, 2, inner, wide_preview=True, enctype="multipart/form-data")
     return html.replace("data-wizard-form", "data-wizard-form data-autosave", 1)
 
 
-# --- step 4: guests --------------------------------------------------------------------------------
-def step4(req, ev):
+# --- step 3: guests --------------------------------------------------------------------------------
+GUESTS_JS = """<script>(function(){var box=document.querySelector('[data-guest-add]');if(!box)return;var ta=box.querySelector('textarea[name=guest_paste]'),
+nm=box.querySelector('[data-qa-name]'),ph=box.querySelector('[data-qa-phone]'),cnt=box.querySelector('[data-pending-count]'),det=box.querySelector('[data-paste-box]');
+function count(){var n=ta.value.split(/\\n/).filter(function(l){l=l.trim();return l&&!/:$/.test(l);}).length;cnt.textContent=n?'('+n+' ready to add when you continue)':'';}
+function add(line){ta.value=(ta.value.trim()?ta.value.replace(/\\s+$/,'')+'\\n':'')+line;count();ta.dispatchEvent(new Event('input',{bubbles:true}));}
+function quick(){var n=nm.value.trim();if(!n)return;add(n+(ph.value.trim()?', '+ph.value.trim():''));nm.value='';ph.value='';nm.focus();if(window.Aurelia)Aurelia.toast(n+' added. Saved when you continue.');}
+box.querySelector('[data-qa-add]').addEventListener('click',quick);
+[nm,ph].forEach(function(el){el.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();if(el===nm&&!ph.value&&nm.value.trim())quick();else if(el===ph)quick();else ph.focus();}});});
+ta.addEventListener('input',count);count();
+var pick=box.querySelector('[data-pick-contacts]');if('contacts' in navigator&&'ContactsManager' in window){pick.hidden=false;pick.addEventListener('click',function(){
+navigator.contacts.select(['name','tel','email'],{multiple:true}).then(function(list){list.forEach(function(c){var n=(c.name&&c.name[0])||'';if(!n)return;
+add(n+(c.tel&&c.tel[0]?', '+c.tel[0]:'')+(c.email&&c.email[0]?', '+c.email[0]:''));});if(list.length){det.open=true;if(window.Aurelia)Aurelia.toast(list.length+' contacts added. Saved when you continue.');}}).catch(function(){});});}
+var file=box.querySelector('[data-guest-file]'),fname=box.querySelector('[data-guest-file-name]');file.addEventListener('change',function(){if(file.files[0]){fname.hidden=false;fname.textContent=file.files[0].name+' will be read when you continue.';}});})();</script>"""
+
+
+def step_guests(req, ev):
     f = Form(req)
     gs = dict(ev["guest_settings"] or {})
     if req.method == "POST":
@@ -518,6 +503,15 @@ def step4(req, ev):
         if gs["rsvp_deadline"] and ev["event_date"] and gs["rsvp_deadline"] > ev["event_date"]:
             f.error("rsvp_deadline", "The RSVP deadline should be on or before the event date.")
         pasted = suggestions.parse_guest_list(req.get("guest_paste"))
+        up = req.file("guest_file")
+        if up is not None and up.data:
+            if up.size > 3 * 1024 * 1024:
+                f.error("guest_paste", "That file is bigger than 3 MB. Save just the guest list as Excel or CSV and try again.")
+            else:
+                try:
+                    pasted += suggestions.parse_sheet(suggestions.read_sheet_file(up.data, up.filename or ""))
+                except Exception:          # a damaged or unusual file: say so plainly
+                    f.error("guest_paste", "We couldn't read that file. Save it as Excel (.xlsx) or CSV and try again, or paste the names instead.")
         if pasted and not catalog.has_feature(ev, "guest_management"):
             f.error("guest_paste", "Adding a guest list is part of the Premium package. Change the package you're planning with, or let guests reply through your one link.")
         if f.ok:
@@ -525,7 +519,7 @@ def step4(req, ev):
             if pasted:
                 added = events.add_pasted_guests(ev, pasted)
                 req.flash("success", f"Added {added} guest{'s' if added != 1 else ''} to your list." + (f" {len(pasted) - added} were already on it." if added < len(pasted) else ""))
-        r = finish_step(req, ev, 4, f)
+        r = finish_step(req, ev, 3, f)
         if r:
             return r
     feats = catalog.category_features(ev["category"])
@@ -539,10 +533,19 @@ def step4(req, ev):
     gcat_note = feature_note(ev, "guest_categories", "Using several guest categories")
     have = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0)
     if catalog.has_feature(ev, "guest_management"):
-        listed = (f'<p class="small" style="margin-bottom:10px"><b>{have} guest{"s" if have != 1 else ""}</b> on your list. '
+        listed = (f'<p class="small"><b>{have} guest{"s" if have != 1 else ""}</b> on your list. '
                   f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/guests">Open the guest list</a> to edit them, mark VIPs or add families.</p>') if have else ""
-        paste = f"""<fieldset><legend>Your guest list</legend>{listed}
-{field("guest_paste", "Paste names (optional)", req.get("guest_paste") if f.errors else "", type="textarea", errors=f.errors, attrs={"rows": 6, "placeholder": "Thandi Mokoena, 082 123 4567" + chr(10) + "Sipho Dlamini, sipho@example.com" + chr(10) + "Gogo Nomsa"}, hint="One guest per line. Add a mobile number or email if you have it. You can copy a column straight from Excel, Google Sheets or your phone's notes. Each guest gets a personal RSVP link.")}</fieldset>"""
+        paste = f"""<fieldset class="guest-add" data-guest-add><legend>Your guest list</legend>{listed}
+<div class="quick-add"><input class="input" data-qa-name placeholder="Guest's name" aria-label="Guest's name" autocomplete="off">
+<input class="input" data-qa-phone type="tel" placeholder="Mobile (optional)" aria-label="Guest's mobile" autocomplete="off">
+<button class="btn btn--secondary" type="button" data-qa-add>{i("plus")} Add</button></div>
+<p class="tiny muted" style="margin-top:-4px">Type a name, press Enter, type the next one. Couples can go on one line, e.g. “Thabo & Lindi Mokoena”.</p>
+<div class="btn-row"><button class="btn btn--ghost btn--sm" type="button" data-pick-contacts hidden>{i("phone")} Choose from my phone contacts</button>
+<label class="btn btn--ghost btn--sm" style="position:relative">{i("upload")} Upload Excel or CSV<input type="file" name="guest_file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;inset:0;opacity:0;cursor:pointer" data-guest-file></label></div>
+<p class="small" data-guest-file-name hidden></p>
+<details data-paste-box{" open" if req.get("guest_paste") or f.errors.get("guest_paste") else ""}><summary class="small" style="cursor:pointer;font-weight:500">Paste a list <span class="muted" data-pending-count></span></summary>
+{field("guest_paste", "Names to add", req.get("guest_paste") if f.errors else "", type="textarea", errors=f.errors, attrs={"rows": 7, "placeholder": "Mokoena family:" + chr(10) + "Thandi Mokoena, 082 123 4567" + chr(10) + "Gogo Nomsa" + chr(10) + "Friends:" + chr(10) + "Sipho Dlamini, sipho@example.com"}, hint="One guest per line, with a mobile or email if you have it. A line ending in a colon, like “Mokoena family:”, groups the names below it. Copying a column from Excel, Google Sheets or your phone's notes works too.")}</details>
+<p class="small muted">No list yet? That's fine. Skip this step: when guests reply through your link, they're added to your list for you.</p></fieldset>"""
     else:
         paste = (f'<div class="notice">{i("users")}<span>With Essential, guests reply through your one link and appear in your dashboard as they do. '
                  f'Keeping your own guest list, with a personal link for each guest, is part of Premium.</span></div>')
@@ -564,10 +567,10 @@ def step4(req, ev):
 <fieldset><legend>Children</legend>{check("children_allowed", "Children are welcome", bool(gs.get("children_allowed")), attrs={"data-reveals": "#kids"})}
 <div id="kids"{"" if gs.get("children_allowed") else " hidden"}>{field("max_children", "Children per invitation (maximum)", gs.get("max_children", 0), type="number", attrs={"min": 0, "max": 10}, errors=f.errors)}</div></fieldset>
 </div></details>"""
-    return wizard_frame(req, ev, 4, inner)
+    return wizard_frame(req, ev, 3, inner + GUESTS_JS, enctype="multipart/form-data")
 
 
-# --- step 5: programme ------------------------------------------------------------------------------
+# --- step 4: programme ------------------------------------------------------------------------------
 def _repeat(prefix: str, cols: str, rows_html: list, template_html: str, add_label: str, max_rows: int = 200) -> str:
     return (f'<div class="repeat" data-repeat="{prefix}" data-next="{len(rows_html) + 1}" data-max="{max_rows}" style="--cols:{cols}">'
             f'<div class="repeat" data-rows>{"".join(rows_html)}</div><template>{template_html}</template>'
@@ -588,93 +591,153 @@ def _sel(name, options, value, label):
     return f'<div class="field"><label class="tiny muted" for="{name}">{esc(label)}</label><select class="select select--sm" id="{name}" name="{name}">{o}</select></div>'
 
 
-def step5(req, ev):
+def _indexed(req, prefix: str, fields: list) -> list:
+    """Repeated rows posted as prefix-<i>-<field>, with their index kept (unlike req.rows)."""
+    pat = re.compile(rf"^{re.escape(prefix)}-(\d+)-")
+    idx = sorted({int(m.group(1)) for k in req.form for m in [pat.match(k)] if m})
+    return [(n, {f: req.get(f"{prefix}-{n}-{f}") for f in fields}) for n in idx]
+
+
+def _prog_row(k, d, it=None) -> str:
+    it = it or {}
+    g = lambda key: (it.get(key) if isinstance(it, dict) else it[key]) or ""
+    return (f'<div class="prog-row"><input type="hidden" name="si-{k}-day" value="{d}">'
+            + _in(f"si-{k}-time", g("item_time"), "time", label="Time") + _in(f"si-{k}-title", g("title"), ph="Ceremony", label="What happens")
+            + _in(f"si-{k}-description", g("description"), ph="Optional detail", label="Detail")
+            + f'<button class="btn btn--ghost btn--icon" type="button" data-remove-item aria-label="Remove item">{i("trash")}</button></div>')
+
+
+def _day_block(d, fn, rows: list, single_hint: bool) -> str:
+    fn = fn or {}
+    g = lambda key: (fn.get(key) if isinstance(fn, dict) else fn[key]) or ""
+    has_place = bool(g("venue_name") or g("address") or g("map_url"))
+    return f"""<section class="day-block" data-day="{d}"><input type="hidden" name="fn-{d}-id" value="{g("id")}">
+<div class="day-head"><div class="row row--between"><h3 data-day-title>Day</h3>
+<button class="btn btn--ghost btn--sm" type="button" data-remove-day>{i("trash")} Remove day</button></div>
+<div class="form-row form-row--4">{_in(f"fn-{d}-name", g("name"), ph="e.g. Negotiations, or Ceremony", label="What's on this day")}{_in(f"fn-{d}-date", g("func_date"), "date", label="Date")}
+{_in(f"fn-{d}-start", g("start_time"), "time", label="Starts")}{_in(f"fn-{d}-end", g("end_time"), "time", label="Ends")}</div>
+<details{" open" if has_place else ""}><summary class="small" style="cursor:pointer">Different venue for this day?</summary>
+<div class="form-row form-row--3" style="margin-top:10px">{_in(f"fn-{d}-venue", g("venue_name"), ph="Leave empty for the main venue", label="Venue")}
+{_in(f"fn-{d}-address", g("address"), ph="Address", label="Address")}{_in(f"fn-{d}-map", g("map_url"), "url", ph="Google Maps link", label="Map link")}</div></details></div>
+<div data-items>{"".join(rows)}</div>
+<div><button class="btn btn--sm btn--secondary" type="button" data-add-item>{i("plus")} Add to this day</button></div></section>"""
+
+
+PROGRAMME_JS = """<script>(function(){var box=document.querySelector('[data-days]');if(!box)return;var form=box.closest('form');
+var nd=+box.getAttribute('data-next-day'),nk=+box.getAttribute('data-next-item'),max=+box.getAttribute('data-max-days');
+var dayT=document.querySelector('template[data-day-template]').innerHTML,itemT=document.querySelector('template[data-item-template]').innerHTML;
+function fill(t,d,k){return t.split('__D__').join(d).split('__K__').join(k);}
+function sync(){var days=box.querySelectorAll('.day-block');box.classList.toggle('is-single',days.length===1);
+days.forEach(function(d,n){var t=d.querySelector('[data-day-title]');if(t)t.textContent='Day '+(n+1);});
+var add=document.querySelector('[data-add-day]'),lock=document.querySelector('[data-day-limit]');if(add)add.hidden=days.length>=max;if(lock)lock.hidden=days.length<max;}
+form.addEventListener('click',function(e){var t=e.target.closest('[data-add-day],[data-add-item],[data-remove-day],[data-remove-item]');if(!t)return;
+if(t.hasAttribute('data-add-day')){box.insertAdjacentHTML('beforeend',fill(dayT,nd,nk));nd++;nk++;sync();var b=box.lastElementChild.querySelector('input[name$="-name"]');if(b)b.focus();}
+else if(t.hasAttribute('data-add-item')){var d=t.closest('.day-block'),list=d.querySelector('[data-items]');list.insertAdjacentHTML('beforeend',fill(itemT,d.getAttribute('data-day'),nk));nk++;list.lastElementChild.querySelector('input').focus();}
+else if(t.hasAttribute('data-remove-day')){if(!confirm('Remove this day and everything planned for it?'))return;t.closest('.day-block').remove();sync();}
+else{t.closest('.prog-row').remove();}
+form.dispatchEvent(new Event('input'));});sync();})();</script>"""
+
+
+def step_programme(req, ev):
     f = Form(req)
-    max_funcs = catalog.limit(ev, "functions", 1) if catalog.has_feature(ev, "multi_functions") else 1
+    max_days = catalog.limit(ev, "functions", 1) if catalog.has_feature(ev, "multi_functions") else 1
+    funcs = events.functions(ev["id"])
     if req.method == "POST" and req.get("nav") == "sample":
-        items = suggestions.sample_programme(ev["category"], ev["start_time"] or "", group_of(ev))
+        items = suggestions.sample_programme(ev["category"], (funcs[0]["start_time"] if funcs and funcs[0]["start_time"] else ev["start_time"]) or "", group_of(ev))
+        first = funcs[0]["id"] if funcs else None
         with db.transaction():
-            db.run("DELETE FROM schedule_items WHERE event_id = ?", (ev["id"],))
+            db.run("DELETE FROM schedule_items WHERE event_id = ? AND (function_id IS ? OR function_id IS NULL)", (ev["id"], first))
             for n, it in enumerate(items):
-                db.insert("schedule_items", {"event_id": ev["id"], "function_id": None, "item_time": it["item_time"], "title": it["title"],
+                db.insert("schedule_items", {"event_id": ev["id"], "function_id": first, "item_time": it["item_time"], "title": it["title"],
                                              "description": it["description"], "kind": it["kind"], "sort": n})
-        req.flash("success", "Sample programme added. Change the times and titles to match your day.")
-        return redirect(step_url(ev, 5))
+        req.flash("success", "Sample programme added" + (f" to {funcs[0]['name']}" if funcs else "") + ". Change the times and titles to match your day.")
+        return redirect(step_url(ev, 4))
     if req.method == "POST":
-        frows = req.rows("fn", ["id", "name", "date", "start", "end", "venue", "address", "map"])
-        if len(frows) > max_funcs:
-            f.error("functions", f"Your package includes {max_funcs} event function{'s' if max_funcs != 1 else ''}. Upgrade for more.")
-        srows = req.rows("si", ["id", "time", "title", "description", "kind", "function"])
-        for r in frows:
-            if not r["name"]:
-                f.error("functions", "Each function needs a name, e.g. Ceremony or Reception.")
+        days = _indexed(req, "fn", ["id", "name", "date", "start", "end", "venue", "address", "map"])
+        rows = [(k, r) for k, r in _indexed(req, "si", ["time", "title", "description", "day"]) if r["time"] or r["title"] or r["description"]]
+        single = len(days) <= 1 and not any(days[0][1][x] for x in ("name", "date", "venue", "address", "map")) if days else True
+        if not single and len(days) > max_days:
+            f.error("functions", f"Your package includes {max_days} day{'s' if max_days != 1 else ''}. Choose a bigger package at the last step for more.")
+        for _, r in days:
             for k in ("start", "end"):
                 if r[k] and not forms.TIME_RE.match(r[k]):
-                    f.error("functions", "Function times must look like 14:30.")
-        for r in srows:
+                    f.error("functions", "Times must look like 14:30.")
+        for _, r in rows:
             if not r["title"]:
-                f.error("schedule", "Each programme item needs a title.")
+                f.error("schedule", "Each programme item needs a short description of what happens, e.g. Ceremony or Dinner.")
             if r["time"] and not forms.TIME_RE.match(r["time"]):
                 f.error("schedule", "Programme times must look like 14:30.")
         if f.ok:
+            from datetime import date, timedelta
             with db.transaction():
-                keep = []
-                for n, r in enumerate(frows):
-                    data = {"name": r["name"][:100], "func_date": r["date"] or None, "start_time": r["start"], "end_time": r["end"],
-                            "venue_name": r["venue"][:160], "address": r["address"][:300], "map_url": r["map"][:600], "sort": n}
-                    if r["id"].isdigit() and db.one("SELECT 1 FROM event_functions WHERE id = ? AND event_id = ?", (int(r["id"]), ev["id"])):
-                        db.update("event_functions", int(r["id"]), data)
-                        keep.append(int(r["id"]))
-                    else:
-                        keep.append(db.insert("event_functions", {"event_id": ev["id"], **data}))
+                fid_for, keep = {}, []
+                if not single:
+                    for n, (d, r) in enumerate(days):
+                        day_date = r["date"] or None
+                        if not day_date and ev["event_date"]:
+                            try:
+                                day_date = (date.fromisoformat(ev["event_date"]) + timedelta(days=n)).isoformat()
+                            except ValueError:
+                                day_date = None
+                        data = {"name": (r["name"] or f"Day {n + 1}")[:100], "func_date": day_date, "start_time": r["start"], "end_time": r["end"],
+                                "venue_name": r["venue"][:160], "address": r["address"][:300], "map_url": r["map"][:600], "sort": n}
+                        if r["id"].isdigit() and db.one("SELECT 1 FROM event_functions WHERE id = ? AND event_id = ?", (int(r["id"]), ev["id"])):
+                            db.update("event_functions", int(r["id"]), data)
+                            fid_for[d] = int(r["id"])
+                        else:
+                            fid_for[d] = db.insert("event_functions", {"event_id": ev["id"], **data})
+                        keep.append(fid_for[d])
                 marks = ",".join("?" * len(keep)) or "NULL"
                 db.run(f"DELETE FROM event_functions WHERE event_id = ? AND id NOT IN ({marks})", [ev["id"], *keep])
                 db.run("DELETE FROM schedule_items WHERE event_id = ?", (ev["id"],))
-                valid_fids = {r["id"] for r in events.functions(ev["id"])}
-                for n, r in enumerate(srows):
-                    fid = int(r["function"]) if r["function"].isdigit() and int(r["function"]) in valid_fids else None
-                    db.insert("schedule_items", {"event_id": ev["id"], "function_id": fid, "item_time": r["time"],
+                first = keep[0] if keep else None
+                for n, (_, r) in enumerate(rows):
+                    fid = fid_for.get(int(r["day"])) if r["day"].isdigit() else None
+                    db.insert("schedule_items", {"event_id": ev["id"], "function_id": fid if fid else first, "item_time": r["time"],
                                                  "title": r["title"][:160], "description": r["description"][:600],
-                                                 "kind": r["kind"] if r["kind"] in dict(KINDS) else "other", "sort": n})
-        r = finish_step(req, ev, 5, f)
+                                                 "kind": suggestions.guess_kind(r["title"]), "sort": n})
+        r = finish_step(req, ev, 4, f)
         if r:
             return r
-    funcs = events.functions(ev["id"])
     sched = events.schedule(ev["id"])
-    fopts = [("", "Whole event")] + [(fn["id"], fn["name"]) for fn in funcs]
-
-    def frow(i_, fn=None):
-        fn = fn or {}
-        g = lambda k: fn[k] if fn and fn[k] is not None else ""
-        return (f'<div class="repeat__row" style="--cols:repeat(4,minmax(0,1fr))"><input type="hidden" name="fn-{i_}-id" value="{g("id")}">'
-                + _in(f"fn-{i_}-name", g("name"), ph="Ceremony", label="Name") + _in(f"fn-{i_}-date", g("func_date"), "date", label="Date")
-                + _in(f"fn-{i_}-start", g("start_time"), "time", label="Starts") + _in(f"fn-{i_}-end", g("end_time"), "time", label="Ends")
-                + _in(f"fn-{i_}-venue", g("venue_name"), ph="Venue (if different)", label="Venue") + _in(f"fn-{i_}-address", g("address"), ph="Address", label="Address")
-                + _in(f"fn-{i_}-map", g("map_url"), "url", ph="Map link", label="Map link") + "<span></span>" + _rm() + "</div>")
-
-    def srow(i_, s=None):
-        s = s or {}
-        g = lambda k: s[k] if s and s[k] is not None else ""
-        return (f'<div class="repeat__row" style="--cols:110px minmax(0,1.3fr) minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)"><input type="hidden" name="si-{i_}-id" value="{g("id")}">'
-                + _in(f"si-{i_}-time", g("item_time"), "time", label="Time") + _in(f"si-{i_}-title", g("title"), ph="Arrival and welcome drinks", label="Title")
-                + _in(f"si-{i_}-description", g("description"), ph="Optional detail", label="Detail")
-                + _sel(f"si-{i_}-kind", KINDS, g("kind") or "other", "Type") + _sel(f"si-{i_}-function", fopts, g("function_id"), "Part of") + _rm() + "</div>")
-
-    fn_rows = [frow(n, fn) for n, fn in enumerate(funcs)] or [frow(0)]
-    s_rows = [srow(n, s) for n, s in enumerate(sched)] or [srow(0), srow(1)]
-    multi = "multi_function" in catalog.category_features(ev["category"])
+    k = 0
+    blocks = []
+    if funcs:
+        for d, fn in enumerate(funcs):
+            mine = [s_ for s_ in sched if s_["function_id"] == fn["id"] or (d == 0 and s_["function_id"] not in {x["id"] for x in funcs})]
+            rows_html = []
+            for it in mine:
+                rows_html.append(_prog_row(k, d, it)); k += 1
+            if not rows_html:
+                rows_html.append(_prog_row(k, d)); k += 1
+            blocks.append(_day_block(d, fn, rows_html, False))
+        nd = len(funcs)
+    else:
+        rows_html = []
+        for it in sched:
+            rows_html.append(_prog_row(k, 0, it)); k += 1
+        if not rows_html:
+            rows_html = [_prog_row(k, 0), _prog_row(k + 1, 0)]; k += 2
+        blocks.append(_day_block(0, None, rows_html, True))
+        nd = 1
+    multi = "multi_function" in catalog.category_features(ev["category"]) or ev["category"] == "lobola"
+    tip = ("Lobola, traditional and multi-day weddings often run over more than one day. Add each day and plan what happens on it. "
+           if multi else "")
+    occasion = esc(catalog.category_name(ev["category"]).lower())
     inner = f"""{errors_summary(f.errors)}{feature_note(ev, "programme", "The programme")}
-<fieldset><legend>Event functions</legend><p class="hint" style="margin-bottom:12px">{"Traditional and multi-day events often have several parts, each with its own venue. " if multi else ""}Add each ceremony or reception. Leave venue blank to use the main venue. Your package allows {max_funcs}.</p>
-{_repeat("fn", "repeat(4,minmax(0,1fr))", fn_rows, frow("__i__"), "Add a function", max_funcs)}</fieldset>
-<fieldset><legend>Programme</legend><p class="hint" style="margin-bottom:12px">The running order guests see: arrival, ceremony, speeches, first dance, entertainment.</p>
-<div class="notice" style="margin-bottom:14px">{i("wand")}<div><span>Start from a typical {esc(catalog.category_name(ev["category"]).lower())} programme{" timed from " + esc(ev["start_time"]) if ev["start_time"] else ""}, then adjust it.</span>
-<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="submit" name="nav" value="sample" formnovalidate{' data-confirm="This replaces the programme items below with a sample. Continue?"' if sched else ""}>Use a sample programme</button></div></div></div>
-{_repeat("si", "", s_rows, srow("__i__"), "Add an item")}</fieldset>"""
-    return wizard_frame(req, ev, 5, inner)
+<div class="notice" style="margin-bottom:6px">{i("wand")}<div><span>Start from a typical {occasion} programme{" timed from " + esc(ev["start_time"]) if ev["start_time"] else ""}, then change the times and titles.</span>
+<div style="margin-top:10px"><button class="btn btn--secondary btn--sm" type="submit" name="nav" value="sample" formnovalidate{' data-confirm="This replaces the items for the first day with a sample. Continue?"' if sched else ""}>Use a sample programme</button></div></div></div>
+<div class="days" data-days data-next-day="{nd}" data-next-item="{k}" data-max-days="{max_days}">{"".join(blocks)}</div>
+<div class="row" style="gap:12px;flex-wrap:wrap"><button class="btn btn--secondary btn--sm" type="button" data-add-day>{i("calendar")} Add another day</button>
+<p class="small muted" style="margin:0">{tip}{f"Your package includes up to {max_days} days." if max_days > 1 else ""}</p>
+<p class="small muted" data-day-limit hidden style="margin:0">{"You've reached the number of days your package includes." if max_days > 1 else "Events over more than one day are part of Premium and Signature. Choose one at the last step."}</p></div>
+<template data-day-template>{_day_block("__D__", None, [_prog_row("__K__", "__D__")], False)}</template>
+<template data-item-template>{_prog_row("__K__", "__D__")}</template>{PROGRAMME_JS}"""
+    return wizard_frame(req, ev, 4, inner)
 
 
-# --- step 6: food ------------------------------------------------------------------------------------
-def step6(req, ev):
+# --- step 5: food ------------------------------------------------------------------------------------
+def step_food(req, ev):
     f = Form(req)
     info = dict(ev["info"] or {})
     if req.method == "POST":
@@ -717,8 +780,8 @@ def step6(req, ev):
             if pasted:
                 req.flash("success", f"Added {len(pasted)} dish{'es' if len(pasted) != 1 else ''} from your pasted menu. Check the courses below.")
                 if req.get("nav") == "next":
-                    return redirect(step_url(ev, 6))
-        r = finish_step(req, ev, 6, f)
+                    return redirect(step_url(ev, 5))
+        r = finish_step(req, ev, 5, f)
         if r:
             return r
     menu = db.one("SELECT * FROM menus WHERE event_id = ? ORDER BY sort, id LIMIT 1", (ev["id"],))
@@ -749,75 +812,78 @@ def step6(req, ev):
 <p class="hint" style="margin-top:8px">Guests can always add allergies in their own words.</p></fieldset>
 <div class="form-row form-row--2">{field("drinks", "Drinks", info.get("drinks", ""), type="textarea", attrs={"rows": 3, "placeholder": "Welcome bubbles, open bar until 23:00, mocktails for kids"})}
 {field("catering_notes", "Notes for guests about food", info.get("catering_notes", ""), type="textarea", attrs={"rows": 3})}</div>"""
-    return wizard_frame(req, ev, 6, inner)
+    return wizard_frame(req, ev, 5, inner)
 
 
-# --- step 7: seating -----------------------------------------------------------------------------------
-def step7(req, ev):
+# --- step 6: seating -----------------------------------------------------------------------------------
+TOP_CHOICES = {
+    "weddings": ("Where will the couple sit?", [("sweetheart", "Sweetheart table", "Just the two of you, facing your guests."),
+                                                ("head", "Head table", "The couple with the bridal party, along one side, facing guests."),
+                                                ("none", "With your guests", "No top table. You sit at a table among family and friends.")]),
+    "other": ("A top table for the hosts?", [("sweetheart", "Small top table", "For the hosts only, facing guests."),
+                                            ("head", "Top table", "Hosts and special guests, along one side, facing the room."),
+                                            ("none", "No top table", "Hosts sit among their guests.")]),
+}
+GUEST_CHOICES = [("round", "Round tables", "Easy conversation. 8 to 10 per table."),
+                 ("long", "Long tables", "Family style, in rows. Seats more in the same space."),
+                 ("mixed", "A mix", "Round tables with a few long ones for big families.")]
+
+SEATING_STEP_JS = """<script src="/static/js/floorplan.js"></script><script>(function(){var f=document.querySelector('[data-wizard-form]');if(!f||!window.AureliaFloor)return;
+f.querySelectorAll('[data-fp-icon]').forEach(function(el){el.innerHTML=AureliaFloor.icon(el.getAttribute('data-fp-icon'));});
+var box=f.querySelector('[data-plan-preview]');function v(n){var el=f.querySelector('[name='+n+']:checked')||f.querySelector('[name='+n+']');return el?el.value:'';}
+function draw(){box.innerHTML=AureliaFloor.plan({top:v('top_table'),guest:v('guest_tables'),count:v('table_count'),cap:v('capacity'),dance:box.getAttribute('data-dance')==='1'});}
+f.addEventListener('input',draw);f.addEventListener('change',draw);draw();})();</script>"""
+
+
+def _layout_choices(name, options, value):
+    return ('<div class="choice-grid layout-choice" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">' + "".join(
+        f'<label class="choice"><input type="radio" name="{name}" value="{k}"{" checked" if k == value else ""}><span><span data-fp-icon="{"none" if name == "top_table" and k == "none" else k}"></span>'
+        f'<b>{esc(t)}</b><small>{esc(d)}</small></span></label>' for k, t, d in options) + "</div>")
+
+
+def step_seating(req, ev):
     f = Form(req)
     info = dict(ev["info"] or {})
     existing = events.tables(ev["id"])
+    layout = events.seating_layout(ev)
+    est = (ev["guest_settings"] or {}).get("estimated") or db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0) or 0
     if req.method == "POST":
-        count = f.integer("table_count", "Number of tables", min=0, max=200)
-        cap = f.integer("capacity", "Seats per table", min=1, max=40, default=10)
-        shape = f.choice("shape", ["round", "long"], "shapes", default="round")
-        names = [n.strip()[:40] for n in req.get("table_names").splitlines() if n.strip()]
+        layout = {"top": f.choice("top_table", ["sweetheart", "head", "none"], "top tables", default=layout["top"]),
+                  "guest": f.choice("guest_tables", ["round", "long", "mixed"], "table types", default=layout["guest"]),
+                  "capacity": f.integer("capacity", "Seats per table", min=2, max=40, default=10)}
+        count = f.integer("table_count", "Number of tables", min=0, max=120, default=10)
+        info["seating_layout"] = layout
         info["seating_notes"] = f.text("seating_notes", "Special seating requirements", max=1500)
-        apply_cap = f.flag("apply_capacity")
         plan_now = f.flag("plan_now")
-        if plan_now and count < len([t for t in existing if t["parties"]]):
-            f.error("table_count", "Some tables already have guests. Move them before removing tables.")
-        if f.ok and not plan_now:
-            events.save_json(ev["id"], "info", info)
-        elif f.ok:
+        if plan_now and any(t["parties"] for t in existing):
+            f.error("plan_now", "Some tables already have guests. Change the tables in the seating editor instead.")
+        if f.ok:
             with db.transaction():
-                cur = events.tables(ev["id"])
-                # remove empty tables from the end until we reach the target
-                for t in reversed(cur):
-                    if len(cur) <= count:
-                        break
-                    if not t["parties"]:
-                        db.run("DELETE FROM seating_tables WHERE id = ?", (t["id"],))
-                        cur.remove(t)
-                for n in range(len(cur), count):
-                    col, rowi = n % 5, n // 5
-                    db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {n + 1}", "capacity": cap, "shape": shape,
-                                                 "pos_x": 12 + col * 19, "pos_y": 18 + rowi * 22, "sort": n})
-                cur = events.tables(ev["id"])
-                for n, t in enumerate(cur):
-                    upd = {}
-                    if n < len(names):
-                        upd["name"] = names[n]
-                    if apply_cap:
-                        upd["capacity"] = cap
-                        upd["shape"] = shape
-                    if upd:
-                        db.update("seating_tables", t["id"], upd)
                 events.save_json(ev["id"], "info", info)
-        r = finish_step(req, ev, 7, f)
+                if plan_now:
+                    db.run("DELETE FROM seating_tables WHERE event_id = ?", (ev["id"],))
+                    events.create_layout_tables(ev, layout, count)
+        r = finish_step(req, ev, 6, f)
         if r:
             return r
-    tables = events.tables(ev["id"])
-    est = (ev["guest_settings"] or {}).get("estimated") or 0
-    suggested = max(1, -(-est // 10)) if est else 10
-    cap = tables[0]["capacity"] if tables else 10
-    now = bool(tables) or bool(f.errors) or bool(req.get("plan_now"))
+    group = group_of(ev)
+    top_q, top_opts = TOP_CHOICES["weddings" if group == "weddings" else "other"]
+    suggested = max(1, -(-int(est) // int(layout.get("capacity") or 10))) if est else 10
+    guest_tables = [t for t in existing if t["notes"] != events.TOP_TABLE_NOTE]
     inner = f"""{errors_summary(f.errors)}{feature_note(ev, "seating", "The seating chart")}
-<div class="notice">{i("seat")}<span>Most hosts plan seating once replies are in. Then the <a class="text-link" href="/dashboard/events/{ev['uid']}/seating">seating editor</a> can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>
-{check("plan_now", "Set up my tables now", now, attrs={"data-reveals": "#tables-now"})}
-<div id="tables-now" style="display:grid;gap:18px"{"" if now else " hidden"}>
-<div class="form-row form-row--3">{field("table_count", "Number of tables", len(tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 200}, hint=f"About {suggested} for {est} guests at 10 a table." if est else "")}
-{field("capacity", "Seats per table", cap, type="number", errors=f.errors, attrs={"min": 1, "max": 40})}
-{select("shape", "Table shape", [("round", "Round"), ("long", "Long / banquet")], tables[0]["shape"] if tables else "round")}</div>
-{check("apply_capacity", "Apply seats and shape to existing tables too", not tables)}
-{field("table_names", "Table names (optional)", chr(10).join(t["name"] for t in tables), type="textarea", attrs={"rows": 5, "placeholder": "Head table" + chr(10) + "Protea" + chr(10) + "Baobab"}, hint="One per line, in order. Leave blank for Table 1, Table 2 and so on.")}
-<p class="small muted">{len(tables)} table{"s" if len(tables) != 1 else ""} set up so far.</p></div>
-{field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}"""
-    return wizard_frame(req, ev, 7, inner)
+<div class="notice">{i("seat")}<span>Most hosts plan seating once replies are in. Then the seating editor in your dashboard can seat everyone automatically, keeping families and groups together, and you drag people to fine-tune.</span></div>
+<fieldset><legend>{esc(top_q)}</legend>{_layout_choices("top_table", top_opts, layout["top"])}</fieldset>
+<fieldset><legend>Guest tables</legend>{_layout_choices("guest_tables", GUEST_CHOICES, layout["guest"])}</fieldset>
+<div class="form-row form-row--2">{field("capacity", "Seats per table", layout.get("capacity") or 10, type="number", errors=f.errors, attrs={"min": 2, "max": 40})}
+{field("table_count", "Number of guest tables", len(guest_tables) or suggested, type="number", errors=f.errors, attrs={"min": 0, "max": 120}, hint=f"About {suggested} for {est} guests." if est else "We'll adjust this once you know your numbers.")}</div>
+<div class="fp-plan-box"><p class="tiny muted mono" style="margin-bottom:8px">YOUR ROOM, ROUGHLY</p><div data-plan-preview data-dance="{1 if group in ("weddings", "parties") else 0}"></div></div>
+<div class="field{' has-error' if 'plan_now' in f.errors else ''}">{check("plan_now", "Create these tables now", bool(req.get("plan_now")), hint="Optional. Otherwise we create them from this layout when you open the seating editor. You can rename and move tables there.")}</div>
+{field("seating_notes", "Special seating requirements", info.get("seating_notes", ""), type="textarea", attrs={"rows": 3, "placeholder": "Grandparents near the front and away from the speakers; wheelchair access at Table 3."})}{SEATING_STEP_JS}"""
+    return wizard_frame(req, ev, 6, inner)
 
 
-# --- step 8: extras -------------------------------------------------------------------------------------
-def step8(req, ev):
+# --- step 7: extras -------------------------------------------------------------------------------------
+def step_extras(req, ev):
     f = Form(req)
     info = dict(ev["info"] or {})
     if req.method == "POST":
@@ -854,8 +920,8 @@ def step8(req, ev):
             events.save_json(ev["id"], "info", info)
         if rm.isdigit() and f.ok:
             req.flash("success", "Photo removed.")
-            return redirect(step_url(ev, 8))
-        r = finish_step(req, ev, 8, f)
+            return redirect(step_url(ev, 7))
+        r = finish_step(req, ev, 7, f)
         if r:
             return r
     def rows3(prefix, items, fields, phs):
@@ -885,13 +951,16 @@ def step8(req, ev):
 {field("dress_code_notes", "Dress code notes", info.get("dress_code_notes", ""), attrs={"placeholder": "Shades of emerald and gold; comfortable shoes for the lawn"})}</div>
 <fieldset><legend>Gift registry</legend>{_repeat("rg", "", rg_rows, rg_t, "Add a registry", 10)}
 {field("gift_note", "Gift preferences", info.get("gift_note", ""), type="textarea", attrs={"rows": 2, "placeholder": "Your presence is our present. If you'd like to give, a contribution to our honeymoon fund is welcome."})}</fieldset>
-<fieldset><legend>Contacts for guests</legend>{_repeat("ct", "", ct_rows, crow("__i__"), "Add a contact", 8)}</fieldset>
+<details class="box" style="padding:14px 16px"{" open" if info.get("contacts") else ""}><summary style="cursor:pointer;font-weight:500">Someone guests can call on the day (optional)</summary>
+<p class="hint" style="margin:10px 0 12px">For guests who are lost, running late or need help on the day, e.g. your planner, MC or a cousin. It shows on your website, so you're not the one answering calls. Leave it empty if you don't need it.</p>
+{_repeat("ct", "", ct_rows, crow("__i__"), "Add a person", 8)}</details>
 <fieldset><legend>Accommodation</legend>{_repeat("ac", "", ac_rows, ac_t, "Add a place to stay", 10)}</fieldset>
 {field("instructions", "Special instructions", info.get("instructions", ""), type="textarea", attrs={"rows": 3, "placeholder": "Unplugged ceremony: please keep phones away until the reception."})}
 <fieldset><legend>Photo gallery</legend>{feature_note(ev, "gallery", "The photo gallery")}
+<p class="hint" style="margin-bottom:12px">Add a few photos now, like your engagement shoot, or come back after the event and add photos from the day. Guests see them on the same link they already have.</p>
 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-bottom:12px">{thumbs}</div>
 {('<label class="file-drop" style="position:relative">' + i("image") + f'<span>Add photos ({len(gallery)} of {glimit})</span><span class="hint">JPG, PNG or WebP up to {config.MAX_UPLOAD_BYTES // 1048576} MB each.</span><span class="tiny" data-files></span><input type="file" name="gallery" multiple accept="image/jpeg,image/png,image/webp,image/gif"></label>') if glimit else '<p class="hint">Your current package has no gallery. Premium includes 40 photos.</p>'}</fieldset>"""
-    return wizard_frame(req, ev, 8, inner, enctype="multipart/form-data")
+    return wizard_frame(req, ev, 7, inner, enctype="multipart/form-data")
 
 
 def _join(parts: list) -> str:
@@ -903,11 +972,11 @@ def _q(text: str) -> str:
     return quote(text)
 
 
-# --- step 9: review --------------------------------------------------------------------------------------
-def step9(req, ev):
-    if req.method == "POST":
-        f = Form(req)
-        return finish_step(req, ev, 9, f) or redirect(step_url(ev, 10))
+# --- step 8: review and pay ------------------------------------------------------------------------------
+def step_review_pay(req, ev):
+    """One page to check and pay: what's still needed, the packages with a Pay button each, a draft link to
+    show family, and everything entered so far (folded away)."""
+    from ..services import payments
     venue = ev["venue"] or {}
     gs = ev["guest_settings"] or {}
     info = ev["info"] or {}
@@ -918,35 +987,60 @@ def step9(req, ev):
     t_row = catalog.template(ev["template"])
     n_guests = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (ev["id"],), 0)
     wording = (ev["design"] or {}).get("wording") or {}
-    has_photo = bool(events.uploads(ev["id"], "hero"))
-    needed = [  # (done, label, step, needed before paying)
-        (bool(ev["hosts"] and ev["event_date"]), "Names and date", 1, True),
-        (bool(venue.get("name") and venue.get("address")), "Venue and address", 2, True),
-    ]
-    nice = [
-        (has_photo, "A main photo", 3), (any(wording.values()), "Your own wording (or keep the template's)", 3),
-        (bool(gs.get("rsvp_deadline")), "An RSVP deadline", 4),
-    ]
+    paid = catalog.package(ev["paid_package"])
+    pending = db.one("SELECT * FROM orders WHERE event_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", (ev["id"],))
+    needed = [(bool(ev["hosts"] and ev["event_date"]), "Names and date", 1), (bool(venue.get("name") and venue.get("address")), "Venue and address", 1)]
+    nice = [(bool(events.uploads(ev["id"], "hero")), "A main photo", 2), (any(wording.values()), "Your own wording (or keep the template's)", 2),
+            (bool(gs.get("rsvp_deadline")), "An RSVP deadline", 3)]
     if catalog.has_feature(ev, "guest_management"):
-        nice.append((bool(n_guests), "Your guest list (you can add it after paying too)", 4))
+        nice.append((bool(n_guests), "Your guest list (you can add it after paying too)", 3))
     if catalog.has_feature(ev, "programme"):
-        nice.append((bool(sched), "The programme", 5))
+        nice.append((bool(sched), "The programme", 4))
     if catalog.has_feature(ev, "menu"):
-        nice.append((bool(items), "The menu", 6))
-    nice.append((bool(info.get("dress_code") or info.get("contacts")), "Dress code or contact people", 8))
+        nice.append((bool(items), "The menu", 5))
+    missing_needed = [x for x in needed if not x[0]]
 
     def li(done, label, n, must=False):
         icon_ = i("check") if done else i("alert" if must else "plus")
         text = esc(label) if done else f'<a class="text-link" href="{step_url(ev, n)}">{esc(label)}</a>'
         return f'<li class="{"is-done" if done else ""}">{icon_}<span>{text}{"" if done or not must else " <b>(needed)</b>"}</span></li>'
-    gaps = events.package_gaps(ev, catalog.planning_package(ev))
-    gap_note = ""
-    if gaps:
-        gap_note = (f'<div class="notice notice--warn">{i("lock")}<span>Your planned package, {esc(catalog.package(catalog.planning_package(ev))["name"])}, '
-                    f'won\'t show {esc(_join(gaps))}. Choose a package that includes them in the next step, or remove them.</span></div>')
-    checklist = (f'<div class="box" style="display:grid;gap:12px"><h3 style="font-size:1.0625rem">Before you choose a package</h3>'
-                 f'<ul class="checklist">{"".join(li(d, l, n, True) for d, l, n, _ in needed)}{"".join(li(d, l, n) for d, l, n in nice)}</ul>'
-                 f'<p class="tiny muted">Only the first two are needed. Everything else can be added after your website is live.</p></div>')
+    checklist = (f'<details class="box"{" open" if missing_needed else ""} style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">'
+                 f'{"Two things are needed before you pay" if len(missing_needed) == 2 else "One thing is needed before you pay" if missing_needed else "Ready to go. Optional extras you can still add"}</summary>'
+                 f'<ul class="checklist" style="margin-top:12px">{"".join(li(d, l, n, True) for d, l, n in needed)}{"".join(li(d, l, n) for d, l, n in nice)}</ul>'
+                 f'<p class="tiny muted" style="margin-top:8px">Everything except the first two can be added after your website is live.</p></details>')
+
+    cards = []
+    for p in catalog.packages():
+        is_paid = paid and p["code"] == paid["code"]
+        if paid and p["rank"] < paid["rank"]:
+            continue
+        price = p["price_cents"] - (paid["price_cents"] if paid and not is_paid else 0)
+        bullets = db.loads(p["bullets"], [])
+        limits = db.loads(p["limits"], {})
+        bl = "".join(f'<li>{i("check")}<span>{esc(b)}</span></li>' for b in bullets)
+        lim = "".join(f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, 0)) or "—"}</b></div>' for k, label in catalog.LIMIT_LABELS.items())
+        p_gaps = [] if is_paid else events.package_gaps(ev, p["code"])
+        gap_html = (f'<p class="small price__gap">{i("lock")} Won\'t show {esc(_join(p_gaps))}.</p>' if p_gaps else "")
+        if is_paid:
+            action = '<span class="pill pill--paid">Your current package</span>'
+        else:
+            label = f"Upgrade for {catalog.money(price)}" if paid else f"Pay {catalog.money(price)}"
+            action = (f'<button class="btn {"btn--primary" if p["highlight"] else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}"'
+                      f'{" disabled" if missing_needed else ""}>{label}</button>')
+        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
+<div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div>{action}<ul>{bl}</ul>
+<details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">{lim}</div></details>{gap_html}</article>""")
+    sandbox = ""
+    if payments.gateway().mode == "sandbox":
+        sandbox = (f'<div class="notice notice--warn">{i("info")}<span><b>Test mode.</b> Payments use the {esc(payments.gateway().label)}; '
+                   f'no real money moves and test payments are marked as sandbox everywhere.</span></div>')
+    status = ""
+    if paid:
+        status = f'<div class="notice notice--success">{i("check")}<span>Paid: <b>{esc(paid["name"])}</b>. Your website is {"live" if events.is_live(ev) else "ready to publish from Settings"}.</span></div>'
+    elif pending:
+        status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
+                  f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
     share = (f'<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>'
              f'<p class="small muted">Send this link to your partner or family. They see your website as it is now, with RSVPs switched off. It never appears in search engines.</p>'
              f'<div class="row" style="gap:8px;flex-wrap:wrap"><input class="input input--sm mono" style="flex:1;min-width:0" readonly value="{esc(events.draft_url(ev))}" aria-label="Draft preview link">'
@@ -958,74 +1052,35 @@ def step9(req, ev):
         return (f'<div class="review-section"><div class="review-section__head"><h3>{esc(title)}</h3>'
                 f'<a class="btn btn--sm btn--ghost" href="{step_url(ev, n)}">{i("edit")} Edit</a></div><dl class="dl">{dl}</dl></div>')
     review = "".join([
-        sec(1, "Event details", [("Event", esc(ev["name"])), ("Type", esc(catalog.category_name(ev["category"]))), ("Hosts", esc(ev["hosts"])),
-                                 ("Date", esc(forms.fmt_date(ev["event_date"]))), ("Time", esc(" – ".join(x for x in (ev["start_time"], ev["end_time"]) if x)))]),
-        sec(2, "Venue", [("Venue", esc(venue.get("name"))), ("Address", esc(venue.get("address"))), ("Parking", esc(venue.get("parking"))),
-                         ("Directions", esc(venue.get("directions")))]),
-        sec(3, "Design", [("Template", esc(t_row["name"] if t_row else ev["template"])), ("Photos", str(len(events.uploads(ev["id"]))) + " uploaded"),
-                          ("Welcome", esc((ev["design"] or {}).get("wording", {}).get("welcome")))]),
-        sec(4, "Guests", [("Estimated", esc(gs.get("estimated") or "")), ("RSVP deadline", esc(forms.fmt_date(gs.get("rsvp_deadline")))),
-                          ("Plus-ones", esc({"none": "Not allowed", "per_guest": "Set per guest", "open": "Allowed"}.get(gs.get("plus_one_policy"), ""))),
+        sec(1, "Details", [("Names", esc(ev["hosts"])), ("Occasion", esc(catalog.category_name(ev["category"]))),
+                           ("Date", esc(forms.fmt_date(ev["event_date"]))), ("Time", esc(" – ".join(x for x in (ev["start_time"], ev["end_time"]) if x))),
+                           ("Venue", esc(venue.get("name"))), ("Address", esc(venue.get("address")))]),
+        sec(2, "Design", [("Template", esc(t_row["name"] if t_row else ev["template"])), ("Photos", str(len(events.uploads(ev["id"]))) + " uploaded"),
+                          ("Welcome", esc(wording.get("welcome")))]),
+        sec(3, "Guests", [("Guest list", f"{n_guests} guests" if n_guests else ""), ("RSVP deadline", esc(forms.fmt_date(gs.get("rsvp_deadline")))),
                           ("Children", "Welcome" if gs.get("children_allowed") else "Adults only")]),
-        sec(5, "Programme", [("Functions", esc(", ".join(fn["name"] for fn in funcs))), ("Programme items", str(len(sched)) if sched else "")]),
-        sec(6, "Food and drinks", [("Menu items", str(items) if items else ""), ("Dietary options", esc(", ".join(info.get("dietary_options", []))))]),
-        sec(7, "Seating", [("Tables", f"{len(tables)} tables, {sum(t['capacity'] for t in tables)} seats" if tables else "")]),
-        sec(8, "Extras", [("Dress code", esc(info.get("dress_code"))), ("Registry", str(len(info.get("registry", []))) if info.get("registry") else ""),
-                          ("Contacts", str(len(info.get("contacts", []))) if info.get("contacts") else "")]),
+        sec(4, "Programme", [("Days", esc(", ".join(fn["name"] for fn in funcs)) if funcs else "One day"), ("Programme items", str(len(sched)) if sched else "")]),
+        sec(5, "Food and drinks", [("Menu items", str(items) if items else ""), ("Dietary options", esc(", ".join(info.get("dietary_options", []))))]),
+        sec(6, "Seating", [("Tables", f"{len(tables)} tables, {sum(t['capacity'] for t in tables)} seats" if tables else "Planned after RSVPs")]),
+        sec(7, "Extras", [("Dress code", esc(info.get("dress_code"))), ("Registry", str(len(info.get("registry", []))) if info.get("registry") else ""),
+                          ("Gallery", str(len(events.uploads(ev["id"], "gallery"))) + " photos" if events.uploads(ev["id"], "gallery") else "")]),
     ])
-    inner = f"""{gap_note}{checklist}{share}
-<div class="notice">{i("link")}<span>Your website address will be <b class="mono">{esc(events.public_url(ev))}</b>. Change it in Settings.</span></div>
-<div class="preview-frame" data-preview data-device="desktop" style="margin:18px 0"><div class="preview-frame__bar"><span class="preview-frame__url">/events/{esc(ev['slug'])}</span>
-<div class="seg"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>
-<div class="preview-frame__stage"><iframe src="/dashboard/events/{ev['uid']}/preview" title="Preview of your event website"></iframe></div></div>
-{review}"""
-    html = wizard_frame(req, ev, 9, inner)
-    return html.replace("Save and continue", "Looks good, choose a package", 1)
-
-
-# --- step 10: package -----------------------------------------------------------------------------------
-def step10(req, ev):
-    paid = catalog.package(ev["paid_package"])
-    pending = db.one("SELECT * FROM orders WHERE event_id = ? AND status = 'pending' ORDER BY id DESC LIMIT 1", (ev["id"],))
-    cards = []
-    for p in catalog.packages():
-        is_paid = paid and p["code"] == paid["code"]
-        if paid and p["rank"] < paid["rank"]:
-            continue
-        price = p["price_cents"] - (paid["price_cents"] if paid and not is_paid else 0)
-        bullets = db.loads(p["bullets"], [])
-        limits = db.loads(p["limits"], {})
-        items = "".join(f'<li>{i("check")}<span>{esc(b)}</span></li>' for b in bullets)
-        lim = "".join(f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, 0)) or "—"}</b></div>' for k, label in catalog.LIMIT_LABELS.items())
-        selected = (ev["selected_package"] == p["code"]) and not is_paid
-        p_gaps = [] if is_paid else events.package_gaps(ev, p["code"])
-        gap_html = (f'<p class="small price__gap">{i("lock")} Won\'t show {esc(_join(p_gaps))}.</p>' if p_gaps else "")
-        if is_paid:
-            action = '<span class="pill pill--paid">Your current package</span>'
-        else:
-            label = f"Upgrade for {catalog.money(price)}" if paid else f"Pay {catalog.money(price)}"
-            action = (f'<button class="btn {"btn--primary" if p["highlight"] or selected else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}">{label}</button>')
-        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
-<div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div><ul>{items}</ul><div class="price__limits">{lim}</div>{gap_html}{action}</article>""")
-    sandbox = ""
-    from ..services import payments
-    if payments.gateway().mode == "sandbox":
-        sandbox = (f'<div class="notice notice--warn">{i("info")}<span><b>Test mode.</b> Payments use the {esc(payments.gateway().label)}; '
-                   f'no real money moves and test payments are marked as sandbox everywhere.</span></div>')
-    status = ""
-    if paid:
-        status = f'<div class="notice notice--success">{i("check")}<span>Paid: <b>{esc(paid["name"])}</b>. Your website is {"live" if events.is_live(ev) else "ready to publish from Settings"}.</span></div>'
-    elif pending:
-        status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
-                  f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
-    inner = f"""{status}{sandbox}
-<form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}
+    pay_note = ("Finish the details marked “needed” above, then pay." if missing_needed else
+                "Secure payment by card or instant EFT. Prices include 15% VAT. Your website goes live as soon as the payment is confirmed, and you get a receipt by email.")
+    inner = f"""{status}{sandbox}{checklist}
+<form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}<input type="hidden" name="accept" value="1">
 <div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">{"".join(cards)}</div>
-<label class="check"><input type="checkbox" name="accept" value="1" required><span>I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and <a class="text-link" href="/refunds" target="_blank">refund policy</a>. My website is published only after the payment gateway confirms payment.</span></label>
-<p class="tiny muted">Secure payment by card or instant EFT. Prices include 15% VAT. You'll get a receipt by email.</p></form>
+<p class="small muted">{pay_note} By paying, you accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and <a class="text-link" href="/refunds" target="_blank">refund policy</a>.</p></form>
+{share}
+<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">See everything you've entered</summary><div style="display:grid;gap:16px;margin-top:16px">
+<div class="notice">{i("link")}<span>Your website address will be <b class="mono">{esc(events.public_url(ev))}</b>. Change it in Settings.</span></div>
+<div class="preview-frame" data-preview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">/events/{esc(ev['slug'])}</span>
+<div class="seg"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>
+<div class="preview-frame__stage"><iframe loading="lazy" src="/dashboard/events/{ev['uid']}/preview" title="Preview of your event website"></iframe></div></div>
+{review}</div></details>
 <p class="small muted" style="margin-top:14px">Questions before you pay, or rather have us finish the set-up? <a class="text-link" href="/help-me-set-up">Ask us to help</a>.</p>"""
-    return wizard_frame(req, ev, 10, inner)
+    return wizard_frame(req, ev, 8, inner)
 
 
-STEP_HANDLERS = {1: step1, 2: step2, 3: step3, 4: step4, 5: step5, 6: step6, 7: step7, 8: step8, 9: step9, 10: step10}
+STEP_HANDLERS = {1: step_details, 2: step_design, 3: step_guests, 4: step_programme, 5: step_food, 6: step_seating, 7: step_extras,
+                 8: step_review_pay}

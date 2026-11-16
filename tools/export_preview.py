@@ -145,7 +145,7 @@ def route_for(href: str) -> str:
 
 
 def rewrite(html: str) -> str:
-    html = html.replace(config.BASE_URL + "/events/", "aurelia.events/").replace(config.BASE_URL, "")
+    html = html.replace(config.BASE_URL + "/events/", "aureliastudio.co.za/events/").replace(config.BASE_URL, "")
 
     def iframe(m):
         previews.add((m.group(1), m.group(2)))
@@ -209,7 +209,7 @@ views.forEach(function(v){v.hidden=v!==target;});window.scrollTo(0,0);
 navs.forEach(function(a){var on=a.getAttribute('href')==='#'+id||(id.indexOf('tpl-')===0&&a.getAttribute('href')==='#templates');if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
 var d=document.getElementById('drawer');if(d&&d.open)d.close();
 if(J&&J.handles(id)){J.route(id);}
-var t=target.querySelector('h1');document.title=(t?t.textContent.trim()+' · ':'')+'Aurelia';
+var t=target.querySelector('h1');document.title=(t?t.textContent.trim()+' · ':'')+'""" + config.BRAND_NAME + """';
 setTimeout(function(){window.dispatchEvent(new Event('resize'));target.querySelectorAll('[data-reveal]').forEach(function(e){e.classList.add('is-visible');});},60);}
 window.addEventListener('hashchange',show);show();})();</script>"""
 def _netlify_form(name: str, fields: list, files: list = ()) -> str:
@@ -227,7 +227,7 @@ netlify_forms = ('<div hidden aria-hidden="true">'
                  + _netlify_form("setup-help", ["name", "email", "phone", "reach", "occasion", "event_date", "package", "~message"])
                  + "</div>") if STANDALONE else ""
 scripts = ''.join(f'<script src="static/js/{n}"></script>' for n in ("app.js", "data.js", "eventrender.js", "journey.js"))
-index = (f'<title>Aurelia</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
+index = (f'<title>{config.BRAND_NAME}</title>\n{head_links}\n{theme_script}\n<script>document.body.classList.add("site");</script>\n'
          f'{rewrite(chrome_start)}<main id="main">{sections}</main>{rewrite(footer)}'
          f'<div class="toasts" aria-live="polite"></div>{netlify_forms}{scripts}{router}')
 index = index.replace("<body", "<div").replace("</body>", "")

@@ -141,12 +141,13 @@ def s_programme(ctx) -> str:
     for it in items:
         name = it.get("function_name") or ""
         if not groups or groups[-1][0] != name:
-            groups.append((name, []))
+            groups.append((name, [], it.get("function_date") or ""))
         groups[-1][1].append(it)
     out = ""
-    for name, rows in groups:
+    for name, rows, day in groups:
         if name and len(groups) > 1:
-            out += f'<h3 class="ev-prog__group">{esc(name)}</h3>'
+            when = fmt_date(day, False) if day else ""
+            out += f'<h3 class="ev-prog__group">{esc(name)}{(" <small>" + esc(when) + "</small>") if when else ""}</h3>'
         out += '<ol class="ev-prog">' + "".join(
             f'<li class="ev-prog__item ev-kind-{esc(it.get("kind") or "other")}"><time>{esc(fmt_time(it.get("item_time")))}</time>'
             f'<div><h4>{esc(it["title"])}</h4>{p(it.get("description") or "", "ev-small")}</div></li>' for it in rows) + "</ol>"

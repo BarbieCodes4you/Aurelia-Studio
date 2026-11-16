@@ -138,7 +138,7 @@ def add_pasted_guests(ev, people: list[dict]) -> int:
             continue
         first, _, last = p["name"].partition(" ")
         db.insert("guests", {"event_id": ev["id"], "token": new_guest_token(), "first_name": first[:60], "last_name": last[:80],
-                             "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "source": "import",
+                             "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "family_group": p.get("group", "")[:60], "source": "import",
                              "email_consent": 1, "created_at": now, "updated_at": now})
         names.add(p["name"].lower())
         if p.get("email"):
@@ -164,7 +164,7 @@ def functions(event_id: int):
 
 
 def schedule(event_id: int):
-    return db.q("""SELECT s.*, f.name AS function_name FROM schedule_items s
+    return db.q("""SELECT s.*, f.name AS function_name, f.func_date AS function_date FROM schedule_items s
                    LEFT JOIN event_functions f ON f.id = s.function_id
                    WHERE s.event_id = ? ORDER BY COALESCE(f.sort, 0), s.sort, s.item_time, s.id""", (event_id,))
 
@@ -323,3 +323,37 @@ def keep_online_past_event(ev) -> None:
             return
         if ev["hosting_until"] < floor:
             touch(ev["id"], hosting_until=floor)
+
+
+TOP_TABLE_NOTE = "Top table"
+
+
+def seating_layout(ev) -> dict:
+    info = ev["info"] if isinstance(ev["info"], dict) else db.loads(ev["info"], {})
+    lay = dict((info or {}).get("seating_layout") or {})
+    lay.setdefault("top", "head" if catalog.category(ev["category"]) and catalog.category(ev["category"])["group_slug"] == "weddings" else "none")
+    lay.setdefault("guest", "round")
+    lay.setdefault("capacity", 10)
+    return lay
+
+
+def create_layout_tables(ev, layout: dict, count: int) -> int:
+    """Create the top table (if any) and `count` guest tables in the chosen shapes, laid out on the floor
+    plan with the top table at the front. Returns how many tables were made."""
+    cap = max(2, min(40, int(layout.get("capacity") or 10)))
+    made, sort = 0, 0
+    if layout.get("top") in ("head", "sweetheart"):
+        head = layout["top"] == "head"
+        db.insert("seating_tables", {"event_id": ev["id"], "name": "Head table" if head else "Sweetheart table",
+                                     "capacity": 10 if head else 2, "shape": "long" if head else "round",
+                                     "pos_x": 50, "pos_y": 6, "notes": TOP_TABLE_NOTE, "sort": sort})
+        made, sort = 1, 1
+    cols = 2 if layout.get("guest") == "long" else 4
+    for k in range(max(0, min(120, count))):
+        long = layout.get("guest") == "long" or (layout.get("guest") == "mixed" and k % 3 == 2)
+        x = (100 / cols) * (k % cols + 0.5)
+        y = 26 + (k // cols) * (18 if cols == 4 else 14)
+        db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": cap, "shape": "long" if long else "round",
+                                     "pos_x": round(x, 1), "pos_y": min(96, y), "sort": sort + k})
+        made += 1
+    return made

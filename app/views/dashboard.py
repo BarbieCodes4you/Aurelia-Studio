@@ -87,8 +87,8 @@ def overview(req, uid):
     if not paid:
         banner = (f'<div class="cta-panel" style="margin-bottom:22px"><div><h2 style="font-size:1.6rem">Ready to share it?</h2>'
                   f'<p>Your event is saved as a private draft. Choose a package and pay securely to publish your website and start collecting RSVPs.</p></div>'
-                  f'<div class="btn-row"><a class="btn btn--primary btn--lg" href="{base(ev)}/setup/10">Choose a package</a>'
-                  f'<a class="btn btn--secondary" href="{base(ev)}/setup/9">Preview</a></div></div>')
+                  f'<div class="btn-row"><a class="btn btn--primary btn--lg" href="{base(ev)}/setup/8">Choose a package</a>'
+                  f'<a class="btn btn--secondary" href="{base(ev)}/setup/8">Preview</a></div></div>')
     elif ev["status"] == "suspended":
         banner = (f'<div class="notice notice--error" style="margin-bottom:22px">{i("alert")}<div><b>This event is suspended.</b> '
                   f'{esc(ev.get("suspended_reason") or "")} Guests can’t open the website. <a class="text-link" href="/contact">Contact support</a></div></div>')
@@ -118,9 +118,9 @@ def overview(req, uid):
     next_html = _next_steps(ev, s, paid, live, days, tables)
     checklist = [
         ("Event details and date", bool(ev.get("event_date") and ev.get("name")), f"{base(ev)}/setup/1"),
-        ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/2"),
-        ("Design chosen", 3 in (ev.get("wizard_done") or []), f"{base(ev)}/setup/3"),
-        ("Package paid", bool(paid), f"{base(ev)}/setup/10"),
+        ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/1"),
+        ("Design chosen", 2 in (ev.get("wizard_done") or []), f"{base(ev)}/setup/2"),
+        ("Package paid", bool(paid), f"{base(ev)}/setup/8"),
         ("Website published", live, f"{base(ev)}/settings"),
         ("Guests added", s["invited"] > 0, f"{base(ev)}/guests"),
     ]
@@ -169,7 +169,7 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if not (ev.get("hosts") and ev.get("event_date")):
         steps.append(("Add your names and date", "Guests see these first.", f"{base(ev)}/setup/1", "Add details"))
     if not (venue.get("name") and venue.get("address")):
-        steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/2", "Add venue"))
+        steps.append(("Add your venue", "So guests get directions and a map.", f"{base(ev)}/setup/1", "Add venue"))
     if not paid:
         pass                                    # the "Ready to share it?" banner above already asks for this
     elif not live and ev["status"] != "suspended":
@@ -186,6 +186,8 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if has(ev, "seating") and s["attending"] and s["unseated_parties"]:
         steps.append(("Seat your guests", f"{s['unseated_parties']} confirmed part{'y' if s['unseated_parties'] == 1 else 'ies'} without a table. Seat everyone automatically, then fine-tune.",
                       f"{base(ev)}/seating", "Open seating"))
+    if days is not None and days < 0 and has(ev, "gallery") and not db.val("SELECT COUNT(*) FROM uploads WHERE event_id = ? AND kind = 'gallery' AND created_at >= ?", (ev["id"], ev["event_date"] or ""), 0):
+        steps.append(("Share photos from the day", "Add your favourites to the gallery. Guests see them on the link they already have.", f"{base(ev)}/setup/7", "Add photos"))
     if days is not None and days < 0 and has(ev, "reports"):
         steps.append(("Download your final report", "Attendance, meals and seating in one file to keep.", f"{base(ev)}/reports", "Reports"))
     if not steps:
@@ -302,7 +304,7 @@ def share(req, uid):
     live = events.is_live(ev)
     note = "" if live else (f'<div class="notice notice--warn" style="margin-bottom:18px">{i("info")}<div>Your link is reserved, '
                             f'but guests will only see the website once it is paid for and published. '
-                            f'<a class="text-link" href="{base(ev)}/setup/10">Publish now</a></div></div>')
+                            f'<a class="text-link" href="{base(ev)}/setup/8">Publish now</a></div></div>')
     personal = (f'<div class="notice" style="margin-top:12px">{i("chat")}<div><span>Each guest also has a personal link that opens their own RSVP.</span>'
                 f'<div style="margin-top:10px"><a class="btn btn--secondary btn--sm" href="{base(ev)}/share/whatsapp">Send personal invitations on WhatsApp</a></div></div></div>') if has(ev, "personal_invites") else ""
     sub_js = json.dumps("Invitation: " + ev["name"]).replace("<", "\\u003c")
@@ -361,7 +363,7 @@ def reports_page(req, uid):
         final = (f'<form method="post" action="{base(ev)}/communications/final-report">{csrf(req)}<input type="hidden" name="back" value="/reports">'
                  f'<button class="btn btn--primary btn--sm" type="submit">{i("mail")}Email me the final report</button></form>')
     upsell = "" if can else (f'<div class="notice" style="margin-bottom:16px">{i("lock")}<div>Downloadable reports are part of the Premium Experience. '
-                             f'Your RSVP numbers stay visible on the dashboard. <a class="text-link" href="{base(ev)}/setup/10">Compare packages</a></div></div>')
+                             f'Your RSVP numbers stay visible on the dashboard. <a class="text-link" href="{base(ev)}/setup/8">Compare packages</a></div></div>')
     reminders_switch = forms.switch("auto_reminders", "Remind guests who haven't replied, 7 and 2 days before the RSVP deadline",
                                     bool(prefs.get("auto_reminders"))) if has(ev, "reminders") else \
         '<p class="small muted">Automatic guest reminders are part of the Premium Experience.</p>'
@@ -418,7 +420,7 @@ def settings(req, uid):
     live = events.is_live(ev)
     if not ev["paid_package"]:
         pub = (f'<p class="small muted">Publishing needs a confirmed payment.</p>'
-               f'<a class="btn btn--primary btn--sm" href="{base(ev)}/setup/10">Choose a package</a>')
+               f'<a class="btn btn--primary btn--sm" href="{base(ev)}/setup/8">Choose a package</a>')
     elif ev["status"] == "suspended":
         pub = '<p class="small">This event is suspended by the platform. <a class="text-link" href="/contact">Contact support</a>.</p>'
     elif live:

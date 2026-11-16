@@ -84,30 +84,39 @@ class WizardTest(unittest.TestCase):
         self.user = make_user()
         login(self.c)
 
-    def create(self, category="white-wedding", template="atelier"):
-        r = self.c.post("/create", {"category": category, "template": template, "name": "Our wedding"})
+    def create(self, category="white-wedding", template="atelier", hosts="Lerato & Sipho"):
+        r = self.c.post("/create", {"category": category, "template": template, "hosts": hosts})
         self.assertEqual(r.status, 303, r.text[:400])
         uid = find(r"/dashboard/events/([0-9a-f]+)/setup/1", r.location)
         return uid
 
+    def test_create_asks_for_names(self):
+        r = self.c.post("/create", {"category": "white-wedding", "template": "atelier"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("Add the names", r.text)
+        uid = self.create()
+        ev = events.get(uid)
+        self.assertEqual((ev["hosts"], ev["name"], ev["slug"]), ("Lerato & Sipho", "Lerato & Sipho's wedding", "lerato-and-sipho"))
+        self.assertNotIn("Which package", self.c.get("/create").text)
+
     def test_create_without_account_needs_only_name_and_email(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom"})
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle"})
         self.assertEqual(r.status, 200)
         self.assertIn("Your name", r.text)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "package": "essential",
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
         self.assertEqual(r.status, 303, r.text[:300])
         self.assertIn("/setup/1", r.location)
         user = db.one("SELECT * FROM users WHERE email = ?", ("amahle@example.com",))
         self.assertEqual(user["password_hash"], "")
         ev = db.one("SELECT * FROM events WHERE owner_id = ?", (user["id"],))
-        self.assertEqual(ev["selected_package"], "essential")
+        self.assertEqual((ev["selected_package"], ev["name"]), ("essential", "Amahle's baby shower"))
         self.assertEqual(anon.get(r.location).status, 200)      # signed in straight away
 
     def test_create_with_existing_email_sends_sign_in_link(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "birthday", "template": "pulse", "contact_name": "Thandi",
+        r = anon.post("/create", {"category": "birthday", "template": "pulse", "hosts": "Kagiso's 40th", "contact_name": "Thandi",
                                   "contact_email": "organiser@example.com", "terms": "1"})
         self.assertEqual(r.status, 200)
         self.assertIn("sign-in link", r.text)
@@ -118,66 +127,82 @@ class WizardTest(unittest.TestCase):
         uid = self.create()
         base = f"/dashboard/events/{uid}/setup"
         self.assertEqual(self.c.get(base + "/1").status, 200)
-        r = self.c.post(base + "/1", {"name": "Our wedding", "category": "white-wedding", "hosts": "Lerato & Sipho",
-                                      "event_date": "2027-03-14", "start_time": "14:00", "end_time": "23:00", "nav": "next"})
+        r = self.c.post(base + "/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "start_time": "14:00", "end_time": "23:00",
+                                      "venue_name": "Avianto", "address": "Muldersdrift, Gauteng", "nav": "next"})
         self.assertEqual(r.location, base + "/2")
         ev = events.get(uid)
-        self.assertEqual(ev["slug"], "lerato-and-sipho")
-        r = self.c.post(base + "/2", {"venue_name": "Avianto", "address": "Muldersdrift, Gauteng", "nav": "next"})
-        self.assertEqual(r.status, 303)
-        r = self.c.post(base + "/3", {"template": "atelier", "palette": "stone", "font_pair": "cormorant-jost", "background": "paper",
+        self.assertEqual((ev["slug"], ev["venue"]["name"]), ("lerato-and-sipho", "Avianto"))
+        r = self.c.post(base + "/2", {"template": "atelier", "palette": "stone", "font_pair": "cormorant-jost", "background": "paper",
                                       "monogram": "L&S", "w_welcome": "Together with their families", "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertEqual(events.get(uid)["design"]["palette"], "stone")
-        r = self.c.post(base + "/4", {"estimated": "150", "categories": ["Family", "Friends"], "categories_other": "Choir",
+        r = self.c.post(base + "/3", {"estimated": "150", "categories": ["Family", "Friends"], "categories_other": "Choir",
                                       "plus_one_policy": "per_guest", "plus_ones_default": "1", "rsvp_deadline": "2027-02-01",
                                       "children_allowed": "1", "max_children": "2", "nav": "next"})
         self.assertEqual(r.status, 303)
         self.assertIn("Choir", events.get(uid)["guest_settings"]["categories"])
-        r = self.c.post(base + "/5", {"fn-0-name": "Ceremony", "fn-0-start": "14:00", "fn-1-name": "Reception", "fn-1-start": "17:00",
-                                      "si-0-time": "14:00", "si-0-title": "Ceremony begins", "si-0-kind": "ceremony",
-                                      "si-1-time": "18:30", "si-1-title": "Dinner", "si-1-kind": "meal", "nav": "next"})
-        self.assertEqual(r.status, 303)
-        self.assertEqual(len(events.functions(events.get(uid)["id"])), 2)
-        self.assertEqual(len(events.schedule(events.get(uid)["id"])), 2)
-        r = self.c.post(base + "/6", {"menu_name": "Reception menu", "mi-0-course": "Main", "mi-0-name": "Lamb", "mi-0-selectable": "1",
+        # two days, each with its own items
+        r = self.c.post(base + "/4", {"fn-0-name": "Ceremony", "fn-0-start": "14:00", "fn-1-name": "Reception", "fn-1-date": "2027-03-15",
+                                      "si-0-time": "14:00", "si-0-title": "Ceremony begins", "si-0-day": "0",
+                                      "si-1-time": "18:30", "si-1-title": "Dinner", "si-1-day": "1", "nav": "next"})
+        self.assertEqual(r.status, 303, r.text[:500])
+        eid = events.get(uid)["id"]
+        funcs = events.functions(eid)
+        self.assertEqual([f["name"] for f in funcs], ["Ceremony", "Reception"])
+        self.assertEqual(funcs[0]["func_date"], "2027-03-14")                 # day 1 defaults to the event date
+        sched = events.schedule(eid)
+        self.assertEqual([(x["title"], x["function_name"], x["kind"]) for x in sched],
+                         [("Ceremony begins", "Ceremony", "ceremony"), ("Dinner", "Reception", "meal")])
+        r = self.c.post(base + "/5", {"menu_name": "Reception menu", "mi-0-course": "Main", "mi-0-name": "Lamb", "mi-0-selectable": "1",
                                       "mi-1-course": "Main", "mi-1-name": "Butternut risotto", "mi-1-tags": "Vegetarian", "mi-1-selectable": "1",
                                       "dietary_options": ["Vegetarian", "Halal"], "nav": "next"})
         self.assertEqual(r.status, 303)
-        self.assertEqual(len(events.meal_options(events.get(uid)["id"])), 2)
-        r = self.c.post(base + "/7", {"plan_now": "1", "table_count": "15", "capacity": "10", "shape": "round", "apply_capacity": "1",
-                                      "table_names": "Head table\nProtea", "nav": "next"})
+        self.assertEqual(len(events.meal_options(eid)), 2)
+        r = self.c.post(base + "/6", {"top_table": "head", "guest_tables": "mixed", "capacity": "10", "table_count": "15", "plan_now": "1", "nav": "next"})
         self.assertEqual(r.status, 303)
-        tables = events.tables(events.get(uid)["id"])
-        self.assertEqual(len(tables), 15)
-        self.assertEqual(tables[0]["name"], "Head table")
-        r = self.c.post(base + "/8", {"dress_code": "Black tie", "rg-0-name": "Yuppiechef", "rg-0-url": "yuppiechef.com",
+        tables = events.tables(eid)
+        self.assertEqual(len(tables), 16)
+        self.assertEqual((tables[0]["name"], tables[0]["shape"], tables[0]["notes"]), ("Head table", "long", "Top table"))
+        self.assertEqual(sum(1 for t in tables if t["shape"] == "long"), 6)  # head table + every third guest table
+        r = self.c.post(base + "/7", {"dress_code": "Black tie", "rg-0-name": "Yuppiechef", "rg-0-url": "yuppiechef.com",
                                       "ct-0-name": "Zanele", "ct-0-phone": "+27 82 000 0000", "nav": "next"})
         self.assertEqual(r.status, 303)
+        self.assertEqual(r.location, base + "/8")
         self.assertEqual(events.get(uid)["info"]["registry"][0]["url"], "https://yuppiechef.com")
-        self.assertEqual(self.c.get(base + "/9").status, 200)
-        self.assertEqual(self.c.get(base + "/10").status, 200)
-        self.assertEqual(set(events.get(uid)["wizard_done"]), set(range(1, 9)))
+        page8 = self.c.get(base + "/8").text
+        self.assertIn("Pay R12,999", page8)
+        self.assertIn("Show someone before you pay", page8)
+        self.assertEqual(self.c.get(base + "/10").location, base + "/8")       # old links still land on the last step
+        self.assertEqual(set(events.get(uid)["wizard_done"]), set(range(1, 8)))
+
+    def test_single_day_programme_has_no_days(self):
+        uid = self.create()
+        r = self.c.post(f"/dashboard/events/{uid}/setup/4", {"fn-0-id": "", "si-0-time": "14:00", "si-0-title": "Speeches", "si-0-day": "0",
+                                                             "si-1-time": "", "si-1-title": "", "si-1-day": "0", "nav": "next"})
+        self.assertEqual(r.status, 303, r.text[:400])
+        eid = events.get(uid)["id"]
+        self.assertEqual(events.functions(eid), [])
+        self.assertEqual([(x["title"], x["kind"], x["function_id"]) for x in events.schedule(eid)], [("Speeches", "speech", None)])
 
     def test_step1_validation(self):
         uid = self.create()
-        r = self.c.post(f"/dashboard/events/{uid}/setup/1", {"name": "", "category": "nope", "event_date": "2001-01-01", "nav": "next"})
+        r = self.c.post(f"/dashboard/events/{uid}/setup/1", {"hosts": "", "category": "nope", "event_date": "2001-01-01", "nav": "next"})
         self.assertEqual(r.status, 200)
         self.assertIn("form-errors", r.text)
 
-    def test_essential_limits_functions(self):
+    def test_essential_limits_days(self):
         uid = self.create()
         events.touch(events.get(uid)["id"], selected_package="essential")
-        r = self.c.post(f"/dashboard/events/{uid}/setup/5", {"fn-0-name": "A", "fn-1-name": "B", "nav": "next"})
-        self.assertIn("includes 1 event function", r.text)
+        r = self.c.post(f"/dashboard/events/{uid}/setup/4", {"fn-0-name": "A", "fn-1-name": "B", "nav": "next"})
+        self.assertIn("includes 1 day", r.text)
 
     def test_image_upload_checks_content(self):
         uid = self.create()
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/3", {"template": "atelier", "nav": "stay"},
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"},
                              {"hero": ("evil.png", b"<script>alert(1)</script>", "image/png")})
         self.assertIn("Upload a JPG, PNG, WebP or GIF", r.text)
         png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/3", {"template": "atelier", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
         self.assertEqual(r.status, 303)
         self.assertEqual(len(events.uploads(events.get(uid)["id"], "hero")), 1)
 
@@ -207,7 +232,7 @@ class PaymentsTest(unittest.TestCase):
 
     def test_checkout_requires_terms(self):
         r = self.c.post(f"/dashboard/events/{self.ev['uid']}/checkout", {"package": "premium"})
-        self.assertIn("/setup/10", r.location)
+        self.assertIn("/setup/8", r.location)
         self.assertEqual(db.val("SELECT COUNT(*) FROM orders"), 0)
 
     def test_return_page_alone_does_not_pay(self):
@@ -268,7 +293,7 @@ class PaymentsTest(unittest.TestCase):
         order_uid = self.checkout("signature")
         self.assertEqual(db.val("SELECT amount_cents FROM orders WHERE uid = ?", (order_uid,)), 1_799_900 - 899_900)
         r = self.c.post(f"/dashboard/events/{self.ev['uid']}/checkout", {"package": "essential", "accept": "1"})
-        self.assertIn("/setup/10", r.location)
+        self.assertIn("/setup/8", r.location)
 
     def test_payfast_signature(self):
         sig = payments.PayFastGateway.signature([("merchant_id", "10000100"), ("amount", "100.00"), ("item_name", "Test item"), ("empty", "")], "pass phrase")
@@ -280,7 +305,7 @@ class PaymentsTest(unittest.TestCase):
         config.ALLOW_SANDBOX_PAYMENTS = False
         try:
             r = self.c.post(f"/dashboard/events/{self.ev['uid']}/checkout", {"package": "premium", "accept": "1"})
-            self.assertIn("/setup/10", r.location)
+            self.assertIn("/setup/8", r.location)
             self.assertEqual(db.val("SELECT COUNT(*) FROM orders"), 0)
         finally:
             config.ALLOW_SANDBOX_PAYMENTS = old

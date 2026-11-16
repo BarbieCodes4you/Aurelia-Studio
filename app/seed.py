@@ -143,7 +143,7 @@ def run() -> None:
                                 "gift_note": "Your presence is our present.", "contacts": [{"name": "Zanele Dube", "role": "Maid of honour", "phone": "+27 82 000 0101", "email": ""}],
                                 "accommodation": [{"name": "Oakridge Guest Lodge (demo)", "url": "https://example.com/lodge", "note": "Quote DUBE-NKOSI for 10% off"}],
                                 "dietary_options": ["Vegetarian", "Vegan", "Halal", "Gluten-free", "Nut allergy"], "drinks": "Welcome bubbles, open bar until 23:00."}),
-                 wizard_step=10, wizard_done=db.dumps(list(range(1, 10))))
+                 wizard_step=8, wizard_done=db.dumps(list(range(1, 8))))
     f1 = db.insert("event_functions", {"event_id": ev["id"], "name": "Ceremony", "func_date": d.isoformat(), "start_time": "14:00", "end_time": "15:00",
                                        "venue_name": "The Lawn", "sort": 0})
     f2 = db.insert("event_functions", {"event_id": ev["id"], "name": "Reception", "func_date": d.isoformat(), "start_time": "17:30", "end_time": "23:30",
@@ -174,7 +174,7 @@ def run() -> None:
                                           "family_groups": ["Mahlangu delegation", "Khumalo delegation"], "children_allowed": True, "max_children": 3,
                                           "plus_one_policy": "per_guest", "rsvp_deadline": (d2 - timedelta(days=21)).isoformat()}),
                  info=db.dumps({"dress_code": "Traditional attire", "dress_code_notes": "Ochre and indigo, or your family colours."}),
-                 wizard_step=10, wizard_done=db.dumps(list(range(1, 10))))
+                 wizard_step=8, wizard_done=db.dumps(list(range(1, 8))))
     a = db.insert("event_functions", {"event_id": ev2["id"], "name": "Umembeso (gift-giving)", "func_date": d2.isoformat(), "start_time": "09:00",
                                       "end_time": "13:00", "venue_name": "Mahlangu family home", "address": "45 Protea Street, Soweto", "sort": 0})
     b = db.insert("event_functions", {"event_id": ev2["id"], "name": "Wedding celebration", "func_date": (d2 + timedelta(days=1)).isoformat(),
@@ -197,7 +197,7 @@ def run() -> None:
     ev3 = events.create(host["id"], "baby-shower", "bloom", "Amahle's baby shower", "Amahle", is_demo=True)
     events.touch(ev3["id"], event_date=(today + timedelta(days=40)).isoformat(), start_time="11:00", end_time="15:00",
                  venue=db.dumps({"name": "Rosebank garden café (demo)", "address": "Rosebank, Johannesburg"}),
-                 design=db.dumps({"palette": "blush"}), selected_package="essential", wizard_step=4, wizard_done=db.dumps([1, 2, 3]))
+                 design=db.dumps({"palette": "blush"}), selected_package="essential", wizard_step=3, wizard_done=db.dumps([1, 2]))
 
     # 4. A second customer with a party, and a support request --------------------------------------
     other = _user("kagiso@" + DEMO_DOMAIN, "Demo-Host-2026", "Kagiso Molefe")
@@ -206,7 +206,7 @@ def run() -> None:
                  venue=db.dumps({"name": "Rooftop at 44 Stanley (demo)", "address": "44 Stanley Avenue, Milpark, Johannesburg"}),
                  info=db.dumps({"dress_code": "Cocktail"}), guest_settings=db.dumps({"rsvp_deadline": (today + timedelta(days=15)).isoformat(),
                                                                                     "plus_one_policy": "open", "plus_ones_default": 1}),
-                 wizard_step=10, wizard_done=db.dumps(list(range(1, 10))))
+                 wizard_step=8, wizard_done=db.dumps(list(range(1, 8))))
     _pay(ev4, other, "essential")
     _guests(events.by_id(ev4["id"]), rng, 40, cats=("Friends", "Colleagues"))
     db.insert("support_requests", {"user_id": other["id"], "event_id": ev4["id"], "name": other["name"], "email": other["email"], "topic": "event",

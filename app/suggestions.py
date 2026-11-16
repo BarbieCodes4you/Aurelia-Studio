@@ -219,21 +219,31 @@ _HEADER_WORDS = {"name", "names", "full name", "guest", "guests", "guest name", 
                  "phone", "mobile", "cell", "cellphone", "phone number", "whatsapp", "email", "e-mail", "email address"}
 
 
+def _sa_phone(p: str) -> str:
+    """Excel drops the leading 0 of SA mobiles (821234567); put it back."""
+    d = re.sub(r"\D", "", p or "")
+    return "0" + d if len(d) == 9 and d[0] in "678" and not (p or "").strip().startswith("+") else (p or "").strip()
+
+
 def parse_guest_list(text: str, limit: int = 2000) -> list[dict]:
     """One guest per line, in any order: name, mobile, email (commas, tabs or semicolons between).
-    Copying rows from Excel or Google Sheets works too. A header row is skipped."""
-    out, seen = [], set()
+    Copying rows from Excel or Google Sheets works too. A header row is skipped. A line that ends with
+    a colon ("Mokoena family:") is a group heading for the names below it, until the next heading."""
+    out, seen, group = [], set(), ""
     for raw in (text or "").splitlines():
         line = raw.strip().strip(",;\t")
         if not line:
+            continue
+        if line.endswith(":") and not _EMAIL.search(line) and not _PHONE.search(line):
+            group = line[:-1].strip()[:60]
+            continue
+        cells = [c.strip().lower() for c in re.split(r"[,;\t|]+", line) if c.strip()]
+        if cells and all(c in _HEADER_WORDS for c in cells):
             continue
         email = _EMAIL.search(line)
         rest = line.replace(email.group(0), " ") if email else line
         phone = _PHONE.search(rest)
         rest = rest.replace(phone.group(0), " ") if phone else rest
-        cells = [c.strip().lower() for c in re.split(r"[,;\t|]+", line) if c.strip()]
-        if cells and all(c in _HEADER_WORDS for c in cells):
-            continue
         name = re.sub(r"\s+", " ", re.sub(r"[,;\t|]+", " ", rest)).strip(" -")
         if not name:
             continue
@@ -241,11 +251,92 @@ def parse_guest_list(text: str, limit: int = 2000) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
-        out.append({"name": name[:120], "phone": phone.group(0).strip() if phone else "",
-                    "email": email.group(0).lower() if email else ""})
+        out.append({"name": name[:120], "phone": _sa_phone(phone.group(0)) if phone else "",
+                    "email": email.group(0).lower() if email else "", "group": group})
         if len(out) >= limit:
             break
     return out
+
+
+_COLS = {"name": ("name", "full name", "guest", "guest name", "names", "guest names"), "first": ("first name", "first", "firstname", "given name"),
+         "last": ("surname", "last name", "last", "lastname", "family name"),
+         "phone": ("phone", "mobile", "cell", "cellphone", "whatsapp", "number", "phone number", "mobile number", "contact", "tel"),
+         "email": ("email", "e-mail", "email address", "mail"), "group": ("family", "family group", "group", "side", "household")}
+
+
+def parse_sheet(rows: list, limit: int = 2000) -> list[dict]:
+    """Rows from a spreadsheet. With a header row (Name / Surname / Mobile / Email / Family), columns are
+    matched by heading; without one, each row is read like a pasted line."""
+    rows = [[str(c or "").strip() for c in r] for r in rows if any(str(c or "").strip() for c in r)]
+    if not rows:
+        return []
+    head = [c.lower() for c in rows[0]]
+    col = {k: next((n for n, h in enumerate(head) if h in words), None) for k, words in _COLS.items()}
+    if col["name"] is None and col["first"] is None:
+        return parse_guest_list("\n".join(", ".join(c for c in r if c) for r in rows), limit)
+    out, seen = [], set()
+    get = lambda r, k: r[col[k]] if col[k] is not None and col[k] < len(r) else ""
+    for r in rows[1:]:
+        name = get(r, "name") or " ".join(x for x in (get(r, "first"), get(r, "last")) if x)
+        name = re.sub(r"\s+", " ", name).strip()
+        if not name:
+            continue
+        email = (_EMAIL.search(get(r, "email")) or [""])[0].lower() if get(r, "email") else ""
+        key = (name.lower(), email)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"name": name[:120], "phone": _sa_phone(get(r, "phone")), "email": email, "group": get(r, "group")[:60]})
+        if len(out) >= limit:
+            break
+    return out
+
+
+def read_sheet_file(data: bytes, filename: str) -> list[list[str]]:
+    """Rows from an uploaded .csv or .xlsx (Excel, Google Sheets download). First sheet only."""
+    import csv
+    import io
+    import zipfile
+    from xml.etree import ElementTree as ET
+    if data[:2] == b"PK":
+        ns = {"m": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            names = z.namelist()
+            shared = []
+            if "xl/sharedStrings.xml" in names:
+                for si in ET.fromstring(z.read("xl/sharedStrings.xml")).findall("m:si", ns):
+                    shared.append("".join(t.text or "" for t in si.iter("{%s}t" % ns["m"])))
+            sheets = sorted(n for n in names if re.match(r"xl/worksheets/sheet\d+\.xml$", n))
+            if not sheets:
+                raise ValueError("That Excel file has no sheets.")
+            first = "xl/worksheets/sheet1.xml" if "xl/worksheets/sheet1.xml" in sheets else sheets[0]
+            out = []
+            for row in ET.fromstring(z.read(first)).iter("{%s}row" % ns["m"]):
+                cells = {}
+                for c in row.findall("m:c", ns):
+                    ref = re.match(r"([A-Z]+)", c.get("r", "A"))
+                    colno = 0
+                    for ch in ref.group(1):
+                        colno = colno * 26 + ord(ch) - 64
+                    t, v = c.get("t"), c.find("m:v", ns)
+                    if t == "s" and v is not None:
+                        val = shared[int(v.text)] if v.text and v.text.isdigit() and int(v.text) < len(shared) else ""
+                    elif t == "inlineStr":
+                        val = "".join(x.text or "" for x in c.iter("{%s}t" % ns["m"]))
+                    else:
+                        val = v.text if v is not None and v.text else ""
+                        if re.match(r"^\d+\.0$", val):
+                            val = val[:-2]
+                    cells[colno] = val
+                if cells:
+                    out.append([cells.get(n, "") for n in range(1, max(cells) + 1)])
+            return out
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = data.decode("cp1252", "replace")
+    dialect = csv.Sniffer().sniff(text[:2000], delimiters=",;\t") if text.strip() else csv.excel
+    return [r for r in csv.reader(io.StringIO(text), dialect)]
 
 
 # --- pasted menu -----------------------------------------------------------------------------------------
@@ -299,3 +390,24 @@ def parse_menu(text: str, limit: int = 60) -> list[dict]:
         if len(items) >= limit:
             break
     return items
+
+
+# --- programme item type, guessed from its title (the client never picks a "type") ---------------------
+KIND_WORDS = [
+    ("meal", ("dinner", "lunch", "breakfast", "brunch", "meal", "food", "starter", "main course", "dessert", "cake", "canap",
+              "braai", "buffet", "tea", "supper", "snack")),
+    ("ceremony", ("ceremony", "vows", "wedding", "negotiation", "lobola", "blessing", "prayer", "unveiling", "graduation",
+                  "church", "service", "ritual", "exchange of gifts", "umembeso", "umabo")),
+    ("speech", ("speech", "toast", "welcome", "remarks", "introduction", "thanks", "keynote", "panel", "announcement")),
+    ("entertainment", ("dance", "music", "dj", "band", "entertainment", "party", "reveal", "performance", "choir", "show")),
+    ("reception", ("reception", "seated", "drinks", "cocktail", "arrival of the couple", "entrance")),
+    ("activity", ("photo", "games", "gift", "workshop", "registration", "tour")),
+]
+
+
+def guess_kind(title: str) -> str:
+    t = (title or "").lower()
+    for kind, words in KIND_WORDS:
+        if any(w in t for w in words):
+            return kind
+    return "other"

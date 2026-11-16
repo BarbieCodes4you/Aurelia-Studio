@@ -879,3 +879,26 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 @media print { .wa-float { display: none; } }
 .price__gap { display: flex; gap: 8px; align-items: flex-start; margin: 0; } .price__gap .i { color: var(--warn); flex: none; margin-top: 2px; }
 .how-list li { display: flex; gap: 14px; align-items: flex-start; } .how-list .mono { flex: none; color: var(--color-accent-text); padding-top: 2px; }
+.brand__sub { font-family: var(--font-sans); font-style: normal; font-size: .6875rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--color-muted); margin-left: 2px; vertical-align: .32em; }
+/* Programme by day */
+.days { display: grid; gap: 16px; margin: 14px 0; }
+.day-block { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
+.day-head { display: grid; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--color-line); }
+.days.is-single .day-head { display: none; }
+.days.is-single .day-block { padding: 0; border: 0; background: none; }
+.day-block h3 { font-size: 1.0625rem; }
+[data-items] { display: grid; gap: 8px; }
+.prog-row { display: grid; gap: 8px; grid-template-columns: 110px minmax(0, 1.2fr) minmax(0, 1.6fr) auto; align-items: end; }
+@media (max-width: 640px) { .prog-row { grid-template-columns: 96px minmax(0, 1fr) auto; } .prog-row > .field:nth-of-type(3) { grid-column: 1 / -1; grid-row: 2; } }
+/* Seating layout drawings */
+.fp { width: 100%; height: auto; display: block; color: var(--color-text); }
+.fp .fp-table { fill: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface)); stroke: currentColor; stroke-width: 1.2; }
+.fp .fp-table--top { fill: color-mix(in srgb, var(--color-accent) 45%, var(--color-surface)); }
+.fp .fp-chair { fill: var(--color-surface); stroke: currentColor; stroke-width: 1; opacity: .75; }
+.fp .fp-chair--couple { fill: var(--color-accent-dark, var(--color-accent)); opacity: 1; }
+.fp .fp-dance { fill: none; stroke: currentColor; stroke-dasharray: 4 3; opacity: .5; }
+.fp .fp-label { font: 500 9px var(--font-sans); fill: currentColor; opacity: .6; }
+.layout-choice .choice > span { display: grid; gap: 6px; }
+.layout-choice .fp { max-width: 140px; margin: 0 auto; }
+.fp-plan-box { padding: 16px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
+.fp--plan { max-width: 520px; margin: 0 auto; }

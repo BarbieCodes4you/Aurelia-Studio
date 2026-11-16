@@ -170,7 +170,7 @@
   }
   function safeUrl(u) { return /^https?:\/\/[^\s<>"]+$/i.test(u || "") ? u : ""; }
   function clean(raw) {
-    if (!raw || typeof raw !== "object" || !cat(raw.category) || !tpl(raw.template)) throw new Error("Not an Aurelia draft");
+    if (!raw || typeof raw !== "object" || !cat(raw.category) || !tpl(raw.template)) throw new Error("Not an event draft");
     var ev = newEvent(raw.category, raw.template, String(raw.name || ""));
     ["id", "created", "updated", "hosts", "description", "event_date", "start_time", "end_time", "ends_next_day", "selected_package", "booking"].forEach(function (k) { if (raw[k] !== undefined) ev[k] = raw[k]; });
     ["contact", "venue", "design", "guest_settings", "menu", "info", "tables"].forEach(function (k) { if (raw[k] && typeof raw[k] === "object") ev[k] = Object.assign(ev[k], raw[k]); });
@@ -427,7 +427,7 @@
     refreshPreview(true);
   }
   function previewFrame(height) {
-    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aurelia.events/' + esc(slugOf(cur())) + "</span>" +
+    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(cur())) + "</span>" +
       '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
       '<div class="preview-frame__stage" style="height:' + (height || 680) + 'px"><iframe title="Live preview of your event website" data-live></iframe></div></div>';
   }
@@ -786,7 +786,7 @@
     }
     var tc = +ev.tables.count || 0;
     return gapNote + checklist + share +
-      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aurelia.events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
+      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudio.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
       '<div style="margin:18px 0">' + previewFrame(620) + "</div>" +
       sec(1, "Event details", [["You", ev.contact.name + (ev.contact.email ? " · " + ev.contact.email : "")], ["Event", ev.name], ["Type", (cat(ev.category) || {}).name], ["Hosts", ev.hosts],
         ["Date", ev.event_date ? R.fmtDate(ev.event_date) : ""], ["Time", [ev.start_time, ev.end_time].filter(Boolean).join(" – ")]]) +
@@ -897,7 +897,7 @@
       '<span class="tiny muted">Subject: <span style="user-select:all">' + esc(subject) + "</span></span></div></div>" +
       '<div class="btn-row"><button class="btn btn--primary" type="button" data-copy-booking>' + icon("copy") + " Copy booking details</button>" +
       '<button class="btn btn--secondary" type="button" data-copy="' + esc(email) + '" data-copied="Email address copied">Copy email address</button>' +
-      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello Aurelia,\n\nPlease find my booking request " + b.ref + " below.\n\n") + '">Open my email app</a></div>' +
+      '<a class="btn btn--ghost" href="mailto:' + esc(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent("Hello " + D.brand + ",\n\nPlease find my booking request " + b.ref + " below.\n\n") + '">Open my email app</a></div>' +
       '<details><summary class="small" style="cursor:pointer;min-height:44px;display:flex;align-items:center">Show the booking details</summary><textarea class="textarea mono" readonly rows="14" style="font-size:.8125rem" data-booking-text>' + esc(text) + "</textarea></details></div>";
     var status, showEmail = !D.forms || b.status === "failed";
     if (!D.forms) status = '<p class="lead" style="font-size:1.0625rem">Your booking details are ready to send. Email them to us below and we\'ll take it from there.</p>';
@@ -955,7 +955,7 @@
       root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.hosts || ev.name) +
         '</h1><p>A draft of this event website, shared with you before it goes live. RSVPs open once it\'s published.</p></div>' +
         '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#create">Create your own event</a></div></div>' +
-        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aurelia.events/' + esc(slugOf(ev)) + "</span>" +
+        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(ev)) + "</span>" +
         '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
         '<div class="preview-frame__stage" style="height:' + Math.max(560, window.innerHeight - 220) + 'px"><iframe title="Shared draft of an event website" data-shared></iframe></div></div></div></section>';
       document.querySelector("iframe[data-shared]").srcdoc = R.render(ev, "preview");
@@ -1172,7 +1172,7 @@
     }
     if (t.hasAttribute("data-continue-link")) {
       var f0 = document.querySelector("#journey-root form[data-step]"); if (f0) { collectStep(f0); save(); }
-      pack(cur(), false).then(function (code) { shareOrCopy(pageUrl() + "#resume=" + code, "Continue my Aurelia event", "Link copied. Open it on your other device to carry on. Photos stay on this device."); });
+      pack(cur(), false).then(function (code) { shareOrCopy(pageUrl() + "#resume=" + code, "Continue my " + D.brand + " event", "Link copied. Open it on your other device to carry on. Photos stay on this device."); });
       return;
     }
     if (t.hasAttribute("data-share-preview")) {

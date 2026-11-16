@@ -32,7 +32,9 @@ NAV = [
 
 
 def brand(href: str = "/") -> str:
-    return f'<a class="brand" href="{href}" aria-label="{esc(config.BRAND_NAME)} home">{BRAND_MARK}<span class="brand__name">{esc(config.BRAND_NAME)}</span></a>'
+    first, _, rest = config.BRAND_NAME.partition(" ")
+    name = esc(first) + (f' <span class="brand__sub">{esc(rest)}</span>' if rest else "")
+    return f'<a class="brand" href="{href}" aria-label="{esc(config.BRAND_NAME)} home">{BRAND_MARK}<span class="brand__name">{name}</span></a>'
 
 
 def head(title: str, description: str = "", extra: str = "", noindex: bool = False) -> str:

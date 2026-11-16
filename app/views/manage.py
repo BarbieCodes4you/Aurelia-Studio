@@ -126,7 +126,7 @@ def guests_list(req, uid):
     if not can_edit:
         notice = ('<div class="notice" style="margin-bottom:16px">' + i("info") + '<div>Guests who RSVP through your '
                   'event link appear here. Adding, importing and editing guests is part of the Premium Experience. '
-                  f'<a class="text-link" href="{base(ev)}/setup/10">Compare packages</a></div></div>')
+                  f'<a class="text-link" href="{base(ev)}/setup/8">Compare packages</a></div></div>')
 
     def opts(values, current, blank):
         return f'<option value="">{blank}</option>' + "".join(
@@ -847,15 +847,12 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
     people = sum(events.party_size(g) for g in guests)
     created = 0
     if table_count == 0:
-        need = min(60, -(-people // 10))
+        layout = events.seating_layout(ev)
+        need = min(60, -(-people // int(layout.get("capacity") or 10)))
         with db.transaction():
-            for k in range(need):
-                x, y = _auto_pos(k)
-                db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": 10, "shape": "round",
-                                             "pos_x": x, "pos_y": y, "sort": k})
-        created = need
+            created = events.create_layout_tables(ev, layout, need)
     tables = events.tables(ev["id"])
-    free = {t["id"]: t["capacity"] - t["seated"] for t in tables}
+    free = {t["id"]: t["capacity"] - t["seated"] for t in tables if t["notes"] != events.TOP_TABLE_NOTE}   # the top table is set by hand
     groups: dict[str, list] = {}
     for g in guests:
         groups.setdefault((g["family_group"] or g["side"] or g["category"] or "").strip().lower() or f"~{g['id']}", []).append(g)
@@ -884,7 +881,7 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
                 db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, ?, ?, ?)",
                        (g["id"], tid, ev["id"], now))
                 seated += 1
-    message = f"Seated {seated} part{'y' if seated == 1 else 'ies'}" + (f" and created {created} tables of 10" if created else "") + ". Drag anyone to fine-tune."
+    message = f"Seated {seated} part{'y' if seated == 1 else 'ies'}" + (f" and created {created} tables from your layout" if created else "") + ". Drag anyone to fine-tune."
     warning = ""
     if left_out:
         n = sum(events.party_size(g) for g in left_out)
@@ -1108,7 +1105,7 @@ def programme(req, uid):
 <form class="form" method="post" action="{base(ev)}/programme/functions" style="margin-top:12px">{csrf(req)}{_function_fields({})}
 <div class="row row--end"><button class="btn btn--primary btn--sm" type="submit">Add function</button></div></form></details>""" if can_add_f else
              f'<p class="small muted" style="margin-top:12px">Your package includes {max_f} function{"s" if max_f != 1 else ""}. '
-             + ("" if has(ev, "multi_functions") else f'<a class="text-link" href="{base(ev)}/setup/10">Upgrade for more ceremonies and venues.</a>') + "</p>")
+             + ("" if has(ev, "multi_functions") else f'<a class="text-link" href="{base(ev)}/setup/8">Upgrade for more ceremonies and venues.</a>') + "</p>")
     rows = []
     current = object()
     for it in items:
@@ -1348,7 +1345,7 @@ def comms(req, uid):
     aud_opts += "".join(f'<option value="category:{esc(c)}"{" selected" if audience == "category:" + c else ""}>Category: {esc(c)}</option>' for c in cats)
     live_note = "" if events.is_live(ev) else (
         f'<div class="notice notice--warn" style="margin-bottom:16px">{i("alert")}<div>You can draft and preview messages now. '
-        f'Sending to guests starts once your website is paid for and published. <a class="text-link" href="{base(ev)}/setup/10">Publish your event</a></div></div>')
+        f'Sending to guests starts once your website is paid for and published. <a class="text-link" href="{base(ev)}/setup/8">Publish your event</a></div></div>')
     logs = db.q("SELECT * FROM email_logs WHERE event_id = ? ORDER BY created_at DESC, id DESC LIMIT 40", (ev["id"],))
     log_rows = "".join(
         f'<tr><td>{esc(l["subject"])}<span class="table__sub">{esc(l["to_email"])}</span></td><td>{"Guest" if l["audience"] == "guest" else "You"}</td>'
