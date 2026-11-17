@@ -3,6 +3,32 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-17: full platform on Railway
+
+**Decisions (from you)**
+- Launch the full platform (not the Netlify static site) on **Railway**, code in a **private GitHub repo**.
+- Template gallery photos from free sources.
+
+**Changes**
+- Railway-ready: no `VOLUME` line (Railway refuses it), `deploy/entrypoint.py` fixes ownership of the
+  root-owned `/data` disk and then runs the app as a normal user, `railway.json` (Dockerfile build,
+  `/healthz` health check, restart on failure), `/healthz` endpoint.
+- Admin: **Download a backup** (database + uploaded photos in one zip).
+- Sample galleries and main photos use real photos once added (`tools/add_photos.py` resizes and files
+  them); the static bundle skips image files.
+- Fixed: on the create page, changing the occasion caused a script error (data escaped twice).
+- `DEPLOY-RAILWAY.md`: GitHub → Railway → domain via Cloudflare DNS → Resend email → PayFast → checklist.
+
+**Checked**
+- Production Docker image built and run like Railway (PORT from Railway, root-owned `/data`): health
+  check ok, app runs as uid 1000, admin created from variables, client can create an event, payments stay
+  in test mode until PayFast is set. 97 tests pass.
+
+**Open**
+- GitHub repo name from you → I push the code.
+- Photos: Unsplash and Wikimedia both refuse automated downloads from this session's shared address;
+  photos from you (zip) go in with `tools/add_photos.py`.
+
 ## 2026-11-16 (night): why digital, seating how-to, booking view, photo slots
 
 **Changes**

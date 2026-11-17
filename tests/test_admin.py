@@ -255,3 +255,24 @@ class Scheduler(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BackupTest(unittest.TestCase):
+    def test_admin_can_download_backup_others_cannot(self):
+        import io
+        import zipfile
+        from tests.helpers import Client, fresh_app, login, make_user
+        app = fresh_app("backup")
+        make_user("boss@example.com", role="admin")
+        make_user("guest@example.com")
+        c = Client(app)
+        login(c, "boss@example.com")
+        r = c.get("/admin/backup")
+        self.assertEqual(r.status, 200)
+        names = zipfile.ZipFile(io.BytesIO(r.body)).namelist()
+        self.assertIn("aurelia.sqlite3", names)
+        self.assertIn("README.txt", names)
+        other = Client(app)
+        login(other, "guest@example.com")
+        self.assertNotEqual(other.get("/admin/backup").status, 200)
+

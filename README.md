@@ -30,7 +30,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 96 tests
+python3 -m unittest discover -s tests -t .     # 97 tests
 ```
 
 ## The customer journey
@@ -78,7 +78,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 96 tests
+  tests/                      in-process test client and 97 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,
@@ -154,7 +154,11 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 3. **Approved WhatsApp Business API** for automated invitations. Today WhatsApp is share-only, by design.
 4. **Custom PDF invitation designs** (Signature) and S3/R2 storage.
 
-## Go live now
+## Launch the full platform
+
+`DEPLOY-RAILWAY.md`: GitHub, Railway, your domain (Cloudflare DNS), email (Resend) and PayFast, step by step.
+
+## Go live now (static site)
 
 `GO-LIVE-GUIDE.md` covers putting the static site on Netlify (with bookings, contact messages and
 set-up requests arriving through Netlify Forms) and taking payment with PayFast.

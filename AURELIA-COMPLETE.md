@@ -1,6 +1,6 @@
 # Aurelia Studio: complete project and hosting guide
 
-Generated 2026-11-16 from the working project. **74 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-17 from the working project. **78 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -365,7 +365,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 96 tests.
+- `tests/`: an in-process test client and 97 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 
@@ -407,6 +407,7 @@ is manual today, by design).
 | POST | `/account/verify` | accounts |
 | GET, POST | `/account` | accounts |
 | GET | `/account/export` | accounts |
+| GET | `/admin/backup` | admin |
 | GET | `/admin` | admin |
 | GET | `/admin/customers` | admin |
 | GET | `/admin/customers/<int:user_id>` | admin |
@@ -490,6 +491,7 @@ is manual today, by design).
 | POST | `/dashboard/events/<uid>/settings/admins` | dashboard |
 | POST | `/dashboard/events/<uid>/settings/admins/<int:user_id>/remove` | dashboard |
 | POST | `/dashboard/events/<uid>/settings/delete` | dashboard |
+| GET | `/healthz` | marketing |
 | GET | `/` | marketing |
 | GET | `/weddings` | marketing |
 | GET | `/baby-celebrations` | marketing |
@@ -531,10 +533,12 @@ is manual today, by design).
 - `.dockerignore`
 - `.env.example`
 - `.gitignore`
+- `DEPLOY-RAILWAY.md`
 - `Dockerfile`
 - `GO-LIVE-GUIDE.md`
 - `PROJECT-LOG.md`
 - `README.md`
+- `railway.json`
 - `run.py`
 - `wsgi.py`
 - `app/__init__.py`
@@ -581,6 +585,7 @@ is manual today, by design).
 - `deploy/Caddyfile`
 - `deploy/aurelia.service`
 - `deploy/backup.sh`
+- `deploy/entrypoint.py`
 - `preview_site/eventrender.js`
 - `preview_site/journey.js`
 - `preview_site/payment_links.json`
@@ -600,6 +605,7 @@ is manual today, by design).
 - `tests/test_ease.py`
 - `tests/test_eventsite.py`
 - `tests/test_manage.py`
+- `tools/add_photos.py`
 - `tools/export_preview.py`
 - `tools/make_bundle.py`
 
@@ -618,7 +624,7 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=7eb9fc0445257cf7ab624dc590b781b6179acc3f9ee2bf81c70e1fffcbbbe5f7 nl=1 -->
+<!-- FILE: .env.example sha256=46f3bc6c14d90eec897f60240586f9545133315de0faa307392b2ed161090040 nl=1 -->
 ```
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
@@ -637,7 +643,7 @@ SOCIAL_FACEBOOK=
 SOCIAL_TIKTOK=
 VAT_NUMBER=                         # shown on tax invoices
 
-# Email: outbox (dev, writes files to data/outbox), resend, or smtp
+# Email: outbox (dev, writes files to data/outbox), resend, or smtp. On Railway use resend (SMTP is blocked on Hobby).
 EMAIL_PROVIDER=outbox
 EMAIL_FROM=Aurelia Studio <no-reply@aurelia.example>
 EMAIL_REPLY_TO=
@@ -683,11 +689,142 @@ preview_build/
 dist/
 ```
 
+### `DEPLOY-RAILWAY.md`
+
+<!-- FILE: DEPLOY-RAILWAY.md sha256=92af60bc737d0d31a891f64a9051e485f6c9fb1df5bd6f02094669ac65a09caa nl=1 -->
+````markdown
+# Aurelia Studio: launch on Railway with your own domain
+
+The full platform: accounts and "My events", guest RSVPs, seating, WhatsApp invitations, PayFast
+checkout that publishes the website by itself, emails and the admin area. Follow the parts in order.
+Menu names can shift slightly when Railway, Cloudflare or Resend update their dashboards; look for the
+closest match, or send me a screenshot.
+
+**Monthly cost, roughly:** Railway Hobby about US$5 (card needed) · domain: a yearly fee at a South
+African registrar · Cloudflare DNS: free · Resend email: free plan to start (check its daily limit) ·
+PayFast: a fee per transaction.
+
+---
+
+## Part 1: GitHub (where the code lives)
+
+1. Sign up at **github.com** (free).
+2. **New repository** → name it e.g. `aurelia-studio` → **Private** → leave "Add a README" unticked →
+   **Create repository**.
+3. Send me the name, e.g. `yourname/aurelia-studio`. I push the code there, and every future change I
+   make goes there too.
+
+## Part 2: Railway (the server)
+
+1. Sign up at **railway.com** with your GitHub account, choose the **Hobby** plan and add a card.
+2. **New Project → Deploy from GitHub repo** → pick `aurelia-studio`. Railway reads `railway.json` and
+   builds from the `Dockerfile`; nothing to configure for the build.
+3. **Add a volume** (the disk for the database and photos): on the project canvas, add a Volume and
+   attach it to the service with mount path **`/data`**. Without it, everything is lost on each update.
+4. **Variables** (service → Variables → Raw Editor), paste and fill in:
+
+```ini
+APP_ENV=production
+BASE_URL=https://<your-railway-address>.up.railway.app
+SECRET_KEY=<a long random string: mash the keyboard for 60+ characters, or use a password generator>
+TRUST_PROXY=1
+SUPPORT_EMAIL=invitesaurelia@gmail.com
+ADMIN_EMAIL=<your email>
+ADMIN_PASSWORD=<a strong password for your admin login>
+ALLOW_SANDBOX_PAYMENTS=1
+```
+
+5. **A web address:** service → Settings → Networking → **Generate Domain**. Copy it into `BASE_URL`
+   (with `https://`). Railway redeploys by itself after variable changes.
+6. Open the address. Sign in at `/login` with your `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then go to `/admin`.
+   **Delete the `ADMIN_PASSWORD` variable** afterwards (your account keeps the password).
+7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
+   (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
+
+## Part 3: your domain
+
+1. **Buy the domain** at a South African registrar (for a `.co.za`, e.g. Domains.co.za, Afrihost or
+   Xneelo). Compare yearly prices; you only need the domain, not their hosting or email.
+2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain
+   (`aureliastudio.co.za`, without www) at it; Cloudflare can. Sign up at **cloudflare.com** → **Add a
+   site** → your domain → Free plan. Cloudflare gives you two **nameservers**.
+3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours.
+4. In Railway: service → Settings → Networking → **Custom Domain** → add `aureliastudio.co.za`, then add
+   `www.aureliastudio.co.za` too. For each, Railway shows the DNS record to create.
+5. In Cloudflare → DNS → **Add record** exactly as Railway shows (usually a CNAME; for the bare domain use
+   name `@`). Set the cloud icon to **DNS only** (grey) so Railway can issue the HTTPS certificate.
+6. When Railway shows both domains as active, change **`BASE_URL`** to `https://aureliastudio.co.za`.
+
+## Part 4: email (Resend)
+
+Railway's Hobby plan blocks ordinary email sending (SMTP), so the platform sends through Resend's
+secure web connection instead.
+
+1. Sign up at **resend.com** → **Domains → Add domain** → your domain.
+2. Add the DNS records Resend lists in Cloudflare (DNS only). Wait for Resend to show "Verified".
+3. **API Keys → Create** (sending access) and copy it.
+4. Railway variables:
+
+```ini
+EMAIL_PROVIDER=resend
+RESEND_API_KEY=<the key from Resend>
+EMAIL_FROM=Aurelia Studio <invites@aureliastudio.co.za>
+EMAIL_REPLY_TO=invitesaurelia@gmail.com
+```
+
+5. Test: `/admin/emails` → open any template → **Send test to me**.
+
+## Part 5: PayFast (real payments)
+
+1. Open and verify a PayFast merchant account (see `GO-LIVE-GUIDE.md`, Part 2, for documents).
+2. In PayFast, set a **passphrase** (developer or integration settings) and copy your merchant ID and key.
+3. Railway variables, first against PayFast's sandbox:
+
+```ini
+PAYMENT_GATEWAY=payfast
+PAYFAST_MERCHANT_ID=<id>
+PAYFAST_MERCHANT_KEY=<key>
+PAYFAST_PASSPHRASE=<passphrase>
+PAYFAST_SANDBOX=1
+PAYFAST_CHECK_IP=1
+```
+
+   PayFast tells the platform about each payment at `BASE_URL/webhooks/payments/payfast`; there's
+   nothing to set up for that in PayFast.
+4. Test a payment, see the order in `/admin/orders`, then switch to live: `PAYFAST_SANDBOX=0` and your
+   live merchant details. **Delete `ALLOW_SANDBOX_PAYMENTS`** so nobody can publish without paying.
+
+## Part 6: before you announce it
+
+- [ ] Your domain opens with the padlock (HTTPS), and `BASE_URL` is that address
+- [ ] `ADMIN_PASSWORD` and `ALLOW_SANDBOX_PAYMENTS` variables deleted
+- [ ] A test email arrived; a PayFast payment published an event by itself
+- [ ] Company address, VAT number and information officer set (`COMPANY_ADDRESS`, `VAT_NUMBER`,
+      `INFORMATION_OFFICER_EMAIL`)
+- [ ] Legal pages reviewed (`/privacy`, `/terms`, `/refunds`)
+- [ ] Optional: `WHATSAPP_NUMBER`, `SOCIAL_INSTAGRAM`, `SOCIAL_FACEBOOK`, `SOCIAL_TIKTOK`
+- [ ] A first backup downloaded: `/admin` → **Download a backup**. Do this weekly and keep the files
+      somewhere safe (e.g. Google Drive)
+
+## Updates
+
+I push changes to GitHub; Railway rebuilds and redeploys by itself in a few minutes. Your data on the
+`/data` volume stays. Database changes apply automatically on start.
+
+## If something goes wrong
+
+- Railway → service → **Deployments → View logs** shows what the app printed.
+- The health check is `/healthz` (answers "ok" when the app and database are up).
+- To restore a backup: stop the service, replace `aurelia.sqlite3` and the `uploads` folder on the volume
+  with the ones from the zip, start it again. Ask me and I'll walk you through it.
+````
+
 ### `Dockerfile`
 
-<!-- FILE: Dockerfile sha256=ca265b4f45dfc6c83097b3614c1c833f94b11293a671115989b04ad90bbc825b nl=1 -->
+<!-- FILE: Dockerfile sha256=a62cc952b771e4f61926f3692757bb2d9de0f3854402b203a946d2b9675e301a nl=1 -->
 ```dockerfile
-# Aurelia: Python standard library only, no pip install needed.
+# Aurelia Studio: Python standard library only, no pip install needed.
+# The persistent disk is mounted at /data (Railway: add a Volume with mount path /data).
 FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     AURELIA_DATA_DIR=/data \
@@ -697,10 +834,9 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 COPY . /app
 RUN useradd --create-home aurelia && mkdir -p /data && chown -R aurelia /data /app/static/css
-USER aurelia
-VOLUME ["/data"]
 EXPOSE 8040
-CMD ["python3", "run.py"]
+# Starts as root only to fix /data ownership, then runs the app as the "aurelia" user.
+CMD ["python3", "deploy/entrypoint.py"]
 ```
 
 ### `GO-LIVE-GUIDE.md`
@@ -834,12 +970,38 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=88710ca1d9751998fdbad8d7669d2bf1cb0432da1a49a76cc9c04b4d7f021e5c nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=714241c655b89807e1099901e207d556c700323d30f606c0229e823ac253a642 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-17: full platform on Railway
+
+**Decisions (from you)**
+- Launch the full platform (not the Netlify static site) on **Railway**, code in a **private GitHub repo**.
+- Template gallery photos from free sources.
+
+**Changes**
+- Railway-ready: no `VOLUME` line (Railway refuses it), `deploy/entrypoint.py` fixes ownership of the
+  root-owned `/data` disk and then runs the app as a normal user, `railway.json` (Dockerfile build,
+  `/healthz` health check, restart on failure), `/healthz` endpoint.
+- Admin: **Download a backup** (database + uploaded photos in one zip).
+- Sample galleries and main photos use real photos once added (`tools/add_photos.py` resizes and files
+  them); the static bundle skips image files.
+- Fixed: on the create page, changing the occasion caused a script error (data escaped twice).
+- `DEPLOY-RAILWAY.md`: GitHub → Railway → domain via Cloudflare DNS → Resend email → PayFast → checklist.
+
+**Checked**
+- Production Docker image built and run like Railway (PORT from Railway, root-owned `/data`): health
+  check ok, app runs as uid 1000, admin created from variables, client can create an event, payments stay
+  in test mode until PayFast is set. 97 tests pass.
+
+**Open**
+- GitHub repo name from you → I push the code.
+- Photos: Unsplash and Wikimedia both refuse automated downloads from this session's shared address;
+  photos from you (zip) go in with `tools/add_photos.py`.
 
 ## 2026-11-16 (night): why digital, seating how-to, booking view, photo slots
 
@@ -987,7 +1149,7 @@ The 21 pain points from the journey review, fixed in both the hosted app and the
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=cdfffd56cf3e94185e5b67355b84779da4c06366d1ca67b791cee3d4a3e77f88 nl=1 -->
+<!-- FILE: README.md sha256=13780e97329014d5dbe38af4fbee5ffac4102de47e4dad6695250c2caffce7db nl=1 -->
 ````markdown
 # Aurelia Studio — digital event experience platform
 
@@ -1021,7 +1183,7 @@ and running the seed again replaces them. To create a real administrator, run
 Run the tests:
 
 ```bash
-python3 -m unittest discover -s tests -t .     # 96 tests
+python3 -m unittest discover -s tests -t .     # 97 tests
 ```
 
 ## The customer journey
@@ -1069,7 +1231,7 @@ aurelia/
   static/css/app.css          design system (from docs/website-style-playbook.md plus the glass layer)
   static/css/eventsite.css    event website designs; admin.css
   static/js/                  app.js (UI behaviour), seating.js (seating editor), eventsite.js (countdown, RSVP)
-  tests/                      in-process test client and 96 tests
+  tests/                      in-process test client and 97 tests
 ```
 
 **Data model:** users, sessions, user_tokens, categories, templates, packages, events, event_admins,
@@ -1145,7 +1307,11 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 3. **Approved WhatsApp Business API** for automated invitations. Today WhatsApp is share-only, by design.
 4. **Custom PDF invitation designs** (Signature) and S3/R2 storage.
 
-## Go live now
+## Launch the full platform
+
+`DEPLOY-RAILWAY.md`: GitHub, Railway, your domain (Cloudflare DNS), email (Resend) and PayFast, step by step.
+
+## Go live now (static site)
 
 `GO-LIVE-GUIDE.md` covers putting the static site on Netlify (with bookings, contact messages and
 set-up requests arriving through Netlify Forms) and taking payment with PayFast.
@@ -1179,6 +1345,25 @@ test checkout is refused unless `ALLOW_SANDBOX_PAYMENTS=1`.
 The Claude preview server can't read the Desktop, so it runs a copy in the session scratchpad
 (`.claude/launch.json` → `aurelia`). Bash can run `python3 run.py` here directly.
 ````
+
+### `railway.json`
+
+<!-- FILE: railway.json sha256=0e262bf1f4762de67d466a79fed045e2f873b46defbfffbc59b66f4be37aa9d1 nl=1 -->
+```json
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "healthcheckPath": "/healthz",
+    "healthcheckTimeout": 60,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
+```
 
 ### `run.py`
 
@@ -2605,7 +2790,7 @@ def create_layout_tables(ev, layout: dict, count: int) -> int:
 
 ### `app/eventsite/demo.py`
 
-<!-- FILE: app/eventsite/demo.py sha256=a2938b4a4d7f80cb74c172542a895876c4ecbed9a73ed7807c2fe21e9bee2341 nl=1 -->
+<!-- FILE: app/eventsite/demo.py sha256=6817b677ae2dba850f5b7a6b43131c478205318db17e05d0538a55f4fc947124 nl=1 -->
 ```python
 """Sample events for the template gallery. All names and venues are fictional."""
 from __future__ import annotations
@@ -2717,7 +2902,7 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
     return {
         "_demo": True, "_design": design, "_group": group,
         "_functions": functions, "_schedule": schedule, "_menus": menus, "_hero": _stock_hero(template_slug, group),
-        "_gallery": [{"url": "", "caption": c} for c in ("", "", "", "", "", "")],
+        "_gallery": _stock_gallery(template_slug, group),
         "id": 0, "uid": "demo", "slug": f"sample-{template_slug}", "status": "published", "owner_id": 0,
         "template": template_slug, "category": s["category"], "name": s["name"], "hosts": s["hosts"],
         "description": s["description"], "event_date": ev_date.isoformat(), "start_time": first_time,
@@ -2744,6 +2929,16 @@ def _stock_hero(slug: str, group: str) -> str:
     if slug == "heritage" and stock.url("traditional"):
         return stock.url("traditional")
     return stock.url(group)
+
+
+def _stock_gallery(slug: str, group: str) -> list:
+    """Real photos when they have been added (static/img/stock/gallery/<slot>/), else six art tiles."""
+    from .. import stock
+    slot = "traditional" if slug == "heritage" and stock.gallery("traditional") else group
+    photos = stock.gallery(slot) or (stock.gallery("weddings") if group == "weddings" else [])
+    if photos:
+        return [{"url": u, "caption": ""} for u in photos[:9]]
+    return [{"url": "", "caption": ""} for _ in range(6)]
 
 ```
 
@@ -6621,12 +6816,13 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
 
 ### `app/stock.py`
 
-<!-- FILE: app/stock.py sha256=addca32bbe2ea64ad3ddbf553944080b7f738748f42aa34ec8b5eaa58611d3d0 nl=1 -->
+<!-- FILE: app/stock.py sha256=923ac2cad6d62a0f6d9212e42f4206566e07e711f58cbfc6c0e0d0f63b8eac86 nl=1 -->
 ```python
 """Stock photos for the marketing pages and the template samples.
 
 Drop a photo into static/img/stock/ under one of these names and it is used automatically; until then
-the line drawings and colour washes stay. Keep each photo under about 250 KB (1600px wide, JPEG).
+the line drawings and colour washes stay. Sample gallery photos go in static/img/stock/gallery/<slot>/.
+`python3 tools/add_photos.py PHOTOS_FOLDER_OR_ZIP` resizes and files them for you. Keep each photo under about 250 KB (1600px wide, JPEG).
 Record where each photo came from and its licence in CREDITS below (Unsplash and Pexels photos are free
 for commercial use without attribution, but keeping the source makes them easy to check or replace).
 """
@@ -6653,6 +6849,15 @@ def url(slot: str) -> str:
         if (DIR / f"{slot}.{ext}").is_file():
             return f"/static/img/stock/{slot}.{ext}"
     return ""
+
+
+def gallery(slot: str) -> list[str]:
+    """Web paths of the sample gallery photos for `slot` (static/img/stock/gallery/<slot>/), sorted by name."""
+    folder = DIR / "gallery" / slot
+    if not folder.is_dir():
+        return []
+    return [f"/static/img/stock/gallery/{slot}/{f.name}" for f in sorted(folder.iterdir())
+            if f.suffix.lower() in (".jpg", ".jpeg", ".webp", ".png")]
 ```
 
 ### `app/suggestions.py`
@@ -7454,7 +7659,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=80d2bc171612be34a1db82c7e536a2b554e9560b721309e054664dfec65bb074 nl=1 -->
+<!-- FILE: app/views/admin.py sha256=341d5c15b029ac27cebe0a54f5bccb3e8e2572abcee41cedba0af8897dfb54ab nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -7473,7 +7678,7 @@ from typing import Optional
 from .. import auth, catalog, config, db, events, notify
 from ..icons import i
 from ..services import email as mail
-from ..web import HTTPError, Response, esc, redirect, router, url
+from ..web import HTTPError, Response, download, esc, redirect, router, url
 from .forms import SLUG_RE, Form, check, csrf, errors_summary, field, fmt_date, fmt_dt, select, switch
 from .shell import admin_page, page_head
 
@@ -7621,6 +7826,38 @@ def _bar_list(rows: list[tuple[str, int, str]]) -> str:
     return f'<div class="bar-list">{"".join(out)}</div>'
 
 
+@router.get("/admin/backup")
+def backup(req):
+    """Everything needed to restore the platform: a consistent copy of the database plus every uploaded
+    photo, in one zip. Download it now and then and keep it somewhere safe (e.g. Google Drive)."""
+    import io
+    import os
+    import sqlite3
+    import tempfile
+    import zipfile
+    admin = auth.require_admin(req)
+    stamp = db.now()[:16].replace(":", "").replace("T", "-")
+    buf = io.BytesIO()
+    with tempfile.TemporaryDirectory(dir=str(config.DATA_DIR)) as tmp:
+        copy = os.path.join(tmp, "aurelia.sqlite3")
+        src = sqlite3.connect(str(config.DATABASE_PATH))
+        dst = sqlite3.connect(copy)
+        with dst:
+            src.backup(dst)
+        src.close()
+        dst.close()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            z.write(copy, "aurelia.sqlite3")
+            for root, _, files in os.walk(str(config.UPLOAD_DIR)):
+                for f in files:
+                    full = os.path.join(root, f)
+                    z.write(full, os.path.join("uploads", os.path.relpath(full, str(config.UPLOAD_DIR))), compress_type=zipfile.ZIP_STORED)
+            z.writestr("README.txt", "Aurelia Studio backup " + stamp + ".\nTo restore: stop the app, put aurelia.sqlite3 and the uploads folder "
+                                     "back into the data folder (/data on Railway), then start it again.\n")
+    auth.audit(admin["id"], "admin.backup", stamp)
+    return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
+
+
 @router.get("/admin")
 def overview(req):
     auth.require_admin(req)
@@ -7671,7 +7908,8 @@ def overview(req):
                  for u in recent_users]
 
     body = page_head("Platform overview", "Live figures across every customer and event. "
-                     + (f"{demo_events} demo events are excluded from all totals." if demo_events else "Demo data is excluded from all totals."))
+                     + (f"{demo_events} demo events are excluded from all totals." if demo_events else "Demo data is excluded from all totals."),
+                     f'<a class="btn btn--secondary btn--sm" href="/admin/backup">{i("download")}Download a backup</a>')
     body += f"""<div class="kpis">
 <div class="kpi kpi--accent"><span>Live revenue</span><b>{catalog.money(rev['live']['cents'])}</b><small>{rev['live']['count']} paid orders · avg {catalog.money(rev['average_cents'])}</small></div>
 <div class="kpi"><span>Customers</span><b>{customers}</b><small>+{new7} in 7 days · +{new30} in 30 days</small></div>
@@ -11222,7 +11460,7 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=81b63d9a868f03e1811dc09c4278515bd739fbc6a26512ff80a3970968e08c0a nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=17f7608e858cee9f6a0a9fca1fe6437077a519bb924e35baee5a4c62b4b73a60 nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
@@ -11407,6 +11645,16 @@ def why_digital() -> str:
     return (f'<section class="section"><div class="container">{section_head("Why send your invitations this way", "Say you are inviting 300 people.")}'
             f'<div class="vs box"><div class="vs-row vs-head"><span></span><b>Printed cards</b><b>One {esc(config.BRAND_NAME)} link</b></div>{body}</div>'
             f'<p class="tiny muted" style="margin-top:10px">Printing estimate based on South African prices of about R30 to R50 per printed invitation.</p></div></section>')
+
+
+@router.get("/healthz")
+def healthz(req):
+    """For the host's health check: answers once the database is reachable."""
+    from ..web import Response
+    db.val("SELECT 1")
+    r = Response("ok", content_type="text/plain; charset=utf-8")
+    r.header("Cache-Control", "no-store")
+    return r
 
 
 @router.get("/")
@@ -12514,7 +12762,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=cae10389270462f896b8c6547a4694268cca51eb22f493cf00ac5e989f7302ab nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=394d5bd9285b1d209ba3d2f9e1b7fd9f3f504dc8935ddeeb25d26dd51383c568 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -12692,7 +12940,7 @@ def create(req):
 <div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
 <button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>
 <div class="box" data-field="hosts"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Whose celebration is it?</h2>
-{field("hosts", HOST_LABEL.get(group or "weddings", ("Names", ""))[0], f.data.get("hosts") or get("hosts"), required=True, errors=f.errors, attrs={"placeholder": HOST_LABEL.get(group or "weddings", ("", "e.g. Lerato & Sipho"))[1], "data-host-labels": esc(json.dumps({k: list(v) for k, v in HOST_LABEL.items()}))}, hint="Shown large on your website and used for your link. You can change it later.")}</div>
+{field("hosts", HOST_LABEL.get(group or "weddings", ("Names", ""))[0], f.data.get("hosts") or get("hosts"), required=True, errors=f.errors, attrs={"placeholder": HOST_LABEL.get(group or "weddings", ("", "e.g. Lerato & Sipho"))[1], "data-host-labels": json.dumps({k: list(v) for k, v in HOST_LABEL.items()})}, hint="Shown large on your website and used for your link. You can change it later.")}</div>
 {about}
 <div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up {i("arrow", "i--arrow")}</button></div></form></div></section>
 {CREATE_JS}"""
@@ -13985,6 +14233,45 @@ PY
 tar -czf "$DEST/uploads-$STAMP.tgz" -C "$DATA" uploads
 find "$DEST" -type f -mtime +30 -delete
 echo "Backed up to $DEST ($STAMP)"
+```
+
+### `deploy/entrypoint.py`
+
+<!-- FILE: deploy/entrypoint.py sha256=40ac8db447dec624fb4ab4b9e435576d0b1ced84c2996cd2fe173e18f44dba4b nl=1 -->
+```python
+#!/usr/bin/env python3
+"""Container start: make sure the data folder belongs to the app user, then run the app as that user.
+
+Hosts like Railway attach the persistent disk (/data) owned by root. Starting as root, fixing ownership
+and dropping privileges keeps the app itself from running as root while still being able to write there.
+"""
+from __future__ import annotations
+
+import os
+import pwd
+import sys
+
+DATA = os.environ.get("AURELIA_DATA_DIR", "/data")
+USER = "aurelia"
+
+if os.geteuid() == 0:
+    pw = pwd.getpwnam(USER)
+    os.makedirs(DATA, exist_ok=True)
+    for root, dirs, files in os.walk(DATA):
+        for name in [root] + [os.path.join(root, x) for x in dirs + files]:
+            try:
+                st = os.lstat(name)
+                if st.st_uid != pw.pw_uid:
+                    os.lchown(name, pw.pw_uid, pw.pw_gid)
+            except OSError:
+                pass
+    os.setgroups([])
+    os.setgid(pw.pw_gid)
+    os.setuid(pw.pw_uid)
+    os.environ["HOME"] = pw.pw_dir
+
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 ```
 
 ### `preview_site/eventrender.js`
@@ -18438,7 +18725,7 @@ def find(pattern: str, text: str) -> str:
 
 ### `tests/test_admin.py`
 
-<!-- FILE: tests/test_admin.py sha256=f8457eae01bf12c6518ecc5b7c665f06d3aa6dcd77082d571204f0234ecb3c14 nl=1 -->
+<!-- FILE: tests/test_admin.py sha256=7f221174c75ea6a28e92a342cf4b3b849fdb9a62108a42bd0026b7250a5c6553 nl=1 -->
 ```python
 """Admin dashboard permissions and actions, plus the background scheduler."""
 from __future__ import annotations
@@ -18697,6 +18984,27 @@ class Scheduler(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BackupTest(unittest.TestCase):
+    def test_admin_can_download_backup_others_cannot(self):
+        import io
+        import zipfile
+        from tests.helpers import Client, fresh_app, login, make_user
+        app = fresh_app("backup")
+        make_user("boss@example.com", role="admin")
+        make_user("guest@example.com")
+        c = Client(app)
+        login(c, "boss@example.com")
+        r = c.get("/admin/backup")
+        self.assertEqual(r.status, 200)
+        names = zipfile.ZipFile(io.BytesIO(r.body)).namelist()
+        self.assertIn("aurelia.sqlite3", names)
+        self.assertIn("README.txt", names)
+        other = Client(app)
+        login(other, "guest@example.com")
+        self.assertNotEqual(other.get("/admin/backup").status, 200)
+
 ```
 
 ### `tests/test_core.py`
@@ -19869,9 +20177,90 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
+### `tools/add_photos.py`
+
+<!-- FILE: tools/add_photos.py sha256=5cab910c15d8efa4bf3bb7d5e1566bae6d4af2d3cdfd2d43ad703a5310294530 nl=1 -->
+```python
+#!/usr/bin/env python3
+"""Add photos for the home page tiles and the template sample galleries.
+
+    python3 tools/add_photos.py PHOTOS_FOLDER_OR_ZIP
+
+Put each photo in a sub-folder named after where it goes (or start its file name with that word):
+  weddings/  traditional/  baby/  parties/  other/
+The first photo in each folder (by name) becomes that occasion's main photo (home page tile and the
+big picture in the template samples); all of them go into the sample gallery. Photos are resized to
+1600px on the long side and saved as JPEG, so they stay small. Needs Pillow (pip install Pillow);
+the website itself doesn't.
+"""
+from __future__ import annotations
+
+import io
+import os
+import sys
+import zipfile
+from pathlib import Path
+
+from PIL import Image, ImageOps
+
+ROOT = Path(__file__).resolve().parent.parent
+STOCK = ROOT / "static" / "img" / "stock"
+SLOTS = ("weddings", "traditional", "baby", "parties", "other")
+EXT = (".jpg", ".jpeg", ".png", ".webp", ".heic")
+
+
+def slot_of(path: str) -> str:
+    parts = [p.lower() for p in Path(path).parts]
+    for p in parts[::-1]:
+        for s in SLOTS:
+            if p == s or p.startswith(s):
+                return s
+    return ""
+
+
+def items(src: str):
+    if zipfile.is_zipfile(src):
+        with zipfile.ZipFile(src) as z:
+            for n in sorted(z.namelist()):
+                if n.lower().endswith(EXT) and not n.startswith("__MACOSX"):
+                    yield n, z.read(n)
+    else:
+        for dirpath, _, files in os.walk(src):
+            for f in sorted(files):
+                if f.lower().endswith(EXT):
+                    full = os.path.join(dirpath, f)
+                    yield os.path.relpath(full, src), open(full, "rb").read()
+
+
+def main(src: str) -> None:
+    counts: dict = {}
+    for name, data in items(src):
+        slot = slot_of(name)
+        if not slot:
+            print(f"skipped (put it in a weddings/traditional/baby/parties/other folder): {name}")
+            continue
+        img = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+        img.thumbnail((1600, 1600))
+        n = counts.get(slot, 0) + 1
+        counts[slot] = n
+        folder = STOCK / "gallery" / slot
+        folder.mkdir(parents=True, exist_ok=True)
+        img.save(folder / f"{n:02d}.jpg", "JPEG", quality=82, optimize=True, progressive=True)
+        if n == 1:
+            img.save(STOCK / f"{slot}.jpg", "JPEG", quality=82, optimize=True, progressive=True)
+        print(f"{slot}: {name} -> gallery/{slot}/{n:02d}.jpg")
+    print("Done:", ", ".join(f"{k} {v}" for k, v in counts.items()) or "no photos found")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit(__doc__)
+    main(sys.argv[1])
+```
+
 ### `tools/export_preview.py`
 
-<!-- FILE: tools/export_preview.py sha256=f31aabdd7711069f53f8ff4d69812ed62b0a5c1c4ea3065214c76e4051df227c nl=1 -->
+<!-- FILE: tools/export_preview.py sha256=5fa00687f131e0ddc33eb848632ef8bafc94eb0a852ff79eb431a15ecf7f0644 nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Build the shareable, server-free version of the Aurelia site (published as a Claude Artifact).
@@ -19915,6 +20304,8 @@ for d in ("static/css", "static/js", "static/img"):
     os.makedirs(os.path.join(OUT, d))
 for f in ["css/app.css", "css/icons.css", "css/eventsite.css", "js/eventsite.js", "js/floorplan.js", "img/favicon.svg"]:
     shutil.copy(os.path.join(SRC, "static", f), os.path.join(OUT, "static", f))
+if os.path.isdir(os.path.join(SRC, "static", "img", "stock")):
+    shutil.copytree(os.path.join(SRC, "static", "img", "stock"), os.path.join(OUT, "static", "img", "stock"))
 for f in ("eventrender.js", "journey.js"):
     shutil.copy(os.path.join(SRC, "preview_site", f), os.path.join(OUT, "static/js", f))
 
@@ -20131,7 +20522,7 @@ print(f"{OUT}: {len(views)} pages + journey, {len(previews)} template samples, l
 
 ### `tools/make_bundle.py`
 
-<!-- FILE: tools/make_bundle.py sha256=f3e36d93afc36c5de6f42bc5f3d14f982fc58c63225ee756554cb213aff11b0e nl=1 -->
+<!-- FILE: tools/make_bundle.py sha256=e0cb605a0a6a8394d964d996f7f0efae035618f3fa5a0b38f1717e13fe67ccb1 nl=1 -->
 ````python
 #!/usr/bin/env python3
 """Write AURELIA-COMPLETE.md: the whole project in one Markdown file.
@@ -20153,6 +20544,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "AURELIA-COMPLETE.md")
 SKIP_DIRS = {"data", "__pycache__", ".git", ".claude", "dist", "preview_build"}
 SKIP_FILES = {".DS_Store", "AURELIA-COMPLETE.md"}
+BINARY = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".zip", ".pdf")   # photos live in the Git repository, not this text bundle
 LANG = {".py": "python", ".sql": "sql", ".css": "css", ".js": "javascript", ".md": "markdown", ".svg": "xml",
         ".sh": "sh", ".json": "json", ".service": "ini", ".toml": "toml"}
 
@@ -20162,7 +20554,7 @@ def project_files() -> list[str]:
     for d, dirs, files in os.walk(ROOT):
         dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS)
         for f in sorted(files):
-            if f in SKIP_FILES or f.endswith(".pyc"):
+            if f in SKIP_FILES or f.endswith(".pyc") or f.lower().endswith(BINARY):
                 continue
             out.append(os.path.relpath(os.path.join(d, f), ROOT))
     return sorted(out, key=lambda p: (p.count("/") > 0, p))
@@ -20538,7 +20930,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 - `static/`: `css/app.css` (the design system: pastel tokens at the top), `css/eventsite.css` (event
   templates), `css/admin.css`, `css/icons.css` (generated), `js/app.js`, `js/seating.js`,
   `js/eventsite.js`, `img/favicon.svg`.
-- `tests/`: an in-process test client and 96 tests.
+- `tests/`: an in-process test client and 97 tests.
 - `deploy/`: Caddyfile, systemd unit and backup script. `Dockerfile` and `.dockerignore` for container
   hosts.
 

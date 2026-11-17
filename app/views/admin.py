@@ -15,7 +15,7 @@ from typing import Optional
 from .. import auth, catalog, config, db, events, notify
 from ..icons import i
 from ..services import email as mail
-from ..web import HTTPError, Response, esc, redirect, router, url
+from ..web import HTTPError, Response, download, esc, redirect, router, url
 from .forms import SLUG_RE, Form, check, csrf, errors_summary, field, fmt_date, fmt_dt, select, switch
 from .shell import admin_page, page_head
 
@@ -163,6 +163,38 @@ def _bar_list(rows: list[tuple[str, int, str]]) -> str:
     return f'<div class="bar-list">{"".join(out)}</div>'
 
 
+@router.get("/admin/backup")
+def backup(req):
+    """Everything needed to restore the platform: a consistent copy of the database plus every uploaded
+    photo, in one zip. Download it now and then and keep it somewhere safe (e.g. Google Drive)."""
+    import io
+    import os
+    import sqlite3
+    import tempfile
+    import zipfile
+    admin = auth.require_admin(req)
+    stamp = db.now()[:16].replace(":", "").replace("T", "-")
+    buf = io.BytesIO()
+    with tempfile.TemporaryDirectory(dir=str(config.DATA_DIR)) as tmp:
+        copy = os.path.join(tmp, "aurelia.sqlite3")
+        src = sqlite3.connect(str(config.DATABASE_PATH))
+        dst = sqlite3.connect(copy)
+        with dst:
+            src.backup(dst)
+        src.close()
+        dst.close()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            z.write(copy, "aurelia.sqlite3")
+            for root, _, files in os.walk(str(config.UPLOAD_DIR)):
+                for f in files:
+                    full = os.path.join(root, f)
+                    z.write(full, os.path.join("uploads", os.path.relpath(full, str(config.UPLOAD_DIR))), compress_type=zipfile.ZIP_STORED)
+            z.writestr("README.txt", "Aurelia Studio backup " + stamp + ".\nTo restore: stop the app, put aurelia.sqlite3 and the uploads folder "
+                                     "back into the data folder (/data on Railway), then start it again.\n")
+    auth.audit(admin["id"], "admin.backup", stamp)
+    return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
+
+
 @router.get("/admin")
 def overview(req):
     auth.require_admin(req)
@@ -213,7 +245,8 @@ def overview(req):
                  for u in recent_users]
 
     body = page_head("Platform overview", "Live figures across every customer and event. "
-                     + (f"{demo_events} demo events are excluded from all totals." if demo_events else "Demo data is excluded from all totals."))
+                     + (f"{demo_events} demo events are excluded from all totals." if demo_events else "Demo data is excluded from all totals."),
+                     f'<a class="btn btn--secondary btn--sm" href="/admin/backup">{i("download")}Download a backup</a>')
     body += f"""<div class="kpis">
 <div class="kpi kpi--accent"><span>Live revenue</span><b>{catalog.money(rev['live']['cents'])}</b><small>{rev['live']['count']} paid orders · avg {catalog.money(rev['average_cents'])}</small></div>
 <div class="kpi"><span>Customers</span><b>{customers}</b><small>+{new7} in 7 days · +{new30} in 30 days</small></div>

@@ -174,7 +174,7 @@ def create(req):
 <div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
 <button class="btn btn--ghost btn--sm" type="button" data-show-all hidden style="margin-top:12px">Show all templates</button></div>
 <div class="box" data-field="hosts"><h2 style="font-size:1.25rem;margin-bottom:16px">3. Whose celebration is it?</h2>
-{field("hosts", HOST_LABEL.get(group or "weddings", ("Names", ""))[0], f.data.get("hosts") or get("hosts"), required=True, errors=f.errors, attrs={"placeholder": HOST_LABEL.get(group or "weddings", ("", "e.g. Lerato & Sipho"))[1], "data-host-labels": esc(json.dumps({k: list(v) for k, v in HOST_LABEL.items()}))}, hint="Shown large on your website and used for your link. You can change it later.")}</div>
+{field("hosts", HOST_LABEL.get(group or "weddings", ("Names", ""))[0], f.data.get("hosts") or get("hosts"), required=True, errors=f.errors, attrs={"placeholder": HOST_LABEL.get(group or "weddings", ("", "e.g. Lerato & Sipho"))[1], "data-host-labels": json.dumps({k: list(v) for k, v in HOST_LABEL.items()})}, hint="Shown large on your website and used for your link. You can change it later.")}</div>
 {about}
 <div class="btn-row"><button class="btn btn--primary btn--lg" type="submit">Start setting up {i("arrow", "i--arrow")}</button></div></form></div></section>
 {CREATE_JS}"""

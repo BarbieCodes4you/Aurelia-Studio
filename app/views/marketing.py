@@ -183,6 +183,16 @@ def why_digital() -> str:
             f'<p class="tiny muted" style="margin-top:10px">Printing estimate based on South African prices of about R30 to R50 per printed invitation.</p></div></section>')
 
 
+@router.get("/healthz")
+def healthz(req):
+    """For the host's health check: answers once the database is reachable."""
+    from ..web import Response
+    db.val("SELECT 1")
+    r = Response("ok", content_type="text/plain; charset=utf-8")
+    r.header("Cache-Control", "no-store")
+    return r
+
+
 @router.get("/")
 def home(req):
     pastel_first = ["bloom", "confetti", "aurora", "cradle", "atelier", "linea"]

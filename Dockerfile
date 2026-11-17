@@ -1,4 +1,5 @@
-# Aurelia: Python standard library only, no pip install needed.
+# Aurelia Studio: Python standard library only, no pip install needed.
+# The persistent disk is mounted at /data (Railway: add a Volume with mount path /data).
 FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1 \
     AURELIA_DATA_DIR=/data \
@@ -8,7 +9,6 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 COPY . /app
 RUN useradd --create-home aurelia && mkdir -p /data && chown -R aurelia /data /app/static/css
-USER aurelia
-VOLUME ["/data"]
 EXPOSE 8040
-CMD ["python3", "run.py"]
+# Starts as root only to fix /data ownership, then runs the app as the "aurelia" user.
+CMD ["python3", "deploy/entrypoint.py"]
