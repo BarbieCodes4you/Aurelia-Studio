@@ -3,6 +3,34 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-17 (later): what the client sees after paying
+
+**Question (from you)**: what does the client face after purchasing? Answered with a walkthrough page
+of real screens (pay, confirmation, emails, My events, dashboard, sharing, guest replies, next-morning
+email, RSVPs, seating, the guest's table, reports), captured from the full platform in test mode.
+
+**Changes made while walking through it**
+- Checkout: Pay buttons sit right under the price on every package card; "VAT incl." no longer splits.
+- Emails after paying: the receipt plus one "is live" email (link, Send your invitations, dashboard),
+  instead of three overlapping emails at once. "Next steps" goes out the morning after publishing, only
+  when something is left to do, using the same list as the dashboard (`scheduler._next_steps`).
+  The Share page has "Email me this link" (sends the "Event website link" template on request).
+- Invitation counts: guests who replied, or opened their personal link, count as having their
+  invitation; reminders count only invited guests who haven't replied; the WhatsApp queue skips
+  guests who replied.
+- Guest list paste: "Thabo & Lindi Mokoena" becomes one invitation for two. The details step suggests
+  an RSVP deadline, and changing it updates the invitation wording.
+- Seating floor plan: `pos_y` is now pixels from the top (migration `003_floor_pixels.sql`); tables sit
+  three across under the top table, new tables take free places, the floor grows to fit the lowest
+  table (no more cut-off rows on big events), cards align by their tops, long names stay on one line
+  inside the card (full name on hover), dragging keeps the card under the pointer. Auto-seat gives
+  each family its own table first and creates the number of tables chosen during set-up.
+
+**Checked**
+- 104 tests pass on Python 3.12 and 3.11.
+- Walkthrough in a browser with no script errors; a 60-party event seats into 17 tables with no
+  overlapping or cut-off cards.
+
 ## 2026-11-17: full platform on Railway
 
 **Decisions (from you)**

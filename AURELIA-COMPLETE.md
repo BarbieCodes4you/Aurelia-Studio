@@ -1,6 +1,6 @@
 # Aurelia Studio: complete project and hosting guide
 
-Generated 2026-11-17 from the working project. **78 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-17 from the working project. **79 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -477,6 +477,7 @@ is manual today, by design).
 | GET | `/dashboard/events/<uid>` | dashboard |
 | GET, POST | `/dashboard/events/<uid>/share/whatsapp` | dashboard |
 | GET | `/dashboard/events/<uid>/share` | dashboard |
+| POST | `/dashboard/events/<uid>/share/email-me` | dashboard |
 | GET | `/dashboard/events/<uid>/share/qr.svg` | dashboard |
 | GET | `/dashboard/events/<uid>/share/qr.png` | dashboard |
 | GET | `/dashboard/events/<uid>/reports` | dashboard |
@@ -556,6 +557,7 @@ is manual today, by design).
 - `app/icons.py`
 - `app/migrations/001_init.sql`
 - `app/migrations/002_login_links.sql`
+- `app/migrations/003_floor_pixels.sql`
 - `app/notify.py`
 - `app/seed.py`
 - `app/services/__init__.py`
@@ -970,12 +972,40 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=714241c655b89807e1099901e207d556c700323d30f606c0229e823ac253a642 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=5b7123630cf0590de9b788a90f453140cd41315545a4089c2ee512064205b3bc nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-17 (later): what the client sees after paying
+
+**Question (from you)**: what does the client face after purchasing? Answered with a walkthrough page
+of real screens (pay, confirmation, emails, My events, dashboard, sharing, guest replies, next-morning
+email, RSVPs, seating, the guest's table, reports), captured from the full platform in test mode.
+
+**Changes made while walking through it**
+- Checkout: Pay buttons sit right under the price on every package card; "VAT incl." no longer splits.
+- Emails after paying: the receipt plus one "is live" email (link, Send your invitations, dashboard),
+  instead of three overlapping emails at once. "Next steps" goes out the morning after publishing, only
+  when something is left to do, using the same list as the dashboard (`scheduler._next_steps`).
+  The Share page has "Email me this link" (sends the "Event website link" template on request).
+- Invitation counts: guests who replied, or opened their personal link, count as having their
+  invitation; reminders count only invited guests who haven't replied; the WhatsApp queue skips
+  guests who replied.
+- Guest list paste: "Thabo & Lindi Mokoena" becomes one invitation for two. The details step suggests
+  an RSVP deadline, and changing it updates the invitation wording.
+- Seating floor plan: `pos_y` is now pixels from the top (migration `003_floor_pixels.sql`); tables sit
+  three across under the top table, new tables take free places, the floor grows to fit the lowest
+  table (no more cut-off rows on big events), cards align by their tops, long names stay on one line
+  inside the card (full name on hover), dragging keeps the card under the pointer. Auto-seat gives
+  each family its own table first and creates the number of tables chosen during set-up.
+
+**Checked**
+- 104 tests pass on Python 3.12 and 3.11.
+- Walkthrough in a browser with no script errors; a 60-party event seats into 17 tables with no
+  overlapping or cut-off cards.
 
 ## 2026-11-17: full platform on Railway
 
@@ -2419,7 +2449,7 @@ def migrate() -> list[str]:
 
 ### `app/events.py`
 
-<!-- FILE: app/events.py sha256=05f69a6deabeb102cbac4867ce942d47ea216a693672910a6defb7ae650ab892 nl=1 -->
+<!-- FILE: app/events.py sha256=0947a961dc34ec7d8ef94eeb4f31ce39113558054bfab9881e6c7520f7e19ba0 nl=1 -->
 ```python
 """Event model helpers shared by the wizard, dashboard, event websites, admin and emails."""
 from __future__ import annotations
@@ -2559,8 +2589,10 @@ def add_pasted_guests(ev, people: list[dict]) -> int:
         digits = re.sub(r"\D", "", p.get("phone", ""))
         if p["name"].lower() in names or (p.get("email") and p["email"] in emails) or (digits and digits in phones):
             continue
-        first, _, last = p["name"].partition(" ")
+        couple = re.match(r"^(\S+\s+(?:&|and)\s+\S+)\s*(.*)$", p["name"], re.I)    # "Thabo & Lindi Mokoena": one invitation for two
+        first, last = (couple.group(1), couple.group(2)) if couple else (p["name"].partition(" ")[0], p["name"].partition(" ")[2])
         db.insert("guests", {"event_id": ev["id"], "token": new_guest_token(), "first_name": first[:60], "last_name": last[:80],
+                             "plus_ones_allowed": 1 if couple else 0,
                              "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "family_group": p.get("group", "")[:60], "source": "import",
                              "email_consent": 1, "created_at": now, "updated_at": now})
         names.add(p["name"].lower())
@@ -2760,26 +2792,65 @@ def seating_layout(ev) -> dict:
     return lay
 
 
+# Floor plan coordinates: pos_x is the table card's centre as a percent of the floor's width; pos_y is the
+# card's top edge in pixels from the top of the floor. The seating editor grows the floor to fit every card.
+FLOOR_TOP = 44         # px: first row, just below the "Floor plan" label
+FLOOR_TOP_ROW = 290    # px: the top table's row
+FLOOR_ROW = 320        # px between rows: a full table card (four names, then "+N more") fits with room to spare
+FLOOR_COLS = 3         # tables across: three fit a laptop screen beside the guest list
+
+
+def floor_slots(event_id: int, n: int, cols: int = FLOOR_COLS) -> list:
+    """(x, y) for n new guest tables: the first free places on a grid below the top table (if any), so a
+    new table never lands on an existing one, and gaps left by deleted tables fill up first."""
+    rows = db.q("SELECT pos_x, pos_y, notes FROM seating_tables WHERE event_id = ?", (event_id,))
+    taken = [(r["pos_x"], r["pos_y"]) for r in rows]
+    base = FLOOR_TOP + (FLOOR_TOP_ROW if any(r["notes"] == TOP_TABLE_NOTE for r in rows) else 0)
+    cols = max(1, cols)
+    width = 100 / cols
+    out, i = [], 0
+    while len(out) < n:
+        x, y = round(width * (i % cols + 0.5), 1), base + FLOOR_ROW * (i // cols)
+        if not any(abs(x - tx) < min(20, width * 0.8) and abs(y - ty) < FLOOR_ROW * 0.8 for tx, ty in taken):
+            out.append((x, y))
+            taken.append((x, y))
+        i += 1
+    return out
+
+
 def create_layout_tables(ev, layout: dict, count: int) -> int:
     """Create the top table (if any) and `count` guest tables in the chosen shapes, laid out on the floor
     plan with the top table at the front. Returns how many tables were made."""
     cap = max(2, min(40, int(layout.get("capacity") or 10)))
-    made, sort = 0, 0
+    made, sort = 0, db.val("SELECT COUNT(*) FROM seating_tables WHERE event_id = ?", (ev["id"],), 0)
     if layout.get("top") in ("head", "sweetheart"):
         head = layout["top"] == "head"
         db.insert("seating_tables", {"event_id": ev["id"], "name": "Head table" if head else "Sweetheart table",
                                      "capacity": 10 if head else 2, "shape": "long" if head else "round",
-                                     "pos_x": 50, "pos_y": 6, "notes": TOP_TABLE_NOTE, "sort": sort})
-        made, sort = 1, 1
-    cols = 2 if layout.get("guest") == "long" else 4
-    for k in range(max(0, min(120, count))):
+                                     "pos_x": 50, "pos_y": FLOOR_TOP, "notes": TOP_TABLE_NOTE, "sort": sort})
+        made, sort = 1, sort + 1
+    count = max(0, min(120, count))
+    cols = min(2 if layout.get("guest") == "long" else FLOOR_COLS, max(1, count))    # two tables spread across the room, not bunched left
+    for k, (x, y) in enumerate(floor_slots(ev["id"], count, cols)):
         long = layout.get("guest") == "long" or (layout.get("guest") == "mixed" and k % 3 == 2)
-        x = (100 / cols) * (k % cols + 0.5)
-        y = 26 + (k // cols) * (18 if cols == 4 else 14)
         db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": cap, "shape": "long" if long else "round",
-                                     "pos_x": round(x, 1), "pos_y": min(96, y), "sort": sort + k})
+                                     "pos_x": x, "pos_y": y, "sort": sort + k})
         made += 1
     return made
+
+
+def suggested_rsvp_deadline(event_date: str) -> str:
+    """Six weeks before the event (a week before if the event is close); "" if that would already be past."""
+    from datetime import date, timedelta
+    try:
+        d = date.fromisoformat(event_date or "")
+    except ValueError:
+        return ""
+    for weeks in (6, 4, 2, 1):
+        cand = d - timedelta(weeks=weeks)
+        if cand > date.today():
+            return cand.isoformat()
+    return ""
 ```
 
 ### `app/eventsite/__init__.py`
@@ -4642,9 +4713,20 @@ DROP TABLE user_tokens;
 ALTER TABLE user_tokens_new RENAME TO user_tokens;
 ```
 
+### `app/migrations/003_floor_pixels.sql`
+
+<!-- FILE: app/migrations/003_floor_pixels.sql sha256=d420ada08971c43de9ad9e6c628bc2acbc0b5ba83eaddb0f33b1d3b26c7ef584 nl=1 -->
+```sql
+-- Seating floor plan: pos_y becomes the table card's top edge in pixels from the top of the floor
+-- (pos_x stays the card's centre as a percent of the floor's width). The editor now grows the floor to
+-- fit every table, so rows of tables are never cut off. Earlier percent values convert against the
+-- editor's 640px starting height.
+UPDATE seating_tables SET pos_y = ROUND(pos_y * 6.4);
+```
+
 ### `app/notify.py`
 
-<!-- FILE: app/notify.py sha256=f65509e2a0c9f4f1dbe2a007a56c11bdf845f2bf81e7a30e04048fea1b5f6ffe nl=1 -->
+<!-- FILE: app/notify.py sha256=6d0e2a236554d2cf9e1b695559f638209e43ce57a7f5afe8c5bdf247f2577ae0 nl=1 -->
 ```python
 """Common email variables and organiser/guest notification helpers."""
 from __future__ import annotations
@@ -4734,6 +4816,16 @@ def summary_table_html(stats: dict) -> str:
     return f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{cells}</table>"
 
 
+def steps_html(steps) -> str:
+    """Numbered (title, why, url, link text) steps for the "Next steps" email."""
+    rows = "".join(
+        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#6A4FC4'>{n}</td>"
+        f"<td style='padding:0 0 18px;vertical-align:top'><b>{esc(t)}</b><br><span style='color:#625D5E'>{esc(w)}</span><br>"
+        f"<a href='{esc(url)}' style='color:#5B3FC4;font-weight:600'>{esc(link)}</a></td></tr>"
+        for n, (t, w, url, link) in enumerate(steps, 1))
+    return f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{rows}</table>"
+
+
 def rsvp_details_html(ev, g) -> str:
     parts = []
     if g["status"] == "attending":
@@ -4777,9 +4869,7 @@ def publish(ev, actor_id: Optional[int] = None, send_emails: bool = True) -> tup
                             "created_at": db.now()})
     if send_emails and first_time:
         ev = events.by_id(ev["id"])
-        organiser(ev, "website_published", owner_only=True)
-        organiser(ev, "event_link", owner_only=True)
-        organiser(ev, "setup_instructions", owner_only=True)
+        organiser(ev, "website_published", owner_only=True)    # next steps follow the next day, only if any are left
     return True, "Your event website is live."
 
 
@@ -4791,7 +4881,7 @@ def unpublish(ev, actor_id: Optional[int] = None) -> None:
 
 ### `app/seed.py`
 
-<!-- FILE: app/seed.py sha256=9a5afec69fa84f390428a24bbf56e32ee6441f85985e3b97ce7b7dbbc177b8cb nl=1 -->
+<!-- FILE: app/seed.py sha256=0f74a91b2ebfa95d42eb6e6cced1e5c85a214b34acdfc2e8fe8d7be91b59fb83 nl=1 -->
 ```python
 """Demo data for development and demos. Every row is flagged is_demo = 1 and every email ends in
 @demo.aurelia.example, so it is easy to tell apart from customer data and to remove.
@@ -4900,9 +4990,9 @@ def _seat(ev, guests, leave_unseated=6):
 
 
 def _tables(ev, names, cap=10, shape="round"):
-    for n, name in enumerate(names):
+    for n, (name, (x, y)) in enumerate(zip(names, events.floor_slots(ev["id"], len(names)))):
         db.insert("seating_tables", {"event_id": ev["id"], "name": name, "capacity": cap, "shape": shape,
-                                     "pos_x": 12 + (n % 5) * 19, "pos_y": 20 + (n // 5) * 24, "sort": n})
+                                     "pos_x": x, "pos_y": y, "sort": n})
 
 
 def _menu(ev, name, items):
@@ -5022,7 +5112,7 @@ def run() -> None:
 
 ### `app/services/email.py`
 
-<!-- FILE: app/services/email.py sha256=e29315dba097db8982b979086ab6b72422cf8bbdb523793fde02577301bd0761 nl=1 -->
+<!-- FILE: app/services/email.py sha256=d13d177517d2da175512dae93e64660e4c4feb4a9cbea3fd4eba184fdae7d71c nl=1 -->
 ```python
 """Email delivery behind a provider interface, with editable templates and a delivery log.
 
@@ -5075,13 +5165,13 @@ DEFAULT_TEMPLATES = {
                              "Hi {{first_name}},\n\nThank you. We've received your payment of {{amount}} for the {{package}}.\n\nInvoice: {{invoice_no}}\nReference: {{order_ref}}\n\n[button: View your receipt | {{receipt_url}}]"),
     "website_published": ("organiser", "Website publication",
                           "{{event_name}} is live",
-                          "Hi {{first_name}},\n\nYour event website is published and ready to share. Guests open it without an app or an account.\n\n{{public_url}}\n\n[button: Open your event website | {{public_url}}]\n\nTip: share it on WhatsApp from your dashboard, or download the QR code for printed signage."),
-    "event_link": ("organiser", "Event website link",
+                          "Hi {{first_name}},\n\nYour website for {{event_name}} is live. Guests open it on their phones, without an app or an account:\n\n{{public_url}}\n\n[button: Send your invitations | {{share_url}}]\n\nReplies, meal choices and seating all come together on your dashboard: {{dashboard_url}}\n\nFor printed signage, download your QR code from the Share page."),
+    "event_link": ("organiser", "Event website link (sent when you tap \"Email me this link\")",
                    "Your link for {{event_name}}",
                    "Hi {{first_name}},\n\nHere is the one link for everything about {{event_name}}:\n\n{{public_url}}\n\nCopy it into WhatsApp, email or a text message. Every guest sees the same page; personal links for each guest are in your guest list.\n\n[button: Share options | {{share_url}}]"),
-    "setup_instructions": ("organiser", "Event setup instructions",
+    "setup_instructions": ("organiser", "Next steps (the day after publishing, only if something is left to do)",
                            "Next steps for {{event_name}}",
-                           "Hi {{first_name}},\n\nThree things to do next:\n\n1. Add or import your guest list, so each guest gets a personal RSVP link.\n2. Share your link on WhatsApp or by email.\n3. Once RSVPs come in, build your seating chart and check meal choices.\n\n[button: Open your dashboard | {{dashboard_url}}]"),
+                           "Hi {{first_name}},\n\n{{event_name}} is live. Here's what's left to do:\n\n{{{steps}}}\n\n[button: Open your dashboard | {{dashboard_url}}]\n\nYour dashboard always shows the next thing to do."),
     "new_rsvp": ("organiser", "New RSVP notification",
                  "New RSVP: {{guest_name}} {{status_text}}",
                  "Hi {{first_name}},\n\n{{guest_name}} {{status_text}} for {{event_name}}.\n\n{{{details}}}\n\nResponses so far: {{attending}} attending, {{declined}} declined, {{pending}} still to reply.\n\n[button: View all RSVPs | {{rsvp_url}}]"),
@@ -6528,7 +6618,7 @@ def final_attachments(ev, user_id: Optional[int] = None) -> list:
 
 ### `app/services/scheduler.py`
 
-<!-- FILE: app/services/scheduler.py sha256=22d40d5daf8515e28d738224260a099269176d3c33260aad648358d02f03e7c9 nl=1 -->
+<!-- FILE: app/services/scheduler.py sha256=2082913fa91ad7ec75a73cf584dcad41ce87c9a040882d5c56a61ccfcd91d419 nl=1 -->
 ```python
 """Background jobs: RSVP summaries, reminders, post-event reports, hosting expiry, clean-up.
 
@@ -6650,6 +6740,20 @@ def _event_reminders(ev, today: date) -> int:
     return 1
 
 
+def _next_steps(ev, today: date) -> int:
+    """From the day after the website goes live (for a week): what's left to do, if anything. The same list
+    the dashboard shows, so a client who has already shared their link and seen replies gets no email."""
+    published = _date(ev.get("published_at"))
+    if not events.is_live(ev) or not published or not (1 <= (today - published).days <= 7):
+        return 0
+    from ..views.dashboard import next_steps
+    steps = [(t, w, config.BASE_URL + href, link) for t, w, href, link in next_steps(ev)[:3]]
+    if not steps or not mark(ev["id"], "next-steps"):
+        return 0
+    notify.organiser(ev, "setup_instructions", {"steps": notify.steps_html(steps)}, owner_only=True)
+    return 1
+
+
 def _post_event(ev, today: date) -> int:
     event_day = _date(ev.get("event_date"))
     if not event_day or not (1 <= (today - event_day).days <= 3):
@@ -6688,7 +6792,7 @@ def _prune() -> int:
     return n
 
 
-JOBS = [("summaries", _summaries), ("outstanding", _outstanding), ("guest_reminders", _auto_guest_reminders),
+JOBS = [("next_steps", _next_steps), ("summaries", _summaries), ("outstanding", _outstanding), ("guest_reminders", _auto_guest_reminders),
         ("event_reminders", _event_reminders), ("post_event", _post_event)]
 
 
@@ -7659,7 +7763,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=341d5c15b029ac27cebe0a54f5bccb3e8e2572abcee41cedba0af8897dfb54ab nl=1 -->
+<!-- FILE: app/views/admin.py sha256=c9444d95f3998f723d76619cc771dc44efa7f14cb87d18e1d7e05979bba9f2c0 nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -8611,6 +8715,8 @@ def sample_vars() -> dict:
         "message_html": "<p style='margin:0 0 18px'>We can't wait to celebrate with you.</p>",
         "details": "<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'><tr><td style='padding:6px 12px 6px 0;color:#625D5E'>Meal</td><td>Roast lamb</td></tr></table>",
         "summary_table": notify.summary_table_html(stats),
+        "steps": notify.steps_html([("Send your invitations", "150 guests haven't been sent their invitation yet. Send them on WhatsApp, one tap each.",
+                                     dash + "/share/whatsapp", "Start sending")]),
     }
 
 
@@ -8928,7 +9034,7 @@ def audit_log(req):
 
 ### `app/views/dashboard.py`
 
-<!-- FILE: app/views/dashboard.py sha256=5080d31d440fbcb1bc99a4c167769133a61b34e0a8e354d5547cacf63e0fa938 nl=1 -->
+<!-- FILE: app/views/dashboard.py sha256=e23ce54074fe3f51d400e7d2933873330f2858775c119bae0043e8967ad170cc nl=1 -->
 ```python
 """Organiser dashboard: event list, event overview, sharing (WhatsApp, QR), reports and settings."""
 from __future__ import annotations
@@ -8938,7 +9044,7 @@ from urllib.parse import quote
 
 from .. import auth, catalog, config, db, events, notify
 from ..icons import i
-from ..services import qr, reports
+from ..services import email as mail, qr, reports
 from ..services.storage import storage
 from ..web import HTTPError, Response, download, esc, redirect, router
 from . import forms
@@ -9047,7 +9153,7 @@ def overview(req, uid):
 <div class="kpi"><span>RSVP completion</span><b>{s["completion"]}%</b><div class="progress" style="margin-top:10px"><span style="width:{s["completion"]}%"></span></div></div></div>"""
 
     tables = events.tables(ev["id"])
-    next_html = _next_steps(ev, s, paid, live, days, tables)
+    next_html = _next_step_cards(next_steps(ev, s, days))
     checklist = [
         ("Event details and date", bool(ev.get("event_date") and ev.get("name")), f"{base(ev)}/setup/1"),
         ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/1"),
@@ -9114,10 +9220,18 @@ def _booking_box(ev, paid, live) -> str:
             f'<dl class="dl">{dl}</dl></div>')
 
 
-def _next_steps(ev, s, paid, live, days, tables) -> str:
-    """The next three things to do, in order, so the organiser never has to work out what's next."""
+def next_steps(ev, s: dict | None = None, days: int | None = None) -> list:
+    """What to do next, in order, as (title, why, link, button), so the organiser never has to work it out.
+    Shown on the overview and sent the day after the website goes live (scheduler)."""
+    s = s or events.stats(ev["id"])
+    if days is None:
+        days = forms.days_until(ev.get("event_date"))
+    paid = catalog.package(ev["paid_package"])
+    live = events.is_live(ev)
     venue = ev.get("venue") or {}
-    not_sent = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined'", (ev["id"],), 0)
+    # guests who replied, or opened their personal link, clearly have their invitation
+    not_sent = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NULL AND status = 'pending'", (ev["id"],), 0)
+    waiting = s["pending"] - not_sent              # invited, not replied yet
     steps = []   # (title, why, link, button)
     if not (ev.get("hosts") and ev.get("event_date")):
         steps.append(("Add your names and date", "Guests see these first.", f"{base(ev)}/setup/1", "Add details"))
@@ -9130,12 +9244,12 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if live and has(ev, "guest_management") and s["invited"] == 0:
         steps.append(("Add your guest list", "Paste names or import a spreadsheet. Each guest gets a personal RSVP link.", f"{base(ev)}/guests/import", "Add guests"))
     if live and has(ev, "personal_invites") and not_sent:
-        steps.append(("Send your invitations", f"{not_sent} guest{'s' if not_sent != 1 else ''} haven't been sent their invitation yet. Send them on WhatsApp, one tap each.",
+        steps.append(("Send your invitations", (f"{not_sent} guests haven't been sent their invitation yet. Send them on WhatsApp, one tap each." if not_sent != 1 else "1 guest hasn't been sent their invitation yet. Send it on WhatsApp in one tap."),
                       f"{base(ev)}/share/whatsapp", "Start sending"))
     elif live and not has(ev, "personal_invites") and s["invited"] == 0:
         steps.append(("Share your link", "Send it on WhatsApp, by email or as a QR code. Guests reply on the website.", f"{base(ev)}/share", "Share"))
-    if live and s["pending"] and s["invited"] - not_sent > 0 and (days is None or days >= 0):
-        steps.append(("Remind guests who haven't replied", f"{s['pending']} still to reply.", f"{base(ev)}/share/whatsapp?mode=remind", "Send reminders"))
+    if live and waiting > 0 and (days is None or days >= 0):
+        steps.append(("Remind guests who haven't replied", f"{waiting} still to reply.", f"{base(ev)}/share/whatsapp?mode=remind", "Send reminders"))
     if has(ev, "seating") and s["attending"] and s["unseated_parties"]:
         steps.append(("Seat your guests", f"{s['unseated_parties']} confirmed part{'y' if s['unseated_parties'] == 1 else 'ies'} without a table. Seat everyone automatically, then fine-tune.",
                       f"{base(ev)}/seating", "Open seating"))
@@ -9143,6 +9257,10 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
         steps.append(("Share photos from the day", "Add your favourites to the gallery. Guests see them on the link they already have.", f"{base(ev)}/setup/7", "Add photos"))
     if days is not None and days < 0 and has(ev, "reports"):
         steps.append(("Download your final report", "Attendance, meals and seating in one file to keep.", f"{base(ev)}/reports", "Reports"))
+    return steps
+
+
+def _next_step_cards(steps) -> str:
     if not steps:
         return ""
     cards = "".join(f'<a class="next-step" href="{href}"><span class="mono tiny">NEXT {n}</span><b>{esc(t)}</b><span class="small muted">{esc(w)}</span>'
@@ -9203,7 +9321,7 @@ def whatsapp_queue(req, uid):
         q = {"mode": mode if mode == "remind" else "", "skip": ",".join(map(str, skip))}
         return redirect(f"{base(ev)}/share/whatsapp" + ("?" + "&".join(f"{k}={v}" for k, v in q.items() if v) if any(q.values()) else ""))
     if mode == "invite":
-        todo = db.q("""SELECT * FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined' AND phone != ''
+        todo = db.q("""SELECT * FROM guests WHERE event_id = ? AND invited_at IS NULL AND status = 'pending' AND phone != ''
                        ORDER BY is_vip DESC, last_name COLLATE NOCASE, first_name COLLATE NOCASE""", (ev["id"],))
         done = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NOT NULL AND phone != ''", (ev["id"],), 0)
     else:
@@ -9265,7 +9383,9 @@ def share(req, uid):
 <div class="cols cols--2"><div class="stack">
 <div class="box"><div class="box__head"><h2>Event link</h2></div><div class="row" style="flex-wrap:nowrap">
 <input class="input mono" id="share-link" value="{esc(link)}" readonly aria-label="Event link" style="font-size:.875rem">
-<button class="btn btn--primary" type="button" data-copy-target="#share-link" data-copied="Link copied">{i("copy")}Copy</button></div>{personal}</div>
+<button class="btn btn--primary" type="button" data-copy-target="#share-link" data-copied="Link copied">{i("copy")}Copy</button></div>
+<form method="post" action="{base(ev)}/share/email-me" style="margin-top:10px">{csrf(req)}<button class="btn btn--ghost btn--sm" type="submit">{i("mail")}Email me this link</button>
+<span class="tiny muted">Handy for sharing from your phone.</span></form>{personal}</div>
 <div class="box"><div class="box__head"><h2>Invitation message</h2></div>
 <textarea class="textarea" id="share-message" rows="5" aria-label="Invitation message" data-wa-source>{esc(message)}</textarea>
 <div class="row" style="margin-top:12px"><a class="btn btn--primary" id="wa-link" href="{esc(wa)}" target="_blank" rel="noopener">{i("chat")}Share on WhatsApp</a>
@@ -9281,6 +9401,14 @@ def share(req, uid):
 var sub={sub_js};
 t.addEventListener("input",function(){{a.href="https://wa.me/?text="+encodeURIComponent(t.value);m.href="mailto:?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(t.value);}});}})();</script>"""
     return organiser_page(req, ev, "Share", body, "/share")
+
+
+@router.post("/dashboard/events/<uid>/share/email-me")
+def share_email_me(req, uid):
+    ev = load(req, uid)
+    mail.send(req.user["email"], "event_link", {**notify.event_vars(ev), "first_name": mail.first_name(req.user["name"])},
+              event_id=ev["id"], user_id=req.user["id"])
+    return go(req, ev, "/share", "success", f"Sent to {req.user['email']}. Open it on your phone to share from there.")
 
 
 @router.get("/dashboard/events/<uid>/share/qr.svg")
@@ -10003,7 +10131,7 @@ def error_page(req, status: int, message: str) -> str:
 
 ### `app/views/manage.py`
 
-<!-- FILE: app/views/manage.py sha256=346a68a6b9c891da70330c7ac9aa43a200063285da2297c7144ab8f19bd5f49e nl=1 -->
+<!-- FILE: app/views/manage.py sha256=363444d09df163823efce7db5b23fd3615196e92cda02e003398d77b6b627bbc nl=1 -->
 ```python
 """Organiser tools: guests (with CSV import), RSVPs, seating editor, menu, programme, communications."""
 from __future__ import annotations
@@ -10682,11 +10810,6 @@ def seating_state(ev) -> dict:
     }
 
 
-def _auto_pos(index: int) -> tuple:
-    cols = 4
-    return 14 + (index % cols) * 24, 14 + (index // cols) * 20
-
-
 def _check_seating_complete(ev) -> bool:
     s = events.stats(ev["id"])
     if s["attending"] == 0 or s["unseated_parties"] > 0:
@@ -10712,7 +10835,7 @@ def seating(req, uid):
         exports = (f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/reports/seating.pdf">{i("download")}PDF</a>'
                    f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/reports/seating.csv">{i("download")}CSV</a>')
     actions = exports + f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/seating/print" target="_blank" rel="noopener">{i("print")}Print</a>'
-    head = page_head("Seating chart", f"{s['seated_parties']} of {s['attending']} attending parties seated. Drag guests onto tables; drag tables to arrange the room.", actions)
+    head = page_head("Seating chart", f"<span data-seat-summary>{s['seated_parties']} of {s['attending']} attending parties seated.</span> Drag guests onto tables; drag tables to arrange the room.", actions)
     shape_opts = '<option value="round">Round</option>' + ('<option value="long">Long</option>' if state["advanced"] else "")
     body = head + f"""
 <div class="seating" data-seating data-api="{base(ev)}/seating/api">
@@ -10779,7 +10902,7 @@ def seating_api(req, uid, action):
         shape = body.get("shape") if body.get("shape") in ("round", "long") else "round"
         if shape == "long" and not advanced:
             shape = "round"
-        x, y = _auto_pos(count)
+        (x, y), = events.floor_slots(ev["id"], 1)
         db.insert("seating_tables", {"event_id": ev["id"], "name": name, "capacity": cap, "shape": shape,
                                      "pos_x": x, "pos_y": y, "sort": count})
     elif action == "autocreate":
@@ -10788,8 +10911,7 @@ def seating_api(req, uid, action):
         if count + n > 120:
             raise HTTPError(400, "An event can have up to 120 tables.")
         with db.transaction():
-            for k in range(n):
-                x, y = _auto_pos(count + k)
+            for k, (x, y) in enumerate(events.floor_slots(ev["id"], n)):
                 db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {count + k + 1}", "capacity": cap,
                                              "shape": "round", "pos_x": x, "pos_y": y, "sort": count + k})
     elif action == "update":
@@ -10803,10 +10925,10 @@ def seating_api(req, uid, action):
             fields["shape"] = body["shape"] if (advanced or body["shape"] == "round") else "round"
         if "notes" in body:
             fields["notes"] = str(body["notes"]).strip()[:200]
-        for k, col in (("x", "pos_x"), ("y", "pos_y")):
+        for k, col, top in (("x", "pos_x", 100.0), ("y", "pos_y", 20000.0)):    # x: percent of the width; y: px from the top
             if k in body:
                 try:
-                    fields[col] = max(0.0, min(100.0, float(body[k])))
+                    fields[col] = max(0.0, min(top, float(body[k])))
                 except (TypeError, ValueError):
                     raise HTTPError(400, "Position must be a number.")
         db.update("seating_tables", t["id"], fields)
@@ -10855,11 +10977,12 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
     created = 0
     if table_count == 0:
         layout = events.seating_layout(ev)
-        need = min(60, -(-people // int(layout.get("capacity") or 10)))
+        need = min(60, max(-(-people // int(layout.get("capacity") or 10)), int(layout.get("count") or 0)))
         with db.transaction():
             created = events.create_layout_tables(ev, layout, need)
     tables = events.tables(ev["id"])
     free = {t["id"]: t["capacity"] - t["seated"] for t in tables if t["notes"] != events.TOP_TABLE_NOTE}   # the top table is set by hand
+    empty = [t["id"] for t in tables if t["id"] in free and t["seated"] == 0]                                # in floor-plan order
     groups: dict[str, list] = {}
     for g in guests:
         groups.setdefault((g["family_group"] or g["side"] or g["category"] or "").strip().lower() or f"~{g['id']}", []).append(g)
@@ -10870,8 +10993,11 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
             grp.sort(key=lambda g: (not g["is_vip"], g["last_name"].lower(), g["first_name"].lower()))
             size = sum(events.party_size(g) for g in grp)
             fits = [tid for tid, room in free.items() if room >= size]
-            if fits:                                # the whole group at one table
-                tid = min(fits, key=lambda t: free[t] - size)
+            if fits:                                # the whole group at one table: its own table while there are spare ones
+                spare = [t for t in empty if t in fits]
+                tid = spare[0] if spare else min(fits, key=lambda t: free[t] - size)
+                if tid in empty:
+                    empty.remove(tid)
                 free[tid] -= size
                 plan = [(g, tid) for g in grp]
             else:                                   # too big for any table: party by party, roomiest table first
@@ -10883,6 +11009,8 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
                         continue
                     tid = max(room, key=lambda t: free[t])
                     free[tid] -= events.party_size(g)
+                    if tid in empty:
+                        empty.remove(tid)
                     plan.append((g, tid))
             for g, tid in plan:
                 db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, ?, ?, ?)",
@@ -12328,7 +12456,7 @@ def receipt(req, order_uid):
 
 ### `app/views/public_event.py`
 
-<!-- FILE: app/views/public_event.py sha256=6d8208e0ed4872dd3c87143f78d4fb07c46ca24b0fba1697699e5c5a4835f925 nl=1 -->
+<!-- FILE: app/views/public_event.py sha256=a14bc068e90d0be1c62804e0eaed49be040f4b6505ed99a6ae364144ad57c0cf nl=1 -->
 ```python
 """Guest-facing event websites: public page, personal invitations, RSVP, unsubscribe, calendar,
 plus the organiser preview and the template-gallery sample render."""
@@ -12415,6 +12543,8 @@ def invitation(req, slug, token):
     if guest is None:
         return unavailable(ev)
     if is_available(ev):
+        if not guest["invited_at"] and not auth.can_manage_event(req.user, ev):    # the guest has their link
+            db.run("UPDATE guests SET invited_at = ? WHERE id = ? AND invited_at IS NULL", (db.now(), guest["id"]))
         return Response(R.render(ev, "public", guest, req))
     if auth.can_manage_event(req.user, ev):
         return Response(R.render(ev, "preview", guest, req, notice=f"Personal link for {events.guest_name(guest)}"))
@@ -12762,7 +12892,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=394d5bd9285b1d209ba3d2f9e1b7fd9f3f504dc8935ddeeb25d26dd51383c568 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=f9c6adb75a04117a3a59a068c4240da2c5fe745f1a9d6c3c390fbdee1158c9b4 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -13088,6 +13218,10 @@ def step_details(req, ev):
         if f.ok:
             events.touch(ev["id"], name=name, category=cat, hosts=hosts, description=desc, event_date=d, start_time=st, end_time=et)
             events.save_json(ev["id"], "venue", venue)
+            gs = dict(ev["guest_settings"] or {})
+            if d and not gs.get("rsvp_deadline") and events.suggested_rsvp_deadline(d):
+                gs["rsvp_deadline"] = events.suggested_rsvp_deadline(d)     # a sensible default the client can change in Guests
+                events.save_json(ev["id"], "guest_settings", gs)
             if not ev["published_at"] and hosts and not ev["slug"].startswith(forms.slugify(hosts, 50)):
                 events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
             events.keep_online_past_event(events.by_id(ev["id"]))
@@ -13233,6 +13367,22 @@ def step_design(req, ev):
 
 
 # --- step 3: guests --------------------------------------------------------------------------------
+def _move_deadline_in_wording(ev, old: str, new: str) -> None:
+    """Ready-made wording has the RSVP date written in; keep it in step when the deadline changes."""
+    design = dict(ev["design"] or {})
+    wording = dict(design.get("wording") or {})
+    changed = False
+    for long_ in (True, False):
+        a, b = forms.fmt_date(old, long_), forms.fmt_date(new, long_)
+        for k, v in wording.items():
+            if a and isinstance(v, str) and a in v:
+                wording[k] = v.replace(a, b)
+                changed = True
+    if changed:
+        design["wording"] = wording
+        events.touch(ev["id"], design=db.dumps(design))
+
+
 GUESTS_JS = """<script>(function(){var box=document.querySelector('[data-guest-add]');if(!box)return;var ta=box.querySelector('textarea[name=guest_paste]'),
 nm=box.querySelector('[data-qa-name]'),ph=box.querySelector('[data-qa-phone]'),cnt=box.querySelector('[data-pending-count]'),det=box.querySelector('[data-paste-box]');
 function count(){var n=ta.value.split(/\\n/).filter(function(l){l=l.trim();return l&&!/:$/.test(l);}).length;cnt.textContent=n?'('+n+' ready to add when you continue)':'';}
@@ -13281,7 +13431,10 @@ def step_guests(req, ev):
         if pasted and not catalog.has_feature(ev, "guest_management"):
             f.error("guest_paste", "Adding a guest list is part of the Premium package. Change the package you're planning with, or let guests reply through your one link.")
         if f.ok:
+            old_deadline = (ev["guest_settings"] or {}).get("rsvp_deadline")
             events.save_json(ev["id"], "guest_settings", gs)
+            if old_deadline and gs["rsvp_deadline"] and old_deadline != gs["rsvp_deadline"]:
+                _move_deadline_in_wording(ev, old_deadline, gs["rsvp_deadline"])
             if pasted:
                 added = events.add_pasted_guests(ev, pasted)
                 req.flash("success", f"Added {added} guest{'s' if added != 1 else ''} to your list." + (f" {len(pasted) - added} were already on it." if added < len(pasted) else ""))
@@ -13623,6 +13776,7 @@ def step_seating(req, ev):
                   "guest": f.choice("guest_tables", ["round", "long", "mixed"], "table types", default=layout["guest"]),
                   "capacity": f.integer("capacity", "Seats per table", min=2, max=40, default=10)}
         count = f.integer("table_count", "Number of tables", min=0, max=120, default=10)
+        layout["count"] = count
         info["seating_layout"] = layout
         info["seating_notes"] = f.text("seating_notes", "Special seating requirements", max=1500)
         plan_now = f.flag("plan_now")
@@ -14829,7 +14983,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `preview_site/journey.js`
 
-<!-- FILE: preview_site/journey.js sha256=3ba6c164e4131464cab188e47f92155da849e35cf05ed4195909a76f25b19f3d nl=1 -->
+<!-- FILE: preview_site/journey.js sha256=f350fb6f2a3b34db5777282a133aaaf5c0d088b09b11fce0f95b19756012708f nl=1 -->
 ```javascript
 /* Aurelia customer journey for the shareable site: choose occasion and template, the 10-step set-up,
    live preview, package choice and booking request. Runs entirely in the visitor's browser; drafts are
@@ -15407,9 +15561,16 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
     ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
     ev.name = val(fd, "name") || autoName(ev.category, ev.hosts) || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
+    if (ev.event_date && !ev.guest_settings.rsvp_deadline) ev.guest_settings.rsvp_deadline = suggestedDeadline(ev.event_date);
     var url = val(fd, "map_url");
     if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
     ev.venue = Object.assign(ev.venue || {}, { name: val(fd, "venue_name"), address: val(fd, "address"), map_url: url, parking: val(fd, "parking"), directions: val(fd, "directions") });
+  }
+  function suggestedDeadline(day) {           // six weeks before (or closer if the event is soon); mirrors events.suggested_rsvp_deadline
+    var d = new Date(day + "T12:00:00"), today = todayIso();
+    if (isNaN(d)) return "";
+    for (var w of [6, 4, 2, 1]) { var c = new Date(d); c.setDate(c.getDate() - 7 * w); var iso = c.toISOString().slice(0, 10); if (iso > today) return iso; }
+    return "";
   }
   function validateDetails(ev) {
     var e = {};
@@ -15559,7 +15720,15 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
   }
   function collect4(ev, fd) {
     var gs = ev.guest_settings, cats = fd.getAll("categories").concat(val(fd, "categories_other").split(",").map(function (s) { return s.trim(); }).filter(Boolean));
+    var oldDeadline = gs.rsvp_deadline;
     gs.estimated = val(fd, "estimated"); gs.rsvp_deadline = val(fd, "rsvp_deadline");
+    if (oldDeadline && gs.rsvp_deadline && oldDeadline !== gs.rsvp_deadline) {     // keep a written-in date in the wording in step
+      var w = ev.design.wording || {};
+      [true, false].forEach(function (lng) {
+        var a = R.fmtDate(oldDeadline, lng), b = R.fmtDate(gs.rsvp_deadline, lng);
+        Object.keys(w).forEach(function (k) { if (a && typeof w[k] === "string") w[k] = w[k].split(a).join(b); });
+      });
+    }
     gs.categories = cats.filter(function (c, i) { return cats.indexOf(c) === i; }).slice(0, 20);
     var sides = [val(fd, "side_a"), val(fd, "side_b")].filter(Boolean);
     if (sides.length) gs.sides = sides; else delete gs.sides;
@@ -16369,7 +16538,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=156f1a70d9f8d230531f90827704d854634bae1fbb5be4038a2297beb9432bf3 nl=1 -->
+<!-- FILE: static/css/app.css sha256=78a986e69091e5709a054563da852a5f528ca192813bde254ee7f052fe34b6df nl=1 -->
 ```css
 /* Aurelia design system
    Built from docs/website-style-playbook.md (STS Holdings, Oct 2026): one gold accent used as a
@@ -16851,8 +17020,8 @@ a.chip, button.chip { min-height: 44px; }
 .price--highlight { border-color: color-mix(in srgb, var(--color-accent) 60%, transparent); box-shadow: var(--inset-hi), 0 40px 80px -48px rgb(var(--glow-accent) / .8); background: radial-gradient(80% 40% at 100% 0%, rgb(var(--glow-blush) / .22), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--color-accent-soft) 80%, var(--color-surface)), var(--color-surface) 45%); }
 .price__badge { position: absolute; top: -13px; left: 50%; translate: -50% 0; height: 26px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--gold-sheen); color: var(--btn-text); font-size: .75rem; font-weight: 600; letter-spacing: .02em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .8); }
 .price h3 { font-size: 1.25rem; }
-.price__amount { font-size: clamp(2.2rem, 1.6rem + 2vw, 3rem); font-weight: 650; letter-spacing: -.05em; line-height: 1; }
-.price__amount small { font-size: .875rem; font-weight: 400; letter-spacing: 0; color: var(--color-muted); margin-left: 6px; }
+.price__amount { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: clamp(2.2rem, 1.6rem + 2vw, 3rem); font-weight: 650; letter-spacing: -.05em; line-height: 1; }
+.price__amount small { font-size: .875rem; font-weight: 400; letter-spacing: 0; color: var(--color-muted); white-space: nowrap; }
 .price ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: .9375rem; }
 .price li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; }
 .price li .i { width: 18px; height: 18px; margin-top: 3px; color: var(--color-accent-text); }
@@ -16860,7 +17029,7 @@ a.chip, button.chip { min-height: 44px; }
 .price__limits { padding-top: 14px; border-top: 1px solid var(--color-line); display: grid; gap: 6px; font-size: .8125rem; color: var(--color-muted); }
 .price__limits div { display: flex; justify-content: space-between; gap: 12px; }
 .price__limits b { font-family: var(--font-mono); font-weight: 500; color: var(--color-text); }
-.price .btn { margin-top: auto; }
+.price > .btn:last-child { margin-top: auto; }   /* pricing page: buttons line up at the bottom; at checkout the button sits under the price */
 
 .compare { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .compare th, .compare td { padding: 12px 14px; border-bottom: 1px solid var(--color-line); text-align: center; }
@@ -17130,7 +17299,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .seat-chip.is-selected { border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
 .floor { position: relative; min-height: 640px; border-radius: var(--radius-xl); border: 1px solid var(--color-line); overflow: hidden; background-color: var(--color-surface); background-image: linear-gradient(var(--color-grid) 1px, transparent 1px), linear-gradient(90deg, var(--color-grid) 1px, transparent 1px); background-size: 32px 32px; }
 .floor__label { position: absolute; left: 50%; top: 14px; translate: -50% 0; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-muted); }
-.s-table { position: absolute; width: 150px; translate: -50% -50%; display: grid; gap: 6px; padding: 12px; border-radius: 20px; text-align: center; cursor: move; touch-action: none; transition: box-shadow var(--t-fast), border-color var(--t-fast); }
+.s-table { position: absolute; width: 164px; translate: -50% 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px; border-radius: 20px; text-align: center; cursor: move; touch-action: none; transition: box-shadow var(--t-fast), border-color var(--t-fast); }
 .s-table.is-over { border-color: var(--color-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 25%, transparent), var(--shadow-glass); }
 .s-table.is-full .s-table__occ { color: var(--warn); }
 .s-table.is-over-cap .s-table__occ { color: var(--error); }
@@ -17139,8 +17308,14 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .s-table__ring > span { display: grid; place-items: center; width: calc(100% - 10px); height: calc(100% - 10px); border-radius: inherit; background: var(--color-surface); font: 600 .8125rem/1 var(--font-mono); }
 .s-table__name { font-weight: 600; font-size: .875rem; letter-spacing: -.01em; }
 .s-table__occ { font-size: .75rem; color: var(--color-muted); }
-.s-table ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; max-height: 120px; overflow: auto; text-align: left; }
+.s-table ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; text-align: left; }
+.s-table:hover, .s-table.is-over { z-index: 5; }
+.s-table__more { justify-content: center !important; color: var(--color-accent-text); background: none !important; cursor: pointer !important; }
+.s-seated { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.s-seated li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--color-bg); font-size: .875rem; }
 .s-table li { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: .75rem; padding: 3px 6px; border-radius: 6px; background: var(--color-bg); cursor: grab; }
+.s-table__who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-table__plus { flex: none; color: var(--color-muted); }
 .s-table li button { border: 0; background: none; cursor: pointer; padding: 0 2px; opacity: .55; font-size: .9rem; line-height: 1; min-width: 20px; min-height: 20px; }
 .seat-list-view { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 
@@ -18356,7 +18531,7 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 
 ### `static/js/seating.js`
 
-<!-- FILE: static/js/seating.js sha256=a03048ec579e913ea0d8a4c7d8c50b762a063b38f67ce7ab2b8930dc3d45ea3f nl=1 -->
+<!-- FILE: static/js/seating.js sha256=e5f4ffc185d51e004a19e6dff6fa66c428aec522ab1c2378e711f8a59c4bde6b nl=1 -->
 ```javascript
 /* Seating chart editor: drag tables around the floor, drag guest parties onto tables,
    tap-to-assign on touch screens. Talks to /dashboard/events/<uid>/seating/api/* (JSON, CSRF header). */
@@ -18399,29 +18574,33 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 
     // floor
     floor.querySelectorAll(".s-table").forEach(function (n) { n.remove(); });
-    var maxY = 0;
     state.tables.forEach(function (t) {
       var people = guestsAt(t.id);
       var fill = Math.min(100, Math.round(100 * t.seated / t.capacity));
       var el = document.createElement("div");
       el.className = "s-table glass glass--strong" + (t.shape === "long" ? " s-table--long" : "") +
         (t.seated === t.capacity ? " is-full" : "") + (t.seated > t.capacity ? " is-over-cap" : "") + (selectedTable === t.id ? " is-over" : "");
-      el.style.left = t.x + "%";
-      el.style.top = t.y + "%";
+      el.style.left = t.x + "%";          // centre, as a percent of the floor's width
+      el.style.top = t.y + "px";          // top edge, in px from the top of the floor
       el.setAttribute("data-table", t.id);
       el.setAttribute("tabindex", "0");
       el.setAttribute("aria-label", t.name + ", " + t.seated + " of " + t.capacity + " seats");
       el.innerHTML = '<div class="s-table__ring" style="--fill:' + fill + '"><span>' + t.seated + "/" + t.capacity + "</span></div>" +
         '<div class="s-table__name">' + esc(t.name) + '</div><div class="s-table__occ">' +
         (t.seated > t.capacity ? "Over by " + (t.seated - t.capacity) : (t.capacity - t.seated) + " free") + "</div>" +
-        (people.length ? "<ul>" + people.map(function (g) {
-          return '<li draggable="true" data-guest="' + g.id + '"><span>' + esc(g.name) + (g.party > 1 ? " +" + (g.party - 1) : "") +
-            '</span><button type="button" data-unassign="' + g.id + '" aria-label="Remove ' + esc(g.name) + ' from table">×</button></li>';
-        }).join("") + "</ul>" : "");
+        (people.length ? "<ul>" + people.slice(0, 4).map(function (g) {
+          var plus = g.party > 1 ? " +" + (g.party - 1) : "";
+          return '<li draggable="true" data-guest="' + g.id + '" title="' + esc(g.name + plus) + '"><span class="s-table__who">' + esc(g.name) + "</span>" +
+            (plus ? '<span class="s-table__plus">' + plus + "</span>" : "") + '<button type="button" data-unassign="' + g.id + '" aria-label="Remove ' + esc(g.name) + ' from table">×</button></li>';
+        }).join("") + (people.length > 4 ? '<li class="s-table__more">+' + (people.length - 4) + " more · tap to see all</li>" : "") + "</ul>" : "");
       floor.appendChild(el);
-      maxY = Math.max(maxY, t.y);
     });
-    floor.style.minHeight = Math.max(640, (maxY / 100) * 640 + 260) + "px";
+    fitFloor();
+    var summary = document.querySelector("[data-seat-summary]");
+    if (summary) {
+      var coming = state.guests.filter(function (g) { return g.status === "attending"; });
+      summary.textContent = coming.filter(function (g) { return g.table; }).length + " of " + coming.length + " attending parties seated.";
+    }
     if (!state.tables.length) {
       if (!floor.querySelector("[data-empty]")) floor.insertAdjacentHTML("beforeend", '<p data-empty class="small muted" style="position:absolute;inset:auto 0 45% 0;text-align:center">Add tables on the left to start your floor plan.</p>');
     } else {
@@ -18429,6 +18608,14 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
     }
     renderEditor();
   }
+
+  // the floor grows to fit the lowest table card, so rows of tables are never cut off
+  function fitFloor(extra) {
+    var need = Math.max(640, extra || 0);
+    floor.querySelectorAll(".s-table").forEach(function (el) { need = Math.max(need, el.offsetTop + el.offsetHeight + 40); });
+    floor.style.minHeight = need + "px";
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitFloor(); });
 
   function renderEditor() {
     var t = state.tables.filter(function (x) { return x.id === selectedTable; })[0];
@@ -18440,7 +18627,17 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
       (state.advanced ? '<select class="select select--sm" name="shape" aria-label="Shape"><option value="round"' + (t.shape === "round" ? " selected" : "") + '>Round</option><option value="long"' + (t.shape === "long" ? " selected" : "") + ">Long</option></select>" +
         '<input class="input input--sm" name="notes" value="' + esc(t.notes) + '" maxlength="200" placeholder="Note, e.g. near the stage" aria-label="Table note">' : "") +
       '<div class="row"><button class="btn btn--primary btn--sm" type="submit">Save</button><button class="btn btn--danger btn--sm" type="button" data-delete-table>Delete</button>' +
-      '<button class="btn btn--ghost btn--sm" type="button" data-close-editor>Done</button></div></form>';
+      '<button class="btn btn--ghost btn--sm" type="button" data-close-editor>Done</button></div></form>' + seatedList(t);
+  }
+
+  function seatedList(t) {
+    var people = guestsAt(t.id);
+    if (!people.length) return '<p class="small muted" style="margin-top:12px">Nobody at this table yet. Tap a guest on the left, then this table.</p>';
+    return '<div style="margin-top:14px"><h3 class="small" style="font-weight:600;margin-bottom:6px">At ' + esc(t.name) + " (" + t.seated + " of " + t.capacity + ')</h3><ul class="s-seated">' +
+      people.map(function (g) {
+        return '<li><span>' + esc(g.name) + (g.party > 1 ? ' <span class="muted">+' + (g.party - 1) + "</span>" : "") + (g.group ? '<br><span class="tiny muted">' + esc(g.group) + "</span>" : "") +
+          '</span><button type="button" class="btn btn--ghost btn--sm" data-unassign="' + g.id + '">Remove</button></li>';
+      }).join("") + "</ul></div>";
   }
 
   // --- automatic seating ------------------------------------------------------------------------
@@ -18526,7 +18723,8 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
     var el = e.target.closest(".s-table");
     if (!el || e.target.closest("li, button")) return;
     var rect = floor.getBoundingClientRect();
-    drag = { el: el, id: +el.getAttribute("data-table"), sx: e.clientX, sy: e.clientY, rect: rect, moved: false };
+    drag = { el: el, id: +el.getAttribute("data-table"), sx: e.clientX, sy: e.clientY, rect: rect, moved: false,
+             x0: parseFloat(el.style.left) || 50, y0: parseFloat(el.style.top) || 0 };
     el.setPointerCapture(e.pointerId);
   });
   floor.addEventListener("pointermove", function (e) {
@@ -18534,16 +18732,19 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
     var dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
     if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
     drag.moved = true;
-    var x = Math.max(4, Math.min(96, ((e.clientX - drag.rect.left) / drag.rect.width) * 100));
-    var y = Math.max(6, Math.min(96, ((e.clientY - drag.rect.top) / drag.rect.height) * 100));
-    drag.el.style.left = x + "%"; drag.el.style.top = y + "%";
+    // the card moves with the pointer from where it was picked up; dragging past the bottom makes the floor longer
+    var half = (drag.el.offsetWidth / 2 + 4) / drag.rect.width * 100;     // keep the whole card on the floor
+    var x = Math.max(half, Math.min(100 - half, drag.x0 + (dx / drag.rect.width) * 100));
+    var y = Math.max(8, Math.min(20000, drag.y0 + dy));
+    drag.el.style.left = x + "%"; drag.el.style.top = y + "px";
     drag.x = x; drag.y = y;
+    if (y + drag.el.offsetHeight + 40 > floor.offsetHeight) fitFloor(y + drag.el.offsetHeight + 40);
   });
   floor.addEventListener("pointerup", function () {
     if (!drag) return;
     var d = drag; drag = null;
     if (d.moved) {
-      call("update", { id: d.id, x: Math.round(d.x * 10) / 10, y: Math.round(d.y * 10) / 10 });
+      call("update", { id: d.id, x: Math.round(d.x * 10) / 10, y: Math.round(d.y) });
     } else if (selectedGuest) {
       var gid = selectedGuest; selectedGuest = null;
       call("assign", { guest_id: gid, table_id: d.id });
@@ -18725,7 +18926,7 @@ def find(pattern: str, text: str) -> str:
 
 ### `tests/test_admin.py`
 
-<!-- FILE: tests/test_admin.py sha256=7f221174c75ea6a28e92a342cf4b3b849fdb9a62108a42bd0026b7250a5c6553 nl=1 -->
+<!-- FILE: tests/test_admin.py sha256=30c596926af6ca86488958a0dd2c4ecd3816d3a751e0da962f55ff8dc94b0cef nl=1 -->
 ```python
 """Admin dashboard permissions and actions, plus the background scheduler."""
 from __future__ import annotations
@@ -18973,6 +19174,25 @@ class Scheduler(unittest.TestCase):
         n = db.val("SELECT COUNT(*) FROM email_logs WHERE event_id IN (?, ?)", (ev["id"], demo["id"]), 0)
         self.assertEqual(n, 0)
 
+    def test_next_steps_email_the_day_after_publishing_only_when_something_is_left(self):
+        today = date.today()
+        busy = live_event(new_user())
+        add_guest(busy, "a@example.com")                      # guests added, invitations not sent yet
+        done = live_event(new_user())
+        events.save_json(done["id"], "venue", {"name": "Oakhaven", "address": "Helshoogte Road, Stellenbosch"})
+        g = add_guest(done, "b@example.com", status="attending")
+        db.run("UPDATE guests SET invited_at = ? WHERE id = ?", (db.now(), g))
+        db.run("INSERT INTO seating_tables (event_id, name, capacity, shape, pos_x, pos_y, sort) VALUES (?, 'T1', 10, 'round', 50, 44, 0)", (done["id"],))
+        db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, last_insert_rowid(), ?, ?)", (g, done["id"], db.now()))
+        scheduler.run_once(today)                             # publish day: nothing yet
+        self.assertEqual(sent("setup_instructions", busy["id"]), 0)
+        scheduler.run_once(today + timedelta(days=1))
+        scheduler.run_once(today + timedelta(days=2))
+        self.assertEqual(sent("setup_instructions", busy["id"]), 1)     # once
+        self.assertEqual(sent("setup_instructions", done["id"]), 0)     # nothing left to do: no email
+        html = db.val("SELECT subject FROM email_logs WHERE template_key = 'setup_instructions' AND event_id = ?", (busy["id"],))
+        self.assertIn("Next steps", html)
+
     def test_event_reminder_and_post_event(self):
         ev = live_event(new_user(), event_date=(date.today() + timedelta(days=7)).isoformat())
         scheduler.run_once()
@@ -19009,7 +19229,7 @@ class BackupTest(unittest.TestCase):
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=91161cebbf409fc23271dbc886955020d185f51b32a51a42ba8d42a33e5c2c92 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=5934df67e316e4feb4ad190dc518213178d9f58048d7ab398c8ff79152207b46 nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -19270,7 +19490,8 @@ class PaymentsTest(unittest.TestCase):
         self.assertEqual(ev["status"], "published")
         self.assertTrue(ev["hosting_until"])
         keys = {r["template_key"] for r in db.q("SELECT template_key FROM email_logs")}
-        self.assertTrue({"payment_confirmation", "website_published", "event_link", "setup_instructions"} <= keys)
+        self.assertTrue({"payment_confirmation", "website_published"} <= keys)
+        self.assertFalse({"event_link", "setup_instructions"} & keys)        # one "is live" email; next steps come later
         self.assertIn("Payment confirmed", self.c.get(f"/dashboard/events/{self.ev['uid']}/payment/{order_uid}").text)
         self.assertEqual(self.c.get(f"/dashboard/orders/{order_uid}/receipt").status, 200)
 
@@ -19349,7 +19570,7 @@ class HostingRuleTest(unittest.TestCase):
 
 ### `tests/test_ease.py`
 
-<!-- FILE: tests/test_ease.py sha256=3ddbd229b0096f62d3515ee5b497b7be826aac0aea2cc01ce51d3301e025af85 nl=1 -->
+<!-- FILE: tests/test_ease.py sha256=b487c59d7b3ee2a1993e5e3ef9effcb0842bd9a4cb581153eddd4ed053067c15 nl=1 -->
 ```python
 """Tests for the ease-of-use round (2026-11): sign-in links, draft previews, pasting guests and menus,
 sample programmes, package gaps, the WhatsApp queue, next steps and the set-up help request."""
@@ -19422,6 +19643,11 @@ class EaseTests(unittest.TestCase):
         self.client.post(self.base + "/setup/3", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
         self.assertEqual(db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (self.ev["id"],)), 2)
 
+    def test_pasted_couple_is_one_invitation_for_two(self):
+        self.client.post(self.base + "/setup/3", {"guest_paste": "Thabo & Lindi Mokoena, 082 222 3333\nPieter van Wyk", "nav": "stay"})
+        rows = db.q("SELECT first_name, last_name, plus_ones_allowed FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))
+        self.assertEqual([tuple(r) for r in rows], [("Thabo & Lindi", "Mokoena", 1), ("Pieter", "van Wyk", 0)])
+
     def test_guest_paste_needs_premium(self):
         events.touch(self.ev["id"], selected_package="essential")
         r = self.client.post(self.base + "/setup/3", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
@@ -19460,6 +19686,18 @@ class EaseTests(unittest.TestCase):
         r = self.client.get(self.base + "/setup/8")
         self.assertIn("Show someone before you pay", r.text)
         self.assertIn("Won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
+
+    def test_details_suggest_an_rsvp_deadline(self):
+        self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
+        self.assertEqual(events.by_id(self.ev["id"])["guest_settings"]["rsvp_deadline"], "2027-01-31")
+
+    def test_changing_deadline_updates_ready_made_wording(self):
+        self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
+        from app.views import forms as F
+        old = F.fmt_date("2027-01-31")
+        events.touch(self.ev["id"], design=db.dumps({"wording": {"rsvp_note": f"Kindly reply by {old}."}}))
+        self.client.post(self.base + "/setup/3", {"rsvp_deadline": "2027-02-01", "plus_one_policy": "per_guest", "nav": "stay"})
+        self.assertEqual(events.by_id(self.ev["id"])["design"]["wording"]["rsvp_note"], f"Kindly reply by {F.fmt_date('2027-02-01')}.")
 
     def test_event_name_follows_names(self):
         r = self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
@@ -19834,7 +20072,7 @@ if __name__ == "__main__":
 
 ### `tests/test_manage.py`
 
-<!-- FILE: tests/test_manage.py sha256=8d8264fe33b048668fafd65ce3b5faffae5942df09d60649324d00401f80b899 nl=1 -->
+<!-- FILE: tests/test_manage.py sha256=9f3af0093707872cca59ea95f84f5476b58d2164f33b268278367fa41b5d299f nl=1 -->
 ```python
 """Organiser dashboard tests: guests, CSV import, access control, package gating, seating API,
 reports, QR codes and communications."""
@@ -19994,6 +20232,21 @@ class ManageTests(unittest.TestCase):
         r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={"include_pending": True}).text)
         self.assertIn("Seated 1 party", r["message"])
 
+    def test_auto_seat_gives_each_group_its_own_table_when_there_is_room(self):
+        import json
+        for n in ("Thabo", "Lindi"):
+            add_guest(self.ev, n, family_group="Mokoena family")
+        for n in ("Sipho", "Ayanda"):
+            add_guest(self.ev, n, family_group="Dlamini family")
+        self.client.post(self.base + "/seating/api/autocreate", json_body={"count": 3, "capacity": 10})
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        by_group = {}
+        for g in r["state"]["guests"]:
+            by_group.setdefault(g["group"], set()).add(g["table"])
+        self.assertEqual(len(by_group["Mokoena family"]), 1)
+        self.assertEqual(len(by_group["Dlamini family"]), 1)
+        self.assertNotEqual(by_group["Mokoena family"], by_group["Dlamini family"])
+
     def test_auto_seat_splits_big_groups_and_reports_overflow(self):
         import json
         for n in range(7):
@@ -20003,6 +20256,42 @@ class ManageTests(unittest.TestCase):
         self.assertIn("Seated 5 parties", r["message"])
         self.assertIn("2 parties (4 people) didn't fit", r["warning"])
         self.assertEqual(r["state"]["tables"][0]["seated"], 10)
+
+    def test_next_steps_count_only_guests_without_their_invitation(self):
+        from app.views.dashboard import next_steps
+        events.touch(self.ev["id"], status="published", published_at=db.now(), hosting_until="2099-01-01")
+        a = add_guest(self.ev, "Amy", status="pending")
+        add_guest(self.ev, "Ben", status="attending")                 # replied through the general link
+        add_guest(self.ev, "Cy", status="pending")
+        steps = {t: w for t, w, _, _ in next_steps(events.by_id(self.ev["id"]))}
+        self.assertIn("2 guests haven't been sent", steps["Send your invitations"])
+        self.assertNotIn("Remind guests who haven't replied", steps)
+        # Amy opens her personal link: she has her invitation now
+        Client(self.app).get(f"/events/{self.ev['slug']}/i/{a['token']}")
+        steps = {t: w for t, w, _, _ in next_steps(events.by_id(self.ev["id"]))}
+        self.assertIn("1 guest hasn't been sent", steps["Send your invitations"])
+        self.assertEqual(steps["Remind guests who haven't replied"], "1 still to reply.")
+
+    def test_new_tables_take_free_places_on_the_floor(self):
+        events.create_layout_tables(self.ev, {"top": "head", "guest": "round", "capacity": 10}, 3)
+        tables = events.tables(self.ev["id"])
+        head = [t for t in tables if t["notes"] == events.TOP_TABLE_NOTE][0]
+        guests = [t for t in tables if t["notes"] != events.TOP_TABLE_NOTE]
+        self.assertEqual((head["pos_x"], head["pos_y"]), (50, events.FLOOR_TOP))
+        self.assertEqual(sorted(t["pos_x"] for t in guests), [16.7, 50, 83.3])       # three tables spread across the room
+        self.assertTrue(all(t["pos_y"] >= head["pos_y"] + events.FLOOR_TOP_ROW for t in guests))   # below the head table, in pixels
+        # tables added by hand fill a gap left by a deleted one, then start a new row; none land on another
+        db.run("DELETE FROM seating_tables WHERE id = ?", (guests[0]["id"],))
+        self.client.post(self.base + "/seating/api/autocreate", json_body={"count": 5, "capacity": 10})
+        spots = [(t["pos_x"], t["pos_y"]) for t in events.tables(self.ev["id"])]
+        self.assertEqual(len(spots), 8)
+        for i, (x, y) in enumerate(spots):
+            for (x2, y2) in spots[i + 1:]:
+                self.assertFalse(abs(x - x2) < 20 and abs(y - y2) < events.FLOOR_ROW * 0.8, spots)
+        self.assertIn((guests[0]["pos_x"], guests[0]["pos_y"]), spots)                  # the gap is used first
+        # moving a table stores pixels from the top, beyond the old 100% limit
+        self.client.post(self.base + "/seating/api/update", json_body={"id": guests[1]["id"], "x": 40, "y": 1500})
+        self.assertEqual(db.val("SELECT pos_y FROM seating_tables WHERE id = ?", (guests[1]["id"],)), 1500)
 
     def test_seating_api(self):
         a = add_guest(self.ev, "Ann", plus=1)      # party of 2
@@ -20107,6 +20396,11 @@ class ManageTests(unittest.TestCase):
         r = self.client.get(self.base + "/share")
         self.assertIn("wa.me/?text=", r.text)
         self.assertTrue(self.client.get(self.base + "/share/qr.png").body.startswith(b"\x89PNG"))
+        # "Email me this link" sends the link to whoever is signed in
+        self.assertIn("Email me this link", r.text)
+        r = self.client.post(self.base + "/share/email-me", {})
+        self.assertEqual(r.status, 303)
+        self.assertEqual(db.val("SELECT COUNT(*) FROM email_logs WHERE template_key = 'event_link' AND to_email = ?", (self.owner["email"],)), 1)
 
     # --- communications -------------------------------------------------------------------------
     def test_comms_preview_and_send_requires_live(self):
