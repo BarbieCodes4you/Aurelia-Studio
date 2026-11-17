@@ -675,11 +675,6 @@ def seating_state(ev) -> dict:
     }
 
 
-def _auto_pos(index: int) -> tuple:
-    cols = 4
-    return 14 + (index % cols) * 24, 14 + (index // cols) * 20
-
-
 def _check_seating_complete(ev) -> bool:
     s = events.stats(ev["id"])
     if s["attending"] == 0 or s["unseated_parties"] > 0:
@@ -705,7 +700,7 @@ def seating(req, uid):
         exports = (f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/reports/seating.pdf">{i("download")}PDF</a>'
                    f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/reports/seating.csv">{i("download")}CSV</a>')
     actions = exports + f'<a class="btn btn--secondary btn--sm" href="{base(ev)}/seating/print" target="_blank" rel="noopener">{i("print")}Print</a>'
-    head = page_head("Seating chart", f"{s['seated_parties']} of {s['attending']} attending parties seated. Drag guests onto tables; drag tables to arrange the room.", actions)
+    head = page_head("Seating chart", f"<span data-seat-summary>{s['seated_parties']} of {s['attending']} attending parties seated.</span> Drag guests onto tables; drag tables to arrange the room.", actions)
     shape_opts = '<option value="round">Round</option>' + ('<option value="long">Long</option>' if state["advanced"] else "")
     body = head + f"""
 <div class="seating" data-seating data-api="{base(ev)}/seating/api">
@@ -772,7 +767,7 @@ def seating_api(req, uid, action):
         shape = body.get("shape") if body.get("shape") in ("round", "long") else "round"
         if shape == "long" and not advanced:
             shape = "round"
-        x, y = _auto_pos(count)
+        (x, y), = events.floor_slots(ev["id"], 1)
         db.insert("seating_tables", {"event_id": ev["id"], "name": name, "capacity": cap, "shape": shape,
                                      "pos_x": x, "pos_y": y, "sort": count})
     elif action == "autocreate":
@@ -781,8 +776,7 @@ def seating_api(req, uid, action):
         if count + n > 120:
             raise HTTPError(400, "An event can have up to 120 tables.")
         with db.transaction():
-            for k in range(n):
-                x, y = _auto_pos(count + k)
+            for k, (x, y) in enumerate(events.floor_slots(ev["id"], n)):
                 db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {count + k + 1}", "capacity": cap,
                                              "shape": "round", "pos_x": x, "pos_y": y, "sort": count + k})
     elif action == "update":
@@ -796,10 +790,10 @@ def seating_api(req, uid, action):
             fields["shape"] = body["shape"] if (advanced or body["shape"] == "round") else "round"
         if "notes" in body:
             fields["notes"] = str(body["notes"]).strip()[:200]
-        for k, col in (("x", "pos_x"), ("y", "pos_y")):
+        for k, col, top in (("x", "pos_x", 100.0), ("y", "pos_y", 20000.0)):    # x: percent of the width; y: px from the top
             if k in body:
                 try:
-                    fields[col] = max(0.0, min(100.0, float(body[k])))
+                    fields[col] = max(0.0, min(top, float(body[k])))
                 except (TypeError, ValueError):
                     raise HTTPError(400, "Position must be a number.")
         db.update("seating_tables", t["id"], fields)
@@ -848,11 +842,12 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
     created = 0
     if table_count == 0:
         layout = events.seating_layout(ev)
-        need = min(60, -(-people // int(layout.get("capacity") or 10)))
+        need = min(60, max(-(-people // int(layout.get("capacity") or 10)), int(layout.get("count") or 0)))
         with db.transaction():
             created = events.create_layout_tables(ev, layout, need)
     tables = events.tables(ev["id"])
     free = {t["id"]: t["capacity"] - t["seated"] for t in tables if t["notes"] != events.TOP_TABLE_NOTE}   # the top table is set by hand
+    empty = [t["id"] for t in tables if t["id"] in free and t["seated"] == 0]                                # in floor-plan order
     groups: dict[str, list] = {}
     for g in guests:
         groups.setdefault((g["family_group"] or g["side"] or g["category"] or "").strip().lower() or f"~{g['id']}", []).append(g)
@@ -863,8 +858,11 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
             grp.sort(key=lambda g: (not g["is_vip"], g["last_name"].lower(), g["first_name"].lower()))
             size = sum(events.party_size(g) for g in grp)
             fits = [tid for tid, room in free.items() if room >= size]
-            if fits:                                # the whole group at one table
-                tid = min(fits, key=lambda t: free[t] - size)
+            if fits:                                # the whole group at one table: its own table while there are spare ones
+                spare = [t for t in empty if t in fits]
+                tid = spare[0] if spare else min(fits, key=lambda t: free[t] - size)
+                if tid in empty:
+                    empty.remove(tid)
                 free[tid] -= size
                 plan = [(g, tid) for g in grp]
             else:                                   # too big for any table: party by party, roomiest table first
@@ -876,6 +874,8 @@ def _auto_seat(ev, include_pending: bool, table_count: int) -> tuple:
                         continue
                     tid = max(room, key=lambda t: free[t])
                     free[tid] -= events.party_size(g)
+                    if tid in empty:
+                        empty.remove(tid)
                     plan.append((g, tid))
             for g, tid in plan:
                 db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, ?, ?, ?)",

@@ -156,6 +156,21 @@ class ManageTests(unittest.TestCase):
         r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={"include_pending": True}).text)
         self.assertIn("Seated 1 party", r["message"])
 
+    def test_auto_seat_gives_each_group_its_own_table_when_there_is_room(self):
+        import json
+        for n in ("Thabo", "Lindi"):
+            add_guest(self.ev, n, family_group="Mokoena family")
+        for n in ("Sipho", "Ayanda"):
+            add_guest(self.ev, n, family_group="Dlamini family")
+        self.client.post(self.base + "/seating/api/autocreate", json_body={"count": 3, "capacity": 10})
+        r = json.loads(self.client.post(self.base + "/seating/api/autoseat", json_body={}).text)
+        by_group = {}
+        for g in r["state"]["guests"]:
+            by_group.setdefault(g["group"], set()).add(g["table"])
+        self.assertEqual(len(by_group["Mokoena family"]), 1)
+        self.assertEqual(len(by_group["Dlamini family"]), 1)
+        self.assertNotEqual(by_group["Mokoena family"], by_group["Dlamini family"])
+
     def test_auto_seat_splits_big_groups_and_reports_overflow(self):
         import json
         for n in range(7):
@@ -165,6 +180,27 @@ class ManageTests(unittest.TestCase):
         self.assertIn("Seated 5 parties", r["message"])
         self.assertIn("2 parties (4 people) didn't fit", r["warning"])
         self.assertEqual(r["state"]["tables"][0]["seated"], 10)
+
+    def test_new_tables_take_free_places_on_the_floor(self):
+        events.create_layout_tables(self.ev, {"top": "head", "guest": "round", "capacity": 10}, 3)
+        tables = events.tables(self.ev["id"])
+        head = [t for t in tables if t["notes"] == events.TOP_TABLE_NOTE][0]
+        guests = [t for t in tables if t["notes"] != events.TOP_TABLE_NOTE]
+        self.assertEqual((head["pos_x"], head["pos_y"]), (50, events.FLOOR_TOP))
+        self.assertEqual(sorted(t["pos_x"] for t in guests), [16.7, 50, 83.3])       # three tables spread across the room
+        self.assertTrue(all(t["pos_y"] >= head["pos_y"] + events.FLOOR_TOP_ROW for t in guests))   # below the head table, in pixels
+        # tables added by hand fill a gap left by a deleted one, then start a new row; none land on another
+        db.run("DELETE FROM seating_tables WHERE id = ?", (guests[0]["id"],))
+        self.client.post(self.base + "/seating/api/autocreate", json_body={"count": 5, "capacity": 10})
+        spots = [(t["pos_x"], t["pos_y"]) for t in events.tables(self.ev["id"])]
+        self.assertEqual(len(spots), 8)
+        for i, (x, y) in enumerate(spots):
+            for (x2, y2) in spots[i + 1:]:
+                self.assertFalse(abs(x - x2) < 20 and abs(y - y2) < events.FLOOR_ROW * 0.8, spots)
+        self.assertIn((guests[0]["pos_x"], guests[0]["pos_y"]), spots)                  # the gap is used first
+        # moving a table stores pixels from the top, beyond the old 100% limit
+        self.client.post(self.base + "/seating/api/update", json_body={"id": guests[1]["id"], "x": 40, "y": 1500})
+        self.assertEqual(db.val("SELECT pos_y FROM seating_tables WHERE id = ?", (guests[1]["id"],)), 1500)
 
     def test_seating_api(self):
         a = add_guest(self.ev, "Ann", plus=1)      # party of 2

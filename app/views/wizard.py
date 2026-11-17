@@ -322,6 +322,10 @@ def step_details(req, ev):
         if f.ok:
             events.touch(ev["id"], name=name, category=cat, hosts=hosts, description=desc, event_date=d, start_time=st, end_time=et)
             events.save_json(ev["id"], "venue", venue)
+            gs = dict(ev["guest_settings"] or {})
+            if d and not gs.get("rsvp_deadline") and events.suggested_rsvp_deadline(d):
+                gs["rsvp_deadline"] = events.suggested_rsvp_deadline(d)     # a sensible default the client can change in Guests
+                events.save_json(ev["id"], "guest_settings", gs)
             if not ev["published_at"] and hosts and not ev["slug"].startswith(forms.slugify(hosts, 50)):
                 events.touch(ev["id"], slug=events.unique_slug(hosts, ev["id"]))
             events.keep_online_past_event(events.by_id(ev["id"]))
@@ -467,6 +471,22 @@ def step_design(req, ev):
 
 
 # --- step 3: guests --------------------------------------------------------------------------------
+def _move_deadline_in_wording(ev, old: str, new: str) -> None:
+    """Ready-made wording has the RSVP date written in; keep it in step when the deadline changes."""
+    design = dict(ev["design"] or {})
+    wording = dict(design.get("wording") or {})
+    changed = False
+    for long_ in (True, False):
+        a, b = forms.fmt_date(old, long_), forms.fmt_date(new, long_)
+        for k, v in wording.items():
+            if a and isinstance(v, str) and a in v:
+                wording[k] = v.replace(a, b)
+                changed = True
+    if changed:
+        design["wording"] = wording
+        events.touch(ev["id"], design=db.dumps(design))
+
+
 GUESTS_JS = """<script>(function(){var box=document.querySelector('[data-guest-add]');if(!box)return;var ta=box.querySelector('textarea[name=guest_paste]'),
 nm=box.querySelector('[data-qa-name]'),ph=box.querySelector('[data-qa-phone]'),cnt=box.querySelector('[data-pending-count]'),det=box.querySelector('[data-paste-box]');
 function count(){var n=ta.value.split(/\\n/).filter(function(l){l=l.trim();return l&&!/:$/.test(l);}).length;cnt.textContent=n?'('+n+' ready to add when you continue)':'';}
@@ -515,7 +535,10 @@ def step_guests(req, ev):
         if pasted and not catalog.has_feature(ev, "guest_management"):
             f.error("guest_paste", "Adding a guest list is part of the Premium package. Change the package you're planning with, or let guests reply through your one link.")
         if f.ok:
+            old_deadline = (ev["guest_settings"] or {}).get("rsvp_deadline")
             events.save_json(ev["id"], "guest_settings", gs)
+            if old_deadline and gs["rsvp_deadline"] and old_deadline != gs["rsvp_deadline"]:
+                _move_deadline_in_wording(ev, old_deadline, gs["rsvp_deadline"])
             if pasted:
                 added = events.add_pasted_guests(ev, pasted)
                 req.flash("success", f"Added {added} guest{'s' if added != 1 else ''} to your list." + (f" {len(pasted) - added} were already on it." if added < len(pasted) else ""))
@@ -857,6 +880,7 @@ def step_seating(req, ev):
                   "guest": f.choice("guest_tables", ["round", "long", "mixed"], "table types", default=layout["guest"]),
                   "capacity": f.integer("capacity", "Seats per table", min=2, max=40, default=10)}
         count = f.integer("table_count", "Number of tables", min=0, max=120, default=10)
+        layout["count"] = count
         info["seating_layout"] = layout
         info["seating_notes"] = f.text("seating_notes", "Special seating requirements", max=1500)
         plan_now = f.flag("plan_now")

@@ -757,7 +757,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .seat-chip.is-selected { border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); }
 .floor { position: relative; min-height: 640px; border-radius: var(--radius-xl); border: 1px solid var(--color-line); overflow: hidden; background-color: var(--color-surface); background-image: linear-gradient(var(--color-grid) 1px, transparent 1px), linear-gradient(90deg, var(--color-grid) 1px, transparent 1px); background-size: 32px 32px; }
 .floor__label { position: absolute; left: 50%; top: 14px; translate: -50% 0; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--color-muted); }
-.s-table { position: absolute; width: 150px; translate: -50% -50%; display: grid; gap: 6px; padding: 12px; border-radius: 20px; text-align: center; cursor: move; touch-action: none; transition: box-shadow var(--t-fast), border-color var(--t-fast); }
+.s-table { position: absolute; width: 164px; translate: -50% 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 12px; border-radius: 20px; text-align: center; cursor: move; touch-action: none; transition: box-shadow var(--t-fast), border-color var(--t-fast); }
 .s-table.is-over { border-color: var(--color-accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 25%, transparent), var(--shadow-glass); }
 .s-table.is-full .s-table__occ { color: var(--warn); }
 .s-table.is-over-cap .s-table__occ { color: var(--error); }
@@ -766,8 +766,14 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .s-table__ring > span { display: grid; place-items: center; width: calc(100% - 10px); height: calc(100% - 10px); border-radius: inherit; background: var(--color-surface); font: 600 .8125rem/1 var(--font-mono); }
 .s-table__name { font-weight: 600; font-size: .875rem; letter-spacing: -.01em; }
 .s-table__occ { font-size: .75rem; color: var(--color-muted); }
-.s-table ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; max-height: 120px; overflow: auto; text-align: left; }
+.s-table ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; text-align: left; }
+.s-table:hover, .s-table.is-over { z-index: 5; }
+.s-table__more { justify-content: center !important; color: var(--color-accent-text); background: none !important; cursor: pointer !important; }
+.s-seated { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.s-seated li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--color-bg); font-size: .875rem; }
 .s-table li { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: .75rem; padding: 3px 6px; border-radius: 6px; background: var(--color-bg); cursor: grab; }
+.s-table__who { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.s-table__plus { flex: none; color: var(--color-muted); }
 .s-table li button { border: 0; background: none; cursor: pointer; padding: 0 2px; opacity: .55; font-size: .9rem; line-height: 1; min-width: 20px; min-height: 20px; }
 .seat-list-view { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 

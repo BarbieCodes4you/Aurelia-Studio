@@ -105,9 +105,9 @@ def _seat(ev, guests, leave_unseated=6):
 
 
 def _tables(ev, names, cap=10, shape="round"):
-    for n, name in enumerate(names):
+    for n, (name, (x, y)) in enumerate(zip(names, events.floor_slots(ev["id"], len(names)))):
         db.insert("seating_tables", {"event_id": ev["id"], "name": name, "capacity": cap, "shape": shape,
-                                     "pos_x": 12 + (n % 5) * 19, "pos_y": 20 + (n // 5) * 24, "sort": n})
+                                     "pos_x": x, "pos_y": y, "sort": n})
 
 
 def _menu(ev, name, items):

@@ -574,9 +574,16 @@
     ev.category = val(fd, "category") || ev.category; ev.hosts = val(fd, "hosts"); ev.description = val(fd, "description");
     ev.name = val(fd, "name") || autoName(ev.category, ev.hosts) || (cat(ev.category) || {}).name || "My event";
     ev.event_date = val(fd, "event_date"); ev.start_time = val(fd, "start_time"); ev.end_time = val(fd, "end_time"); ev.ends_next_day = !!fd.get("ends_next_day");
+    if (ev.event_date && !ev.guest_settings.rsvp_deadline) ev.guest_settings.rsvp_deadline = suggestedDeadline(ev.event_date);
     var url = val(fd, "map_url");
     if (url && !/^https?:\/\//i.test(url)) url = "https://" + url;
     ev.venue = Object.assign(ev.venue || {}, { name: val(fd, "venue_name"), address: val(fd, "address"), map_url: url, parking: val(fd, "parking"), directions: val(fd, "directions") });
+  }
+  function suggestedDeadline(day) {           // six weeks before (or closer if the event is soon); mirrors events.suggested_rsvp_deadline
+    var d = new Date(day + "T12:00:00"), today = todayIso();
+    if (isNaN(d)) return "";
+    for (var w of [6, 4, 2, 1]) { var c = new Date(d); c.setDate(c.getDate() - 7 * w); var iso = c.toISOString().slice(0, 10); if (iso > today) return iso; }
+    return "";
   }
   function validateDetails(ev) {
     var e = {};
@@ -726,7 +733,15 @@
   }
   function collect4(ev, fd) {
     var gs = ev.guest_settings, cats = fd.getAll("categories").concat(val(fd, "categories_other").split(",").map(function (s) { return s.trim(); }).filter(Boolean));
+    var oldDeadline = gs.rsvp_deadline;
     gs.estimated = val(fd, "estimated"); gs.rsvp_deadline = val(fd, "rsvp_deadline");
+    if (oldDeadline && gs.rsvp_deadline && oldDeadline !== gs.rsvp_deadline) {     // keep a written-in date in the wording in step
+      var w = ev.design.wording || {};
+      [true, false].forEach(function (lng) {
+        var a = R.fmtDate(oldDeadline, lng), b = R.fmtDate(gs.rsvp_deadline, lng);
+        Object.keys(w).forEach(function (k) { if (a && typeof w[k] === "string") w[k] = w[k].split(a).join(b); });
+      });
+    }
     gs.categories = cats.filter(function (c, i) { return cats.indexOf(c) === i; }).slice(0, 20);
     var sides = [val(fd, "side_a"), val(fd, "side_b")].filter(Boolean);
     if (sides.length) gs.sides = sides; else delete gs.sides;

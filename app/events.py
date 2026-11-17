@@ -136,8 +136,10 @@ def add_pasted_guests(ev, people: list[dict]) -> int:
         digits = re.sub(r"\D", "", p.get("phone", ""))
         if p["name"].lower() in names or (p.get("email") and p["email"] in emails) or (digits and digits in phones):
             continue
-        first, _, last = p["name"].partition(" ")
+        couple = re.match(r"^(\S+\s+(?:&|and)\s+\S+)\s*(.*)$", p["name"], re.I)    # "Thabo & Lindi Mokoena": one invitation for two
+        first, last = (couple.group(1), couple.group(2)) if couple else (p["name"].partition(" ")[0], p["name"].partition(" ")[2])
         db.insert("guests", {"event_id": ev["id"], "token": new_guest_token(), "first_name": first[:60], "last_name": last[:80],
+                             "plus_ones_allowed": 1 if couple else 0,
                              "email": p.get("email", "")[:200], "phone": p.get("phone", "")[:40], "family_group": p.get("group", "")[:60], "source": "import",
                              "email_consent": 1, "created_at": now, "updated_at": now})
         names.add(p["name"].lower())
@@ -337,23 +339,62 @@ def seating_layout(ev) -> dict:
     return lay
 
 
+# Floor plan coordinates: pos_x is the table card's centre as a percent of the floor's width; pos_y is the
+# card's top edge in pixels from the top of the floor. The seating editor grows the floor to fit every card.
+FLOOR_TOP = 44         # px: first row, just below the "Floor plan" label
+FLOOR_TOP_ROW = 290    # px: the top table's row
+FLOOR_ROW = 320        # px between rows: a full table card (four names, then "+N more") fits with room to spare
+FLOOR_COLS = 3         # tables across: three fit a laptop screen beside the guest list
+
+
+def floor_slots(event_id: int, n: int, cols: int = FLOOR_COLS) -> list:
+    """(x, y) for n new guest tables: the first free places on a grid below the top table (if any), so a
+    new table never lands on an existing one, and gaps left by deleted tables fill up first."""
+    rows = db.q("SELECT pos_x, pos_y, notes FROM seating_tables WHERE event_id = ?", (event_id,))
+    taken = [(r["pos_x"], r["pos_y"]) for r in rows]
+    base = FLOOR_TOP + (FLOOR_TOP_ROW if any(r["notes"] == TOP_TABLE_NOTE for r in rows) else 0)
+    cols = max(1, cols)
+    width = 100 / cols
+    out, i = [], 0
+    while len(out) < n:
+        x, y = round(width * (i % cols + 0.5), 1), base + FLOOR_ROW * (i // cols)
+        if not any(abs(x - tx) < min(20, width * 0.8) and abs(y - ty) < FLOOR_ROW * 0.8 for tx, ty in taken):
+            out.append((x, y))
+            taken.append((x, y))
+        i += 1
+    return out
+
+
 def create_layout_tables(ev, layout: dict, count: int) -> int:
     """Create the top table (if any) and `count` guest tables in the chosen shapes, laid out on the floor
     plan with the top table at the front. Returns how many tables were made."""
     cap = max(2, min(40, int(layout.get("capacity") or 10)))
-    made, sort = 0, 0
+    made, sort = 0, db.val("SELECT COUNT(*) FROM seating_tables WHERE event_id = ?", (ev["id"],), 0)
     if layout.get("top") in ("head", "sweetheart"):
         head = layout["top"] == "head"
         db.insert("seating_tables", {"event_id": ev["id"], "name": "Head table" if head else "Sweetheart table",
                                      "capacity": 10 if head else 2, "shape": "long" if head else "round",
-                                     "pos_x": 50, "pos_y": 6, "notes": TOP_TABLE_NOTE, "sort": sort})
-        made, sort = 1, 1
-    cols = 2 if layout.get("guest") == "long" else 4
-    for k in range(max(0, min(120, count))):
+                                     "pos_x": 50, "pos_y": FLOOR_TOP, "notes": TOP_TABLE_NOTE, "sort": sort})
+        made, sort = 1, sort + 1
+    count = max(0, min(120, count))
+    cols = min(2 if layout.get("guest") == "long" else FLOOR_COLS, max(1, count))    # two tables spread across the room, not bunched left
+    for k, (x, y) in enumerate(floor_slots(ev["id"], count, cols)):
         long = layout.get("guest") == "long" or (layout.get("guest") == "mixed" and k % 3 == 2)
-        x = (100 / cols) * (k % cols + 0.5)
-        y = 26 + (k // cols) * (18 if cols == 4 else 14)
         db.insert("seating_tables", {"event_id": ev["id"], "name": f"Table {k + 1}", "capacity": cap, "shape": "long" if long else "round",
-                                     "pos_x": round(x, 1), "pos_y": min(96, y), "sort": sort + k})
+                                     "pos_x": x, "pos_y": y, "sort": sort + k})
         made += 1
     return made
+
+
+def suggested_rsvp_deadline(event_date: str) -> str:
+    """Six weeks before the event (a week before if the event is close); "" if that would already be past."""
+    from datetime import date, timedelta
+    try:
+        d = date.fromisoformat(event_date or "")
+    except ValueError:
+        return ""
+    for weeks in (6, 4, 2, 1):
+        cand = d - timedelta(weeks=weeks)
+        if cand > date.today():
+            return cand.isoformat()
+    return ""

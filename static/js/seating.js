@@ -39,29 +39,33 @@
 
     // floor
     floor.querySelectorAll(".s-table").forEach(function (n) { n.remove(); });
-    var maxY = 0;
     state.tables.forEach(function (t) {
       var people = guestsAt(t.id);
       var fill = Math.min(100, Math.round(100 * t.seated / t.capacity));
       var el = document.createElement("div");
       el.className = "s-table glass glass--strong" + (t.shape === "long" ? " s-table--long" : "") +
         (t.seated === t.capacity ? " is-full" : "") + (t.seated > t.capacity ? " is-over-cap" : "") + (selectedTable === t.id ? " is-over" : "");
-      el.style.left = t.x + "%";
-      el.style.top = t.y + "%";
+      el.style.left = t.x + "%";          // centre, as a percent of the floor's width
+      el.style.top = t.y + "px";          // top edge, in px from the top of the floor
       el.setAttribute("data-table", t.id);
       el.setAttribute("tabindex", "0");
       el.setAttribute("aria-label", t.name + ", " + t.seated + " of " + t.capacity + " seats");
       el.innerHTML = '<div class="s-table__ring" style="--fill:' + fill + '"><span>' + t.seated + "/" + t.capacity + "</span></div>" +
         '<div class="s-table__name">' + esc(t.name) + '</div><div class="s-table__occ">' +
         (t.seated > t.capacity ? "Over by " + (t.seated - t.capacity) : (t.capacity - t.seated) + " free") + "</div>" +
-        (people.length ? "<ul>" + people.map(function (g) {
-          return '<li draggable="true" data-guest="' + g.id + '"><span>' + esc(g.name) + (g.party > 1 ? " +" + (g.party - 1) : "") +
-            '</span><button type="button" data-unassign="' + g.id + '" aria-label="Remove ' + esc(g.name) + ' from table">×</button></li>';
-        }).join("") + "</ul>" : "");
+        (people.length ? "<ul>" + people.slice(0, 4).map(function (g) {
+          var plus = g.party > 1 ? " +" + (g.party - 1) : "";
+          return '<li draggable="true" data-guest="' + g.id + '" title="' + esc(g.name + plus) + '"><span class="s-table__who">' + esc(g.name) + "</span>" +
+            (plus ? '<span class="s-table__plus">' + plus + "</span>" : "") + '<button type="button" data-unassign="' + g.id + '" aria-label="Remove ' + esc(g.name) + ' from table">×</button></li>';
+        }).join("") + (people.length > 4 ? '<li class="s-table__more">+' + (people.length - 4) + " more · tap to see all</li>" : "") + "</ul>" : "");
       floor.appendChild(el);
-      maxY = Math.max(maxY, t.y);
     });
-    floor.style.minHeight = Math.max(640, (maxY / 100) * 640 + 260) + "px";
+    fitFloor();
+    var summary = document.querySelector("[data-seat-summary]");
+    if (summary) {
+      var coming = state.guests.filter(function (g) { return g.status === "attending"; });
+      summary.textContent = coming.filter(function (g) { return g.table; }).length + " of " + coming.length + " attending parties seated.";
+    }
     if (!state.tables.length) {
       if (!floor.querySelector("[data-empty]")) floor.insertAdjacentHTML("beforeend", '<p data-empty class="small muted" style="position:absolute;inset:auto 0 45% 0;text-align:center">Add tables on the left to start your floor plan.</p>');
     } else {
@@ -69,6 +73,14 @@
     }
     renderEditor();
   }
+
+  // the floor grows to fit the lowest table card, so rows of tables are never cut off
+  function fitFloor(extra) {
+    var need = Math.max(640, extra || 0);
+    floor.querySelectorAll(".s-table").forEach(function (el) { need = Math.max(need, el.offsetTop + el.offsetHeight + 40); });
+    floor.style.minHeight = need + "px";
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { fitFloor(); });
 
   function renderEditor() {
     var t = state.tables.filter(function (x) { return x.id === selectedTable; })[0];
@@ -80,7 +92,17 @@
       (state.advanced ? '<select class="select select--sm" name="shape" aria-label="Shape"><option value="round"' + (t.shape === "round" ? " selected" : "") + '>Round</option><option value="long"' + (t.shape === "long" ? " selected" : "") + ">Long</option></select>" +
         '<input class="input input--sm" name="notes" value="' + esc(t.notes) + '" maxlength="200" placeholder="Note, e.g. near the stage" aria-label="Table note">' : "") +
       '<div class="row"><button class="btn btn--primary btn--sm" type="submit">Save</button><button class="btn btn--danger btn--sm" type="button" data-delete-table>Delete</button>' +
-      '<button class="btn btn--ghost btn--sm" type="button" data-close-editor>Done</button></div></form>';
+      '<button class="btn btn--ghost btn--sm" type="button" data-close-editor>Done</button></div></form>' + seatedList(t);
+  }
+
+  function seatedList(t) {
+    var people = guestsAt(t.id);
+    if (!people.length) return '<p class="small muted" style="margin-top:12px">Nobody at this table yet. Tap a guest on the left, then this table.</p>';
+    return '<div style="margin-top:14px"><h3 class="small" style="font-weight:600;margin-bottom:6px">At ' + esc(t.name) + " (" + t.seated + " of " + t.capacity + ')</h3><ul class="s-seated">' +
+      people.map(function (g) {
+        return '<li><span>' + esc(g.name) + (g.party > 1 ? ' <span class="muted">+' + (g.party - 1) + "</span>" : "") + (g.group ? '<br><span class="tiny muted">' + esc(g.group) + "</span>" : "") +
+          '</span><button type="button" class="btn btn--ghost btn--sm" data-unassign="' + g.id + '">Remove</button></li>';
+      }).join("") + "</ul></div>";
   }
 
   // --- automatic seating ------------------------------------------------------------------------
@@ -166,7 +188,8 @@
     var el = e.target.closest(".s-table");
     if (!el || e.target.closest("li, button")) return;
     var rect = floor.getBoundingClientRect();
-    drag = { el: el, id: +el.getAttribute("data-table"), sx: e.clientX, sy: e.clientY, rect: rect, moved: false };
+    drag = { el: el, id: +el.getAttribute("data-table"), sx: e.clientX, sy: e.clientY, rect: rect, moved: false,
+             x0: parseFloat(el.style.left) || 50, y0: parseFloat(el.style.top) || 0 };
     el.setPointerCapture(e.pointerId);
   });
   floor.addEventListener("pointermove", function (e) {
@@ -174,16 +197,19 @@
     var dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
     if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
     drag.moved = true;
-    var x = Math.max(4, Math.min(96, ((e.clientX - drag.rect.left) / drag.rect.width) * 100));
-    var y = Math.max(6, Math.min(96, ((e.clientY - drag.rect.top) / drag.rect.height) * 100));
-    drag.el.style.left = x + "%"; drag.el.style.top = y + "%";
+    // the card moves with the pointer from where it was picked up; dragging past the bottom makes the floor longer
+    var half = (drag.el.offsetWidth / 2 + 4) / drag.rect.width * 100;     // keep the whole card on the floor
+    var x = Math.max(half, Math.min(100 - half, drag.x0 + (dx / drag.rect.width) * 100));
+    var y = Math.max(8, Math.min(20000, drag.y0 + dy));
+    drag.el.style.left = x + "%"; drag.el.style.top = y + "px";
     drag.x = x; drag.y = y;
+    if (y + drag.el.offsetHeight + 40 > floor.offsetHeight) fitFloor(y + drag.el.offsetHeight + 40);
   });
   floor.addEventListener("pointerup", function () {
     if (!drag) return;
     var d = drag; drag = null;
     if (d.moved) {
-      call("update", { id: d.id, x: Math.round(d.x * 10) / 10, y: Math.round(d.y * 10) / 10 });
+      call("update", { id: d.id, x: Math.round(d.x * 10) / 10, y: Math.round(d.y) });
     } else if (selectedGuest) {
       var gid = selectedGuest; selectedGuest = null;
       call("assign", { guest_id: gid, table_id: d.id });

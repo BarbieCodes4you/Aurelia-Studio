@@ -69,6 +69,11 @@ class EaseTests(unittest.TestCase):
         self.client.post(self.base + "/setup/3", {"guest_paste": "Sipho Dlamini, sipho@example.com", "nav": "stay"})
         self.assertEqual(db.val("SELECT COUNT(*) FROM guests WHERE event_id = ?", (self.ev["id"],)), 2)
 
+    def test_pasted_couple_is_one_invitation_for_two(self):
+        self.client.post(self.base + "/setup/3", {"guest_paste": "Thabo & Lindi Mokoena, 082 222 3333\nPieter van Wyk", "nav": "stay"})
+        rows = db.q("SELECT first_name, last_name, plus_ones_allowed FROM guests WHERE event_id = ? ORDER BY id", (self.ev["id"],))
+        self.assertEqual([tuple(r) for r in rows], [("Thabo & Lindi", "Mokoena", 1), ("Pieter", "van Wyk", 0)])
+
     def test_guest_paste_needs_premium(self):
         events.touch(self.ev["id"], selected_package="essential")
         r = self.client.post(self.base + "/setup/3", {"guest_paste": "Thandi Mokoena", "nav": "stay"})
@@ -107,6 +112,18 @@ class EaseTests(unittest.TestCase):
         r = self.client.get(self.base + "/setup/8")
         self.assertIn("Show someone before you pay", r.text)
         self.assertIn("Won't show your programme", r.text.replace("&#x27;", "'").replace("&#39;", "'"))
+
+    def test_details_suggest_an_rsvp_deadline(self):
+        self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
+        self.assertEqual(events.by_id(self.ev["id"])["guest_settings"]["rsvp_deadline"], "2027-01-31")
+
+    def test_changing_deadline_updates_ready_made_wording(self):
+        self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
+        from app.views import forms as F
+        old = F.fmt_date("2027-01-31")
+        events.touch(self.ev["id"], design=db.dumps({"wording": {"rsvp_note": f"Kindly reply by {old}."}}))
+        self.client.post(self.base + "/setup/3", {"rsvp_deadline": "2027-02-01", "plus_one_policy": "per_guest", "nav": "stay"})
+        self.assertEqual(events.by_id(self.ev["id"])["design"]["wording"]["rsvp_note"], f"Kindly reply by {F.fmt_date('2027-02-01')}.")
 
     def test_event_name_follows_names(self):
         r = self.client.post(self.base + "/setup/1", {"hosts": "Lerato & Sipho", "event_date": "2027-03-14", "venue_name": "Avianto", "address": "Muldersdrift", "nav": "stay"})
