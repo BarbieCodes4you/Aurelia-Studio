@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from .. import auth, catalog, config, db, events, notify
 from ..icons import i
-from ..services import qr, reports
+from ..services import email as mail, qr, reports
 from ..services.storage import storage
 from ..web import HTTPError, Response, download, esc, redirect, router
 from . import forms
@@ -115,7 +115,7 @@ def overview(req, uid):
 <div class="kpi"><span>RSVP completion</span><b>{s["completion"]}%</b><div class="progress" style="margin-top:10px"><span style="width:{s["completion"]}%"></span></div></div></div>"""
 
     tables = events.tables(ev["id"])
-    next_html = _next_steps(ev, s, paid, live, days, tables)
+    next_html = _next_step_cards(next_steps(ev, s, days))
     checklist = [
         ("Event details and date", bool(ev.get("event_date") and ev.get("name")), f"{base(ev)}/setup/1"),
         ("Venue and directions", bool(venue.get("name")), f"{base(ev)}/setup/1"),
@@ -182,10 +182,18 @@ def _booking_box(ev, paid, live) -> str:
             f'<dl class="dl">{dl}</dl></div>')
 
 
-def _next_steps(ev, s, paid, live, days, tables) -> str:
-    """The next three things to do, in order, so the organiser never has to work out what's next."""
+def next_steps(ev, s: dict | None = None, days: int | None = None) -> list:
+    """What to do next, in order, as (title, why, link, button), so the organiser never has to work it out.
+    Shown on the overview and sent the day after the website goes live (scheduler)."""
+    s = s or events.stats(ev["id"])
+    if days is None:
+        days = forms.days_until(ev.get("event_date"))
+    paid = catalog.package(ev["paid_package"])
+    live = events.is_live(ev)
     venue = ev.get("venue") or {}
-    not_sent = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined'", (ev["id"],), 0)
+    # guests who replied, or opened their personal link, clearly have their invitation
+    not_sent = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NULL AND status = 'pending'", (ev["id"],), 0)
+    waiting = s["pending"] - not_sent              # invited, not replied yet
     steps = []   # (title, why, link, button)
     if not (ev.get("hosts") and ev.get("event_date")):
         steps.append(("Add your names and date", "Guests see these first.", f"{base(ev)}/setup/1", "Add details"))
@@ -198,12 +206,12 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
     if live and has(ev, "guest_management") and s["invited"] == 0:
         steps.append(("Add your guest list", "Paste names or import a spreadsheet. Each guest gets a personal RSVP link.", f"{base(ev)}/guests/import", "Add guests"))
     if live and has(ev, "personal_invites") and not_sent:
-        steps.append(("Send your invitations", f"{not_sent} guest{'s' if not_sent != 1 else ''} haven't been sent their invitation yet. Send them on WhatsApp, one tap each.",
+        steps.append(("Send your invitations", (f"{not_sent} guests haven't been sent their invitation yet. Send them on WhatsApp, one tap each." if not_sent != 1 else "1 guest hasn't been sent their invitation yet. Send it on WhatsApp in one tap."),
                       f"{base(ev)}/share/whatsapp", "Start sending"))
     elif live and not has(ev, "personal_invites") and s["invited"] == 0:
         steps.append(("Share your link", "Send it on WhatsApp, by email or as a QR code. Guests reply on the website.", f"{base(ev)}/share", "Share"))
-    if live and s["pending"] and s["invited"] - not_sent > 0 and (days is None or days >= 0):
-        steps.append(("Remind guests who haven't replied", f"{s['pending']} still to reply.", f"{base(ev)}/share/whatsapp?mode=remind", "Send reminders"))
+    if live and waiting > 0 and (days is None or days >= 0):
+        steps.append(("Remind guests who haven't replied", f"{waiting} still to reply.", f"{base(ev)}/share/whatsapp?mode=remind", "Send reminders"))
     if has(ev, "seating") and s["attending"] and s["unseated_parties"]:
         steps.append(("Seat your guests", f"{s['unseated_parties']} confirmed part{'y' if s['unseated_parties'] == 1 else 'ies'} without a table. Seat everyone automatically, then fine-tune.",
                       f"{base(ev)}/seating", "Open seating"))
@@ -211,6 +219,10 @@ def _next_steps(ev, s, paid, live, days, tables) -> str:
         steps.append(("Share photos from the day", "Add your favourites to the gallery. Guests see them on the link they already have.", f"{base(ev)}/setup/7", "Add photos"))
     if days is not None and days < 0 and has(ev, "reports"):
         steps.append(("Download your final report", "Attendance, meals and seating in one file to keep.", f"{base(ev)}/reports", "Reports"))
+    return steps
+
+
+def _next_step_cards(steps) -> str:
     if not steps:
         return ""
     cards = "".join(f'<a class="next-step" href="{href}"><span class="mono tiny">NEXT {n}</span><b>{esc(t)}</b><span class="small muted">{esc(w)}</span>'
@@ -271,7 +283,7 @@ def whatsapp_queue(req, uid):
         q = {"mode": mode if mode == "remind" else "", "skip": ",".join(map(str, skip))}
         return redirect(f"{base(ev)}/share/whatsapp" + ("?" + "&".join(f"{k}={v}" for k, v in q.items() if v) if any(q.values()) else ""))
     if mode == "invite":
-        todo = db.q("""SELECT * FROM guests WHERE event_id = ? AND invited_at IS NULL AND status != 'declined' AND phone != ''
+        todo = db.q("""SELECT * FROM guests WHERE event_id = ? AND invited_at IS NULL AND status = 'pending' AND phone != ''
                        ORDER BY is_vip DESC, last_name COLLATE NOCASE, first_name COLLATE NOCASE""", (ev["id"],))
         done = db.val("SELECT COUNT(*) FROM guests WHERE event_id = ? AND invited_at IS NOT NULL AND phone != ''", (ev["id"],), 0)
     else:
@@ -333,7 +345,9 @@ def share(req, uid):
 <div class="cols cols--2"><div class="stack">
 <div class="box"><div class="box__head"><h2>Event link</h2></div><div class="row" style="flex-wrap:nowrap">
 <input class="input mono" id="share-link" value="{esc(link)}" readonly aria-label="Event link" style="font-size:.875rem">
-<button class="btn btn--primary" type="button" data-copy-target="#share-link" data-copied="Link copied">{i("copy")}Copy</button></div>{personal}</div>
+<button class="btn btn--primary" type="button" data-copy-target="#share-link" data-copied="Link copied">{i("copy")}Copy</button></div>
+<form method="post" action="{base(ev)}/share/email-me" style="margin-top:10px">{csrf(req)}<button class="btn btn--ghost btn--sm" type="submit">{i("mail")}Email me this link</button>
+<span class="tiny muted">Handy for sharing from your phone.</span></form>{personal}</div>
 <div class="box"><div class="box__head"><h2>Invitation message</h2></div>
 <textarea class="textarea" id="share-message" rows="5" aria-label="Invitation message" data-wa-source>{esc(message)}</textarea>
 <div class="row" style="margin-top:12px"><a class="btn btn--primary" id="wa-link" href="{esc(wa)}" target="_blank" rel="noopener">{i("chat")}Share on WhatsApp</a>
@@ -349,6 +363,14 @@ def share(req, uid):
 var sub={sub_js};
 t.addEventListener("input",function(){{a.href="https://wa.me/?text="+encodeURIComponent(t.value);m.href="mailto:?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(t.value);}});}})();</script>"""
     return organiser_page(req, ev, "Share", body, "/share")
+
+
+@router.post("/dashboard/events/<uid>/share/email-me")
+def share_email_me(req, uid):
+    ev = load(req, uid)
+    mail.send(req.user["email"], "event_link", {**notify.event_vars(ev), "first_name": mail.first_name(req.user["name"])},
+              event_id=ev["id"], user_id=req.user["id"])
+    return go(req, ev, "/share", "success", f"Sent to {req.user['email']}. Open it on your phone to share from there.")
 
 
 @router.get("/dashboard/events/<uid>/share/qr.svg")

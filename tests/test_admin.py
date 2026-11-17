@@ -244,6 +244,25 @@ class Scheduler(unittest.TestCase):
         n = db.val("SELECT COUNT(*) FROM email_logs WHERE event_id IN (?, ?)", (ev["id"], demo["id"]), 0)
         self.assertEqual(n, 0)
 
+    def test_next_steps_email_the_day_after_publishing_only_when_something_is_left(self):
+        today = date.today()
+        busy = live_event(new_user())
+        add_guest(busy, "a@example.com")                      # guests added, invitations not sent yet
+        done = live_event(new_user())
+        events.save_json(done["id"], "venue", {"name": "Oakhaven", "address": "Helshoogte Road, Stellenbosch"})
+        g = add_guest(done, "b@example.com", status="attending")
+        db.run("UPDATE guests SET invited_at = ? WHERE id = ?", (db.now(), g))
+        db.run("INSERT INTO seating_tables (event_id, name, capacity, shape, pos_x, pos_y, sort) VALUES (?, 'T1', 10, 'round', 50, 44, 0)", (done["id"],))
+        db.run("INSERT INTO seat_assignments (guest_id, table_id, event_id, assigned_at) VALUES (?, last_insert_rowid(), ?, ?)", (g, done["id"], db.now()))
+        scheduler.run_once(today)                             # publish day: nothing yet
+        self.assertEqual(sent("setup_instructions", busy["id"]), 0)
+        scheduler.run_once(today + timedelta(days=1))
+        scheduler.run_once(today + timedelta(days=2))
+        self.assertEqual(sent("setup_instructions", busy["id"]), 1)     # once
+        self.assertEqual(sent("setup_instructions", done["id"]), 0)     # nothing left to do: no email
+        html = db.val("SELECT subject FROM email_logs WHERE template_key = 'setup_instructions' AND event_id = ?", (busy["id"],))
+        self.assertIn("Next steps", html)
+
     def test_event_reminder_and_post_event(self):
         ev = live_event(new_user(), event_date=(date.today() + timedelta(days=7)).isoformat())
         scheduler.run_once()

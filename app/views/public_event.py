@@ -83,6 +83,8 @@ def invitation(req, slug, token):
     if guest is None:
         return unavailable(ev)
     if is_available(ev):
+        if not guest["invited_at"] and not auth.can_manage_event(req.user, ev):    # the guest has their link
+            db.run("UPDATE guests SET invited_at = ? WHERE id = ? AND invited_at IS NULL", (db.now(), guest["id"]))
         return Response(R.render(ev, "public", guest, req))
     if auth.can_manage_event(req.user, ev):
         return Response(R.render(ev, "preview", guest, req, notice=f"Personal link for {events.guest_name(guest)}"))

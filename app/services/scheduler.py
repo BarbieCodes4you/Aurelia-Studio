@@ -118,6 +118,20 @@ def _event_reminders(ev, today: date) -> int:
     return 1
 
 
+def _next_steps(ev, today: date) -> int:
+    """From the day after the website goes live (for a week): what's left to do, if anything. The same list
+    the dashboard shows, so a client who has already shared their link and seen replies gets no email."""
+    published = _date(ev.get("published_at"))
+    if not events.is_live(ev) or not published or not (1 <= (today - published).days <= 7):
+        return 0
+    from ..views.dashboard import next_steps
+    steps = [(t, w, config.BASE_URL + href, link) for t, w, href, link in next_steps(ev)[:3]]
+    if not steps or not mark(ev["id"], "next-steps"):
+        return 0
+    notify.organiser(ev, "setup_instructions", {"steps": notify.steps_html(steps)}, owner_only=True)
+    return 1
+
+
 def _post_event(ev, today: date) -> int:
     event_day = _date(ev.get("event_date"))
     if not event_day or not (1 <= (today - event_day).days <= 3):
@@ -156,7 +170,7 @@ def _prune() -> int:
     return n
 
 
-JOBS = [("summaries", _summaries), ("outstanding", _outstanding), ("guest_reminders", _auto_guest_reminders),
+JOBS = [("next_steps", _next_steps), ("summaries", _summaries), ("outstanding", _outstanding), ("guest_reminders", _auto_guest_reminders),
         ("event_reminders", _event_reminders), ("post_event", _post_event)]
 
 

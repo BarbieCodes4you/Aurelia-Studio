@@ -948,6 +948,8 @@ def sample_vars() -> dict:
         "message_html": "<p style='margin:0 0 18px'>We can't wait to celebrate with you.</p>",
         "details": "<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'><tr><td style='padding:6px 12px 6px 0;color:#625D5E'>Meal</td><td>Roast lamb</td></tr></table>",
         "summary_table": notify.summary_table_html(stats),
+        "steps": notify.steps_html([("Send your invitations", "150 guests haven't been sent their invitation yet. Send them on WhatsApp, one tap each.",
+                                     dash + "/share/whatsapp", "Start sending")]),
     }
 
 

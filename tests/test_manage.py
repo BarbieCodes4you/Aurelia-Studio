@@ -181,6 +181,21 @@ class ManageTests(unittest.TestCase):
         self.assertIn("2 parties (4 people) didn't fit", r["warning"])
         self.assertEqual(r["state"]["tables"][0]["seated"], 10)
 
+    def test_next_steps_count_only_guests_without_their_invitation(self):
+        from app.views.dashboard import next_steps
+        events.touch(self.ev["id"], status="published", published_at=db.now(), hosting_until="2099-01-01")
+        a = add_guest(self.ev, "Amy", status="pending")
+        add_guest(self.ev, "Ben", status="attending")                 # replied through the general link
+        add_guest(self.ev, "Cy", status="pending")
+        steps = {t: w for t, w, _, _ in next_steps(events.by_id(self.ev["id"]))}
+        self.assertIn("2 guests haven't been sent", steps["Send your invitations"])
+        self.assertNotIn("Remind guests who haven't replied", steps)
+        # Amy opens her personal link: she has her invitation now
+        Client(self.app).get(f"/events/{self.ev['slug']}/i/{a['token']}")
+        steps = {t: w for t, w, _, _ in next_steps(events.by_id(self.ev["id"]))}
+        self.assertIn("1 guest hasn't been sent", steps["Send your invitations"])
+        self.assertEqual(steps["Remind guests who haven't replied"], "1 still to reply.")
+
     def test_new_tables_take_free_places_on_the_floor(self):
         events.create_layout_tables(self.ev, {"top": "head", "guest": "round", "capacity": 10}, 3)
         tables = events.tables(self.ev["id"])
@@ -305,6 +320,11 @@ class ManageTests(unittest.TestCase):
         r = self.client.get(self.base + "/share")
         self.assertIn("wa.me/?text=", r.text)
         self.assertTrue(self.client.get(self.base + "/share/qr.png").body.startswith(b"\x89PNG"))
+        # "Email me this link" sends the link to whoever is signed in
+        self.assertIn("Email me this link", r.text)
+        r = self.client.post(self.base + "/share/email-me", {})
+        self.assertEqual(r.status, 303)
+        self.assertEqual(db.val("SELECT COUNT(*) FROM email_logs WHERE template_key = 'event_link' AND to_email = ?", (self.owner["email"],)), 1)
 
     # --- communications -------------------------------------------------------------------------
     def test_comms_preview_and_send_requires_live(self):

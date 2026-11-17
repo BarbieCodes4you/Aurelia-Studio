@@ -257,7 +257,8 @@ class PaymentsTest(unittest.TestCase):
         self.assertEqual(ev["status"], "published")
         self.assertTrue(ev["hosting_until"])
         keys = {r["template_key"] for r in db.q("SELECT template_key FROM email_logs")}
-        self.assertTrue({"payment_confirmation", "website_published", "event_link", "setup_instructions"} <= keys)
+        self.assertTrue({"payment_confirmation", "website_published"} <= keys)
+        self.assertFalse({"event_link", "setup_instructions"} & keys)        # one "is live" email; next steps come later
         self.assertIn("Payment confirmed", self.c.get(f"/dashboard/events/{self.ev['uid']}/payment/{order_uid}").text)
         self.assertEqual(self.c.get(f"/dashboard/orders/{order_uid}/receipt").status, 200)
 

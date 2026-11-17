@@ -478,8 +478,8 @@ a.chip, button.chip { min-height: 44px; }
 .price--highlight { border-color: color-mix(in srgb, var(--color-accent) 60%, transparent); box-shadow: var(--inset-hi), 0 40px 80px -48px rgb(var(--glow-accent) / .8); background: radial-gradient(80% 40% at 100% 0%, rgb(var(--glow-blush) / .22), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--color-accent-soft) 80%, var(--color-surface)), var(--color-surface) 45%); }
 .price__badge { position: absolute; top: -13px; left: 50%; translate: -50% 0; height: 26px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--gold-sheen); color: var(--btn-text); font-size: .75rem; font-weight: 600; letter-spacing: .02em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .8); }
 .price h3 { font-size: 1.25rem; }
-.price__amount { font-size: clamp(2.2rem, 1.6rem + 2vw, 3rem); font-weight: 650; letter-spacing: -.05em; line-height: 1; }
-.price__amount small { font-size: .875rem; font-weight: 400; letter-spacing: 0; color: var(--color-muted); margin-left: 6px; }
+.price__amount { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: clamp(2.2rem, 1.6rem + 2vw, 3rem); font-weight: 650; letter-spacing: -.05em; line-height: 1; }
+.price__amount small { font-size: .875rem; font-weight: 400; letter-spacing: 0; color: var(--color-muted); white-space: nowrap; }
 .price ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: .9375rem; }
 .price li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; }
 .price li .i { width: 18px; height: 18px; margin-top: 3px; color: var(--color-accent-text); }
@@ -487,7 +487,7 @@ a.chip, button.chip { min-height: 44px; }
 .price__limits { padding-top: 14px; border-top: 1px solid var(--color-line); display: grid; gap: 6px; font-size: .8125rem; color: var(--color-muted); }
 .price__limits div { display: flex; justify-content: space-between; gap: 12px; }
 .price__limits b { font-family: var(--font-mono); font-weight: 500; color: var(--color-text); }
-.price .btn { margin-top: auto; }
+.price > .btn:last-child { margin-top: auto; }   /* pricing page: buttons line up at the bottom; at checkout the button sits under the price */
 
 .compare { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .compare th, .compare td { padding: 12px 14px; border-bottom: 1px solid var(--color-line); text-align: center; }
