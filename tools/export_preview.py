@@ -40,6 +40,8 @@ for d in ("static/css", "static/js", "static/img"):
     os.makedirs(os.path.join(OUT, d))
 for f in ["css/app.css", "css/icons.css", "css/eventsite.css", "js/eventsite.js", "js/floorplan.js", "img/favicon.svg"]:
     shutil.copy(os.path.join(SRC, "static", f), os.path.join(OUT, "static", f))
+if os.path.isdir(os.path.join(SRC, "static", "img", "stock")):
+    shutil.copytree(os.path.join(SRC, "static", "img", "stock"), os.path.join(OUT, "static", "img", "stock"))
 for f in ("eventrender.js", "journey.js"):
     shutil.copy(os.path.join(SRC, "preview_site", f), os.path.join(OUT, "static/js", f))
 

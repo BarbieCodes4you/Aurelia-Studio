@@ -108,7 +108,7 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
     return {
         "_demo": True, "_design": design, "_group": group,
         "_functions": functions, "_schedule": schedule, "_menus": menus, "_hero": _stock_hero(template_slug, group),
-        "_gallery": [{"url": "", "caption": c} for c in ("", "", "", "", "", "")],
+        "_gallery": _stock_gallery(template_slug, group),
         "id": 0, "uid": "demo", "slug": f"sample-{template_slug}", "status": "published", "owner_id": 0,
         "template": template_slug, "category": s["category"], "name": s["name"], "hosts": s["hosts"],
         "description": s["description"], "event_date": ev_date.isoformat(), "start_time": first_time,
@@ -135,4 +135,14 @@ def _stock_hero(slug: str, group: str) -> str:
     if slug == "heritage" and stock.url("traditional"):
         return stock.url("traditional")
     return stock.url(group)
+
+
+def _stock_gallery(slug: str, group: str) -> list:
+    """Real photos when they have been added (static/img/stock/gallery/<slot>/), else six art tiles."""
+    from .. import stock
+    slot = "traditional" if slug == "heritage" and stock.gallery("traditional") else group
+    photos = stock.gallery(slot) or (stock.gallery("weddings") if group == "weddings" else [])
+    if photos:
+        return [{"url": u, "caption": ""} for u in photos[:9]]
+    return [{"url": "", "caption": ""} for _ in range(6)]
 

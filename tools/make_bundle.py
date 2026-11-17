@@ -18,6 +18,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "AURELIA-COMPLETE.md")
 SKIP_DIRS = {"data", "__pycache__", ".git", ".claude", "dist", "preview_build"}
 SKIP_FILES = {".DS_Store", "AURELIA-COMPLETE.md"}
+BINARY = (".jpg", ".jpeg", ".png", ".webp", ".gif", ".zip", ".pdf")   # photos live in the Git repository, not this text bundle
 LANG = {".py": "python", ".sql": "sql", ".css": "css", ".js": "javascript", ".md": "markdown", ".svg": "xml",
         ".sh": "sh", ".json": "json", ".service": "ini", ".toml": "toml"}
 
@@ -27,7 +28,7 @@ def project_files() -> list[str]:
     for d, dirs, files in os.walk(ROOT):
         dirs[:] = sorted(x for x in dirs if x not in SKIP_DIRS)
         for f in sorted(files):
-            if f in SKIP_FILES or f.endswith(".pyc"):
+            if f in SKIP_FILES or f.endswith(".pyc") or f.lower().endswith(BINARY):
                 continue
             out.append(os.path.relpath(os.path.join(d, f), ROOT))
     return sorted(out, key=lambda p: (p.count("/") > 0, p))

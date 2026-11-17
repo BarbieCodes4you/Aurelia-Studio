@@ -1,7 +1,8 @@
 """Stock photos for the marketing pages and the template samples.
 
 Drop a photo into static/img/stock/ under one of these names and it is used automatically; until then
-the line drawings and colour washes stay. Keep each photo under about 250 KB (1600px wide, JPEG).
+the line drawings and colour washes stay. Sample gallery photos go in static/img/stock/gallery/<slot>/.
+`python3 tools/add_photos.py PHOTOS_FOLDER_OR_ZIP` resizes and files them for you. Keep each photo under about 250 KB (1600px wide, JPEG).
 Record where each photo came from and its licence in CREDITS below (Unsplash and Pexels photos are free
 for commercial use without attribution, but keeping the source makes them easy to check or replace).
 """
@@ -28,3 +29,12 @@ def url(slot: str) -> str:
         if (DIR / f"{slot}.{ext}").is_file():
             return f"/static/img/stock/{slot}.{ext}"
     return ""
+
+
+def gallery(slot: str) -> list[str]:
+    """Web paths of the sample gallery photos for `slot` (static/img/stock/gallery/<slot>/), sorted by name."""
+    folder = DIR / "gallery" / slot
+    if not folder.is_dir():
+        return []
+    return [f"/static/img/stock/gallery/{slot}/{f.name}" for f in sorted(folder.iterdir())
+            if f.suffix.lower() in (".jpg", ".jpeg", ".webp", ".png")]
