@@ -3,6 +3,18 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-19 (later): moved into the GitHub repository
+
+**Changes**
+- The project and its full history are now on GitHub at `BarbieCodes4you/Aurelia-Studio`, and work
+  continues from there. `START-HERE.md` lists the links, the guides and the launch checklist.
+
+**Checked**
+- 106 tests pass after the move.
+
+**Waiting on**
+- Railway: deploy from the repository (`DEPLOY-RAILWAY.md`, Part 2).
+
 ## 2026-11-19: fewer Railway settings, launch checks
 
 **Changes**
