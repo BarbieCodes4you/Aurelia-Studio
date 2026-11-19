@@ -1062,7 +1062,7 @@ def step_review_pay(req, ev):
             label = f"Upgrade for {catalog.money(price)}" if paid else f"Pay {catalog.money(price)}"
             action = (f'<button class="btn {"btn--primary" if p["highlight"] else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}"'
                       f'{" disabled" if missing_needed else ""}>{label}</button>')
-        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
+        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Recommended</span>' if p['highlight'] and not paid else ''}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
 <div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else ("VAT incl." if config.VAT_REGISTERED else "once-off")}</small></div>{action}<ul>{bl}</ul>
 <details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">{lim}</div></details>{gap_html}</article>""")

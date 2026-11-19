@@ -3,6 +3,26 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-19 (evening): sign-up, previews, VAT, honest claims
+
+**Changes**
+- Sign-up asks for a password, both on `/register` and on the "Create your event" page. Sign-in links
+  stay as a second way in.
+- Unpaid previews (shared draft links and the organiser's own preview) show a striped "Preview only:
+  not published" strip and a watermark across the page, also when printed. The organiser's strip has
+  a "Pay to publish" button.
+- VAT is only mentioned once `VAT_NUMBER` is set. Until then, prices don't say "VAT incl." and receipts
+  are titled "Receipt", not "Tax invoice". Only VAT-registered businesses may charge VAT.
+- "Most chosen" became "Recommended" (no sales yet), and "Ten distinct designs" became "Eleven".
+- `/robots.txt` and `/sitemap.xml` added. Event websites, dashboards and admin are kept out of search.
+
+**Checked**
+- 108 tests pass.
+
+**Waiting on**
+- Stock photos for the templates. Fetching them from Unsplash was blocked in the cloud session.
+  Either allow it, or download photos and add them with `tools/add_photos.py`.
+
 ## 2026-11-19 (later): moved into the GitHub repository
 
 **Changes**

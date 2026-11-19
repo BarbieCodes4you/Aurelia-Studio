@@ -76,7 +76,7 @@ def price_cards(highlight_cta: bool = True) -> str:
         lim = "".join(
             f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, "-")) if limits.get(k, 0) else "Not included"}</b></div>'
             for k, label in catalog.LIMIT_LABELS.items())
-        badge = '<span class="price__badge">Most chosen</span>' if p["highlight"] else ""
+        badge = '<span class="price__badge">Recommended</span>' if p["highlight"] else ""
         btn = "btn--primary" if p["highlight"] else "btn--secondary"
         out.append(f"""<article class="price{' price--highlight' if p['highlight'] else ''}" data-reveal>{badge}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
@@ -152,7 +152,7 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 </div>"""
 
 FEATURES = [
-    ("globe", "A website for your event", "Ten distinct designs, made mobile-first, filled with your details and photos."),
+    ("globe", "A website for your event", "Eleven distinct designs, made for phones first and filled with your details and photos."),
     ("check", "RSVPs that count themselves", "Attending, declined and pending at a glance, with plus-ones, children and meal choices."),
     ("users", "Guest list and families", "Import a spreadsheet, group families, mark VIPs and send personal invitation links."),
     ("seat", "Drag-and-drop seating", "Build your floor plan, seat parties at tables, and print the final chart."),
@@ -181,6 +181,29 @@ def why_digital() -> str:
     return (f'<section class="section"><div class="container">{section_head("Why send your invitations this way", "Say you are inviting 300 people.")}'
             f'<div class="vs box"><div class="vs-row vs-head"><span></span><b>Printed cards</b><b>One {esc(config.BRAND_NAME)} link</b></div>{body}</div>'
             f'<p class="tiny muted" style="margin-top:10px">Printing estimate based on South African prices of about R30 to R50 per printed invitation.</p></div></section>')
+
+
+SITEMAP_PATHS = ["/", "/weddings", "/baby-celebrations", "/parties", "/celebrations", "/templates", "/pricing",
+                 "/how-it-works", "/faq", "/help-me-set-up", "/contact", "/privacy", "/terms", "/refunds"]
+
+
+@router.get("/robots.txt")
+def robots(req):
+    """Marketing pages may be indexed; event websites, accounts and admin may not."""
+    from ..web import Response
+    body = ("User-agent: *\nDisallow: /events/\nDisallow: /dashboard\nDisallow: /admin\nDisallow: /media/\n"
+            "Disallow: /login\nDisallow: /register\nDisallow: /pay/\n"
+            f"Sitemap: {config.BASE_URL}/sitemap.xml\n")
+    return Response(body, content_type="text/plain; charset=utf-8")
+
+
+@router.get("/sitemap.xml")
+def sitemap(req):
+    from ..web import Response
+    paths = SITEMAP_PATHS + [f"/templates/{t['slug']}" for t in db.q("SELECT slug FROM templates WHERE active = 1 ORDER BY sort, id")]
+    urls = "".join(f"<url><loc>{esc(config.BASE_URL + p)}</loc></url>" for p in paths)
+    return Response(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>',
+                    content_type="application/xml; charset=utf-8")
 
 
 @router.get("/healthz")

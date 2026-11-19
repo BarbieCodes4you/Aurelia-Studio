@@ -27,6 +27,15 @@ class AccountsTest(unittest.TestCase):
         db.run("UPDATE packages SET price_cents = 1234500 WHERE code = 'premium'")
         self.assertIn("R12,345", self.c.get("/pricing").text)
 
+    def test_robots_and_sitemap(self):
+        r = self.c.get("/robots.txt")
+        self.assertEqual(r.status, 200)
+        self.assertIn("Disallow: /events/", r.text)
+        r = self.c.get("/sitemap.xml")
+        self.assertEqual(r.status, 200)
+        self.assertIn("/pricing</loc>", r.text)
+        self.assertIn("/templates/atelier</loc>", r.text)
+
     def test_register_login_logout(self):
         r = self.c.post("/register", {"name": "Lerato Dube", "email": "lerato@example.com", "password": "Sunrise-2027a",
                                       "password_confirm": "Sunrise-2027a", "terms": "1"})
