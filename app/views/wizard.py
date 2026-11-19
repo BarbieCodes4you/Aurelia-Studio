@@ -1077,7 +1077,7 @@ def step_review_pay(req, ev):
         status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
                   f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
     share = (f'<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>'
-             f'<p class="small muted">Send this link to your partner or family for their opinion. They see your website as it is now, marked “Preview: not published”, with replies switched off. Guests can only use it once you've paid.</p>'
+             f'<p class="small muted">Send this link to your partner or family for their opinion. They see your website as it is now, marked “Preview: not published”, with replies switched off. Guests can only use it once you\'ve paid.</p>'
              f'<div class="row" style="gap:8px;flex-wrap:wrap"><input class="input input--sm mono" style="flex:1;min-width:0" readonly value="{esc(events.draft_url(ev))}" aria-label="Draft preview link">'
              f'<button class="btn btn--secondary btn--sm" type="button" data-copy="{esc(events.draft_url(ev))}" data-copied="Draft link copied">{i("copy")} Copy link</button>'
              f'<a class="btn btn--ghost btn--sm" href="https://wa.me/?text={esc(_q("Have a look at our event website draft: " + events.draft_url(ev)))}" target="_blank" rel="noopener">{i("chat")} WhatsApp</a></div></div>')
