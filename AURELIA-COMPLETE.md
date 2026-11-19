@@ -1,6 +1,6 @@
 # Aurelia Studio: complete project and hosting guide
 
-Generated 2026-11-17 from the working project. **79 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-19 from the working project. **79 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -626,12 +626,13 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=46f3bc6c14d90eec897f60240586f9545133315de0faa307392b2ed161090040 nl=1 -->
+<!-- FILE: .env.example sha256=6dd35d813eacef35474db25ea19fe0d2587e544b3b39a62c3e572bf3ee9e4afc nl=1 -->
 ```
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
-BASE_URL=http://127.0.0.1:8040      # public address, used in emails and payment callbacks
-SECRET_KEY=                         # long random string in production (python3 -c "import secrets;print(secrets.token_hex(32))")
+BASE_URL=http://127.0.0.1:8040      # public address, used in emails and payment callbacks (on Railway: Railway's domain until you set yours)
+SECRET_KEY=                         # optional: if empty, a random key is created once and kept in the data folder
+# TRUST_PROXY=0                     # 1 behind a reverse proxy you control; on by itself on Railway
 # AURELIA_DATA_DIR=./data           # database, uploads, email outbox
 # DATABASE_PATH=./data/aurelia.sqlite3
 
@@ -693,7 +694,7 @@ dist/
 
 ### `DEPLOY-RAILWAY.md`
 
-<!-- FILE: DEPLOY-RAILWAY.md sha256=92af60bc737d0d31a891f64a9051e485f6c9fb1df5bd6f02094669ac65a09caa nl=1 -->
+<!-- FILE: DEPLOY-RAILWAY.md sha256=fab90f54948c5b7c84e5cf6ebe825d3cabe495bc94e6718f256bcacf447e3440 nl=1 -->
 ````markdown
 # Aurelia Studio: launch on Railway with your own domain
 
@@ -713,33 +714,34 @@ PayFast: a fee per transaction.
 1. Sign up at **github.com** (free).
 2. **New repository** → name it e.g. `aurelia-studio` → **Private** → leave "Add a README" unticked →
    **Create repository**.
-3. Send me the name, e.g. `yourname/aurelia-studio`. I push the code there, and every future change I
-   make goes there too.
+3. Let Claude reach it: open **https://claude.ai/connect-github**, connect your GitHub account and
+   install the **Claude GitHub App** on the `aurelia-studio` repository (same page).
+4. Send me the name, e.g. `yourname/aurelia-studio`. I upload the code there, and every future change
+   I make goes there too.
 
 ## Part 2: Railway (the server)
 
 1. Sign up at **railway.com** with your GitHub account, choose the **Hobby** plan and add a card.
 2. **New Project → Deploy from GitHub repo** → pick `aurelia-studio`. Railway reads `railway.json` and
-   builds from the `Dockerfile`; nothing to configure for the build.
-3. **Add a volume** (the disk for the database and photos): on the project canvas, add a Volume and
+   builds from the `Dockerfile`; nothing to configure for the build. The first build takes a few minutes.
+3. **A web address:** click the service → **Settings → Networking → Generate Domain**. If it asks for a
+   port, enter **8040**.
+4. **Add a volume** (the disk for the database and photos): on the project canvas, add a Volume and
    attach it to the service with mount path **`/data`**. Without it, everything is lost on each update.
-4. **Variables** (service → Variables → Raw Editor), paste and fill in:
+5. **Variables** (service → Variables → Raw Editor), paste and fill in:
 
 ```ini
-APP_ENV=production
-BASE_URL=https://<your-railway-address>.up.railway.app
-SECRET_KEY=<a long random string: mash the keyboard for 60+ characters, or use a password generator>
-TRUST_PROXY=1
-SUPPORT_EMAIL=invitesaurelia@gmail.com
+PORT=8040
 ADMIN_EMAIL=<your email>
 ADMIN_PASSWORD=<a strong password for your admin login>
 ALLOW_SANDBOX_PAYMENTS=1
 ```
 
-5. **A web address:** service → Settings → Networking → **Generate Domain**. Copy it into `BASE_URL`
-   (with `https://`). Railway redeploys by itself after variable changes.
-6. Open the address. Sign in at `/login` with your `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then go to `/admin`.
-   **Delete the `ADMIN_PASSWORD` variable** afterwards (your account keeps the password).
+   That's all. The web address comes from Railway, a secret key is created on the volume the first time
+   the app starts, and the proxy setting is switched on by itself. Railway redeploys after the change.
+6. Open the address. Sign in at `/login` with your `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then go to
+   `/admin`. The **Launch checks** box at the top lists what's left, starting with deleting the
+   `ADMIN_PASSWORD` variable (your account keeps the password).
 7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
    (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
 
@@ -755,7 +757,8 @@ ALLOW_SANDBOX_PAYMENTS=1
    `www.aureliastudio.co.za` too. For each, Railway shows the DNS record to create.
 5. In Cloudflare → DNS → **Add record** exactly as Railway shows (usually a CNAME; for the bare domain use
    name `@`). Set the cloud icon to **DNS only** (grey) so Railway can issue the HTTPS certificate.
-6. When Railway shows both domains as active, change **`BASE_URL`** to `https://aureliastudio.co.za`.
+6. When Railway shows both domains as active, add the variable **`BASE_URL=https://aureliastudio.co.za`**, so
+   links in emails and payment returns use your domain.
 
 ## Part 4: email (Resend)
 
@@ -800,6 +803,7 @@ PAYFAST_CHECK_IP=1
 
 - [ ] Your domain opens with the padlock (HTTPS), and `BASE_URL` is that address
 - [ ] `ADMIN_PASSWORD` and `ALLOW_SANDBOX_PAYMENTS` variables deleted
+- [ ] `/admin` → **Launch checks** shows nothing left to fix
 - [ ] A test email arrived; a PayFast payment published an event by itself
 - [ ] Company address, VAT number and information officer set (`COMPANY_ADDRESS`, `VAT_NUMBER`,
       `INFORMATION_OFFICER_EMAIL`)
@@ -972,12 +976,36 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=5b7123630cf0590de9b788a90f453140cd41315545a4089c2ee512064205b3bc nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=3d8669b098d1392334ef221e98281dcb0b30c896cd5335978666193682ec222a nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-19: fewer Railway settings, launch checks
+
+**Changes**
+- On Railway the app takes its web address from Railway's generated domain (`RAILWAY_PUBLIC_DOMAIN`)
+  and trusts Railway's proxy by itself; the secret key is created once on the `/data` volume. The
+  Railway variables come down to `PORT`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `ALLOW_SANDBOX_PAYMENTS`.
+  `BASE_URL` is only needed once your own domain is connected.
+- The client address behind a proxy is now the last `X-Forwarded-For` entry (the one the proxy adds),
+  so a visitor can't fake their address to get around rate limits.
+- `/admin` shows **Launch checks**: missing volume, web address, `ADMIN_PASSWORD` still set, emails
+  not connected, test-mode payments, company details. Each says what to do.
+- `DEPLOY-RAILWAY.md` updated: connect GitHub to Claude, generate the domain before adding the volume
+  and variables, the shorter variable list.
+
+**Checked**
+- 106 tests pass on Python 3.12 and 3.11.
+- The production image run the way Railway runs it (volume at `/data`, Railway variables): health
+  check ok, the app runs as the `aurelia` user, the secret key is created on the volume, admin sign-in
+  works and the launch checks list the remaining steps. Without a volume, the first check warns.
+
+**Waiting on**
+- GitHub: connect it to Claude (https://claude.ai/connect-github, install the Claude GitHub App on the
+  repository) and send the repository name; then the code goes up and Railway can deploy it.
 
 ## 2026-11-17 (later): what the client sees after paying
 
@@ -1397,7 +1425,7 @@ The Claude preview server can't read the Desktop, so it runs a copy in the sessi
 
 ### `run.py`
 
-<!-- FILE: run.py sha256=26310a45c55e96b1ff36294bc43790e02f68486f662d875d7020fe4a8c3174e1 nl=1 -->
+<!-- FILE: run.py sha256=a91f1efae6d4b79cee47a60ea63f32b5f1263b86ae4fe5139ad87a58b3c79c52 nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Run the Aurelia platform.
@@ -1438,7 +1466,7 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length else b""
         ip = self.client_address[0]
         if config.TRUST_PROXY and self.headers.get("X-Forwarded-For"):
-            ip = self.headers["X-Forwarded-For"].split(",")[0].strip()
+            ip = self.headers["X-Forwarded-For"].split(",")[-1].strip()     # added by the proxy; earlier entries come from the client
         resp = self.app.handle(self.command, self.path, dict(self.headers.items()), body, ip)
         self.send_response(resp.status)
         for k, v in resp.headers:
@@ -1513,7 +1541,7 @@ if __name__ == "__main__":
 
 ### `wsgi.py`
 
-<!-- FILE: wsgi.py sha256=d327e877c5518ada78e148d935631957ce2d7eb3dee3ba1ccc8622d702c94836 nl=1 -->
+<!-- FILE: wsgi.py sha256=a9556e5d76ddfeaad7013ae9c9f777aae7bfc6a4b48ccb8f4eec6ae7bd165ada nl=1 -->
 ```python
 """WSGI entry point, for hosts that run Python web apps through a WSGI server
 (gunicorn, uWSGI, mod_wsgi, PythonAnywhere).
@@ -1567,7 +1595,7 @@ def application(environ, start_response):
     body = environ["wsgi.input"].read(length) if length else b""
     ip = environ.get("REMOTE_ADDR", "")
     if config.TRUST_PROXY and environ.get("HTTP_X_FORWARDED_FOR"):
-        ip = environ["HTTP_X_FORWARDED_FOR"].split(",")[0].strip()
+        ip = environ["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()     # added by the proxy; earlier entries come from the client
     resp = _app.handle(environ.get("REQUEST_METHOD", "GET"), raw, headers, body, ip)
     try:
         phrase = HTTPStatus(resp.status).phrase
@@ -2156,7 +2184,7 @@ def limit(event, key: str, default: int = 0) -> int:
 
 ### `app/config.py`
 
-<!-- FILE: app/config.py sha256=d4b0e7add09cf1e6bc8bfcd1cf2bb38df3ba883f3dc0dbb1f2918a3693b74f58 nl=1 -->
+<!-- FILE: app/config.py sha256=3ccdd6d3424d975d53bc3aa3aee579a591af557f62ec0ec0b412bc1346ac7e07 nl=1 -->
 ```python
 """Runtime configuration.
 
@@ -2220,7 +2248,8 @@ for _d in (UPLOAD_DIR, OUTBOX_DIR, REPORT_DIR):
 
 
 def _secret_key() -> str:
-    """SECRET_KEY from env; in development, a random key persisted in the data folder."""
+    """SECRET_KEY from env; otherwise a random key, created once and kept in the data folder (on Railway,
+    the /data volume), so sign-ins survive restarts and updates."""
     key = env("SECRET_KEY")
     if key:
         return key
@@ -2267,7 +2296,11 @@ TIMEZONE = env("TIMEZONE", "Africa/Johannesburg")
 # --- Server -----------------------------------------------------------------------------
 APP_ENV = env("APP_ENV", "development")            # development | production
 DEBUG = APP_ENV != "production"
-BASE_URL = env("BASE_URL", "http://127.0.0.1:8040").rstrip("/")
+# On Railway the web address and the proxy in front of the app are known, so they need no settings:
+# BASE_URL falls back to the domain Railway generated (set BASE_URL once your own domain is connected).
+ON_RAILWAY = any(env(k) for k in ("RAILWAY_ENVIRONMENT_NAME", "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID"))
+_RAILWAY_URL = f"https://{env('RAILWAY_PUBLIC_DOMAIN')}" if env("RAILWAY_PUBLIC_DOMAIN") else ""
+BASE_URL = env("BASE_URL", _RAILWAY_URL or "http://127.0.0.1:8040").rstrip("/")
 SECRET_KEY = _secret_key()
 DATABASE_PATH = Path(env("DATABASE_PATH", str(DATA_DIR / "aurelia.sqlite3")))
 SESSION_DAYS = env_int("SESSION_DAYS", 14)
@@ -2275,7 +2308,8 @@ MAX_BODY_BYTES = env_int("MAX_BODY_BYTES", 25 * 1024 * 1024)
 MAX_UPLOAD_BYTES = env_int("MAX_UPLOAD_BYTES", 6 * 1024 * 1024)
 SECURE_COOKIES = env_bool("SECURE_COOKIES", BASE_URL.startswith("https://"))
 # Only trust X-Forwarded-For when a reverse proxy you control (Caddy, Nginx, the host's router) sets it.
-TRUST_PROXY = env_bool("TRUST_PROXY", False)
+# Railway always runs one in front of the app. The address that proxy adds (the last one) is used.
+TRUST_PROXY = env_bool("TRUST_PROXY", ON_RAILWAY)
 
 # --- Email ------------------------------------------------------------------------------
 # EMAIL_PROVIDER: "outbox" (development: writes HTML files to data/outbox, nothing is sent),
@@ -7763,7 +7797,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=c9444d95f3998f723d76619cc771dc44efa7f14cb87d18e1d7e05979bba9f2c0 nl=1 -->
+<!-- FILE: app/views/admin.py sha256=ea5fa9feca4716992753dac21dd7c3103acf9c0800b531d43b223151d36bdf00 nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -7962,6 +7996,45 @@ def backup(req):
     return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
 
 
+def launch_checks() -> list:
+    """(level, text) for set-up that still needs attention, in launch order. Shown on the admin overview."""
+    import os
+    out = []
+    if config.ON_RAILWAY and not os.path.ismount(config.DATA_DIR):
+        out.append(("error", f"No volume is attached at {config.DATA_DIR}, so the database and photos are lost on every update. "
+                             f"In Railway, add a volume to this service with mount path {config.DATA_DIR}."))
+    if re.match(r"^https?://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
+        out.append(("error" if not config.DEBUG else "info",
+                    f"Links in emails and payment returns point to {config.BASE_URL}. Set BASE_URL to your public address, "
+                    "e.g. https://aureliastudio.co.za."))
+    elif config.BASE_URL.endswith(".up.railway.app"):
+        out.append(("info", f"Using Railway's address ({config.BASE_URL}). When your own domain is connected, set BASE_URL to it."))
+    if config.ADMIN_PASSWORD:
+        out.append(("warn", "Delete the ADMIN_PASSWORD variable now that you can sign in. Your account keeps its password."))
+    if config.EMAIL_PROVIDER == "outbox":
+        out.append(("warn", "Emails aren't sent yet: they're only saved in the outbox. Connect Resend to send them (deploy guide, part 4)."))
+    if config.PAYMENT_GATEWAY != "payfast":
+        out.append(("warn", "Payments are in test mode, so anyone can publish a website without paying. Connect PayFast "
+                            "(deploy guide, part 5), then delete ALLOW_SANDBOX_PAYMENTS."))
+    elif config.PAYFAST_SANDBOX:
+        out.append(("info", "PayFast is in sandbox mode: no real money moves. Set PAYFAST_SANDBOX=0 with your live merchant details to go live."))
+    elif config.ALLOW_SANDBOX_PAYMENTS and not config.DEBUG:
+        out.append(("warn", "Delete ALLOW_SANDBOX_PAYMENTS: PayFast is live, and the test checkout shouldn't be available."))
+    if not config.VAT_NUMBER or "INFORMATION_OFFICER_EMAIL" not in os.environ:
+        out.append(("info", "Before you announce it: add COMPANY_ADDRESS, VAT_NUMBER (if registered) and INFORMATION_OFFICER_EMAIL."))
+    return out
+
+
+def _launch_box() -> str:
+    items = launch_checks()
+    if not items:
+        return ""
+    icon = {"error": "alert", "warn": "alert", "info": "info"}
+    rows = "".join(f'<li class="launch-check launch-check--{lvl}">{i(icon[lvl])}<span>{esc(text)}</span></li>' for lvl, text in items)
+    return (f'<section class="box" style="margin-bottom:var(--gap)"><div class="box__head"><h2>Launch checks</h2>'
+            f'<span class="tiny muted">{len(items)} to look at</span></div><ul class="launch-checks">{rows}</ul></section>')
+
+
 @router.get("/admin")
 def overview(req):
     auth.require_admin(req)
@@ -8014,6 +8087,7 @@ def overview(req):
     body = page_head("Platform overview", "Live figures across every customer and event. "
                      + (f"{demo_events} demo events are excluded from all totals." if demo_events else "Demo data is excluded from all totals."),
                      f'<a class="btn btn--secondary btn--sm" href="/admin/backup">{i("download")}Download a backup</a>')
+    body += _launch_box()
     body += f"""<div class="kpis">
 <div class="kpi kpi--accent"><span>Live revenue</span><b>{catalog.money(rev['live']['cents'])}</b><small>{rev['live']['count']} paid orders · avg {catalog.money(rev['average_cents'])}</small></div>
 <div class="kpi"><span>Customers</span><b>{customers}</b><small>+{new7} in 7 days · +{new30} in 30 days</small></div>
@@ -16518,7 +16592,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `static/css/admin.css`
 
-<!-- FILE: static/css/admin.css sha256=4cbcb7a9e31c559469bc5da6b99a50338e30199f9bd8abdf02886c3a5b120775 nl=1 -->
+<!-- FILE: static/css/admin.css sha256=9d57d4ded27cd69bc72c59e46e4984810efa0fd15aa4309d813ab7cf3896891d nl=1 -->
 ```css
 /* Admin dashboard additions (loaded only on /admin pages). */
 .admin-count { margin-top: 12px; }
@@ -16534,6 +16608,16 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 .admin-frame { width: 100%; height: 640px; border: 1px solid var(--color-line); border-radius: var(--radius); background: #F5F5F4; }
 .admin-pre { max-width: 420px; max-height: 240px; overflow: auto; margin: 6px 0 0; padding: 10px; border-radius: 8px; background: var(--color-surface-2); font: .75rem/1.5 var(--font-mono); white-space: pre-wrap; word-break: break-all; }
 .box + .box { margin-top: 0; }
+
+/* launch checks on the overview */
+.launch-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.launch-check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: var(--color-surface-2); font-size: .875rem; }
+.launch-check .i { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.launch-check--error { background: color-mix(in srgb, var(--error) 10%, var(--color-surface)); }
+.launch-check--error .i { color: var(--error); }
+.launch-check--warn { background: color-mix(in srgb, var(--warn) 12%, var(--color-surface)); }
+.launch-check--warn .i { color: var(--warn); }
+.launch-check--info .i { color: var(--color-accent-text); }
 ```
 
 ### `static/css/app.css`
@@ -18926,7 +19010,7 @@ def find(pattern: str, text: str) -> str:
 
 ### `tests/test_admin.py`
 
-<!-- FILE: tests/test_admin.py sha256=30c596926af6ca86488958a0dd2c4ecd3816d3a751e0da962f55ff8dc94b0cef nl=1 -->
+<!-- FILE: tests/test_admin.py sha256=2fed1304accf28ee9359aa34f2a4b6c41792ec68b380a621f010ddec201916ac nl=1 -->
 ```python
 """Admin dashboard permissions and actions, plus the background scheduler."""
 from __future__ import annotations
@@ -18937,7 +19021,7 @@ from datetime import date, timedelta
 
 from tests.helpers import Client, fresh_app, make_user
 
-from app import auth, catalog, db, events
+from app import config, auth, catalog, db, events
 from app.services import scheduler
 from app.views import admin as admin_views
 
@@ -19036,6 +19120,18 @@ class AdminActions(unittest.TestCase):
     def setUp(self):
         self.admin = new_user("admin")
         self.c = signed_in(self.app, self.admin)
+
+    def test_launch_checks_list_what_is_left(self):
+        from unittest import mock
+        r = self.c.get("/admin")
+        self.assertIn("Launch checks", r.text)
+        self.assertIn("Emails aren", r.text)                      # outbox in tests
+        self.assertIn("Payments are in test mode", r.text)
+        from app.views import admin as admin_view
+        with mock.patch.object(config, "ON_RAILWAY", True), mock.patch("os.path.ismount", return_value=False):
+            self.assertTrue(any("No volume is attached" in t for _, t in admin_view.launch_checks()))
+        with mock.patch.object(config, "BASE_URL", "https://aurelia.up.railway.app"):
+            self.assertTrue(any("Railway's address" in t for _, t in admin_view.launch_checks()))
 
     def test_edit_package_price(self):
         p = catalog.package("essential")
@@ -19229,7 +19325,7 @@ class BackupTest(unittest.TestCase):
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=5934df67e316e4feb4ad190dc518213178d9f58048d7ab398c8ff79152207b46 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=86535c351ae0c05839f5f92baa5915f9d2b9b600a79b3ada07b314feb95cdcf0 nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -19566,6 +19662,28 @@ class HostingRuleTest(unittest.TestCase):
         self.assertEqual(events.hosting_end({"event_date": "2027-01-10"}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
         self.assertEqual(events.hosting_end({"event_date": ""}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
 
+
+class HostingDefaultsTest(unittest.TestCase):
+    """On Railway the address and the proxy come from the platform, so the owner sets fewer variables."""
+
+    def settings(self, **extra):
+        import os
+        import subprocess
+        import sys
+        import tempfile
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("BASE_URL", "TRUST_PROXY", "SECRET_KEY") and not k.startswith("RAILWAY_")}
+        env.update(extra, AURELIA_DATA_DIR=tempfile.mkdtemp())
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY))"
+        out = subprocess.run([sys.executable, "-c", code], cwd=root, env=env, capture_output=True, text=True, check=True)
+        return out.stdout.split()
+
+    def test_railway_needs_no_address_proxy_or_secret_settings(self):
+        rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
+        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64"])
+        self.assertEqual(self.settings(**rw, BASE_URL="https://aureliastudio.co.za")[0], "https://aureliastudio.co.za")
+        self.assertEqual(self.settings()[:2], ["http://127.0.0.1:8040", "False"])     # elsewhere: nothing assumed
 ```
 
 ### `tests/test_ease.py`

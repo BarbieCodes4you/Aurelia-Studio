@@ -195,6 +195,45 @@ def backup(req):
     return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
 
 
+def launch_checks() -> list:
+    """(level, text) for set-up that still needs attention, in launch order. Shown on the admin overview."""
+    import os
+    out = []
+    if config.ON_RAILWAY and not os.path.ismount(config.DATA_DIR):
+        out.append(("error", f"No volume is attached at {config.DATA_DIR}, so the database and photos are lost on every update. "
+                             f"In Railway, add a volume to this service with mount path {config.DATA_DIR}."))
+    if re.match(r"^https?://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
+        out.append(("error" if not config.DEBUG else "info",
+                    f"Links in emails and payment returns point to {config.BASE_URL}. Set BASE_URL to your public address, "
+                    "e.g. https://aureliastudio.co.za."))
+    elif config.BASE_URL.endswith(".up.railway.app"):
+        out.append(("info", f"Using Railway's address ({config.BASE_URL}). When your own domain is connected, set BASE_URL to it."))
+    if config.ADMIN_PASSWORD:
+        out.append(("warn", "Delete the ADMIN_PASSWORD variable now that you can sign in. Your account keeps its password."))
+    if config.EMAIL_PROVIDER == "outbox":
+        out.append(("warn", "Emails aren't sent yet: they're only saved in the outbox. Connect Resend to send them (deploy guide, part 4)."))
+    if config.PAYMENT_GATEWAY != "payfast":
+        out.append(("warn", "Payments are in test mode, so anyone can publish a website without paying. Connect PayFast "
+                            "(deploy guide, part 5), then delete ALLOW_SANDBOX_PAYMENTS."))
+    elif config.PAYFAST_SANDBOX:
+        out.append(("info", "PayFast is in sandbox mode: no real money moves. Set PAYFAST_SANDBOX=0 with your live merchant details to go live."))
+    elif config.ALLOW_SANDBOX_PAYMENTS and not config.DEBUG:
+        out.append(("warn", "Delete ALLOW_SANDBOX_PAYMENTS: PayFast is live, and the test checkout shouldn't be available."))
+    if not config.VAT_NUMBER or "INFORMATION_OFFICER_EMAIL" not in os.environ:
+        out.append(("info", "Before you announce it: add COMPANY_ADDRESS, VAT_NUMBER (if registered) and INFORMATION_OFFICER_EMAIL."))
+    return out
+
+
+def _launch_box() -> str:
+    items = launch_checks()
+    if not items:
+        return ""
+    icon = {"error": "alert", "warn": "alert", "info": "info"}
+    rows = "".join(f'<li class="launch-check launch-check--{lvl}">{i(icon[lvl])}<span>{esc(text)}</span></li>' for lvl, text in items)
+    return (f'<section class="box" style="margin-bottom:var(--gap)"><div class="box__head"><h2>Launch checks</h2>'
+            f'<span class="tiny muted">{len(items)} to look at</span></div><ul class="launch-checks">{rows}</ul></section>')
+
+
 @router.get("/admin")
 def overview(req):
     auth.require_admin(req)
@@ -247,6 +286,7 @@ def overview(req):
     body = page_head("Platform overview", "Live figures across every customer and event. "
                      + (f"{demo_events} demo events are excluded from all totals." if demo_events else "Demo data is excluded from all totals."),
                      f'<a class="btn btn--secondary btn--sm" href="/admin/backup">{i("download")}Download a backup</a>')
+    body += _launch_box()
     body += f"""<div class="kpis">
 <div class="kpi kpi--accent"><span>Live revenue</span><b>{catalog.money(rev['live']['cents'])}</b><small>{rev['live']['count']} paid orders · avg {catalog.money(rev['average_cents'])}</small></div>
 <div class="kpi"><span>Customers</span><b>{customers}</b><small>+{new7} in 7 days · +{new30} in 30 days</small></div>

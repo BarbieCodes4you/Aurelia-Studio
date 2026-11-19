@@ -333,3 +333,25 @@ class HostingRuleTest(unittest.TestCase):
         self.assertEqual(events.hosting_end({"event_date": "2027-01-10"}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
         self.assertEqual(events.hosting_end({"event_date": ""}, 6, start=__import__("datetime").date(2026, 11, 16)), "2027-05-18")
 
+
+class HostingDefaultsTest(unittest.TestCase):
+    """On Railway the address and the proxy come from the platform, so the owner sets fewer variables."""
+
+    def settings(self, **extra):
+        import os
+        import subprocess
+        import sys
+        import tempfile
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("BASE_URL", "TRUST_PROXY", "SECRET_KEY") and not k.startswith("RAILWAY_")}
+        env.update(extra, AURELIA_DATA_DIR=tempfile.mkdtemp())
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY))"
+        out = subprocess.run([sys.executable, "-c", code], cwd=root, env=env, capture_output=True, text=True, check=True)
+        return out.stdout.split()
+
+    def test_railway_needs_no_address_proxy_or_secret_settings(self):
+        rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
+        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64"])
+        self.assertEqual(self.settings(**rw, BASE_URL="https://aureliastudio.co.za")[0], "https://aureliastudio.co.za")
+        self.assertEqual(self.settings()[:2], ["http://127.0.0.1:8040", "False"])     # elsewhere: nothing assumed

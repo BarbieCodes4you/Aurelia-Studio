@@ -50,7 +50,7 @@ def application(environ, start_response):
     body = environ["wsgi.input"].read(length) if length else b""
     ip = environ.get("REMOTE_ADDR", "")
     if config.TRUST_PROXY and environ.get("HTTP_X_FORWARDED_FOR"):
-        ip = environ["HTTP_X_FORWARDED_FOR"].split(",")[0].strip()
+        ip = environ["HTTP_X_FORWARDED_FOR"].split(",")[-1].strip()     # added by the proxy; earlier entries come from the client
     resp = _app.handle(environ.get("REQUEST_METHOD", "GET"), raw, headers, body, ip)
     try:
         phrase = HTTPStatus(resp.status).phrase

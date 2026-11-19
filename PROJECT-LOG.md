@@ -3,6 +3,30 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-19: fewer Railway settings, launch checks
+
+**Changes**
+- On Railway the app takes its web address from Railway's generated domain (`RAILWAY_PUBLIC_DOMAIN`)
+  and trusts Railway's proxy by itself; the secret key is created once on the `/data` volume. The
+  Railway variables come down to `PORT`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` and `ALLOW_SANDBOX_PAYMENTS`.
+  `BASE_URL` is only needed once your own domain is connected.
+- The client address behind a proxy is now the last `X-Forwarded-For` entry (the one the proxy adds),
+  so a visitor can't fake their address to get around rate limits.
+- `/admin` shows **Launch checks**: missing volume, web address, `ADMIN_PASSWORD` still set, emails
+  not connected, test-mode payments, company details. Each says what to do.
+- `DEPLOY-RAILWAY.md` updated: connect GitHub to Claude, generate the domain before adding the volume
+  and variables, the shorter variable list.
+
+**Checked**
+- 106 tests pass on Python 3.12 and 3.11.
+- The production image run the way Railway runs it (volume at `/data`, Railway variables): health
+  check ok, the app runs as the `aurelia` user, the secret key is created on the volume, admin sign-in
+  works and the launch checks list the remaining steps. Without a volume, the first check warns.
+
+**Waiting on**
+- GitHub: connect it to Claude (https://claude.ai/connect-github, install the Claude GitHub App on the
+  repository) and send the repository name; then the code goes up and Railway can deploy it.
+
 ## 2026-11-17 (later): what the client sees after paying
 
 **Question (from you)**: what does the client face after purchasing? Answered with a walkthrough page

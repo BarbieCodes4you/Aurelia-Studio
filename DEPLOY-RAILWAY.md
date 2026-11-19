@@ -16,33 +16,34 @@ PayFast: a fee per transaction.
 1. Sign up at **github.com** (free).
 2. **New repository** → name it e.g. `aurelia-studio` → **Private** → leave "Add a README" unticked →
    **Create repository**.
-3. Send me the name, e.g. `yourname/aurelia-studio`. I push the code there, and every future change I
-   make goes there too.
+3. Let Claude reach it: open **https://claude.ai/connect-github**, connect your GitHub account and
+   install the **Claude GitHub App** on the `aurelia-studio` repository (same page).
+4. Send me the name, e.g. `yourname/aurelia-studio`. I upload the code there, and every future change
+   I make goes there too.
 
 ## Part 2: Railway (the server)
 
 1. Sign up at **railway.com** with your GitHub account, choose the **Hobby** plan and add a card.
 2. **New Project → Deploy from GitHub repo** → pick `aurelia-studio`. Railway reads `railway.json` and
-   builds from the `Dockerfile`; nothing to configure for the build.
-3. **Add a volume** (the disk for the database and photos): on the project canvas, add a Volume and
+   builds from the `Dockerfile`; nothing to configure for the build. The first build takes a few minutes.
+3. **A web address:** click the service → **Settings → Networking → Generate Domain**. If it asks for a
+   port, enter **8040**.
+4. **Add a volume** (the disk for the database and photos): on the project canvas, add a Volume and
    attach it to the service with mount path **`/data`**. Without it, everything is lost on each update.
-4. **Variables** (service → Variables → Raw Editor), paste and fill in:
+5. **Variables** (service → Variables → Raw Editor), paste and fill in:
 
 ```ini
-APP_ENV=production
-BASE_URL=https://<your-railway-address>.up.railway.app
-SECRET_KEY=<a long random string: mash the keyboard for 60+ characters, or use a password generator>
-TRUST_PROXY=1
-SUPPORT_EMAIL=invitesaurelia@gmail.com
+PORT=8040
 ADMIN_EMAIL=<your email>
 ADMIN_PASSWORD=<a strong password for your admin login>
 ALLOW_SANDBOX_PAYMENTS=1
 ```
 
-5. **A web address:** service → Settings → Networking → **Generate Domain**. Copy it into `BASE_URL`
-   (with `https://`). Railway redeploys by itself after variable changes.
-6. Open the address. Sign in at `/login` with your `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then go to `/admin`.
-   **Delete the `ADMIN_PASSWORD` variable** afterwards (your account keeps the password).
+   That's all. The web address comes from Railway, a secret key is created on the volume the first time
+   the app starts, and the proxy setting is switched on by itself. Railway redeploys after the change.
+6. Open the address. Sign in at `/login` with your `ADMIN_EMAIL` and `ADMIN_PASSWORD`, then go to
+   `/admin`. The **Launch checks** box at the top lists what's left, starting with deleting the
+   `ADMIN_PASSWORD` variable (your account keeps the password).
 7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
    (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
 
@@ -58,7 +59,8 @@ ALLOW_SANDBOX_PAYMENTS=1
    `www.aureliastudio.co.za` too. For each, Railway shows the DNS record to create.
 5. In Cloudflare → DNS → **Add record** exactly as Railway shows (usually a CNAME; for the bare domain use
    name `@`). Set the cloud icon to **DNS only** (grey) so Railway can issue the HTTPS certificate.
-6. When Railway shows both domains as active, change **`BASE_URL`** to `https://aureliastudio.co.za`.
+6. When Railway shows both domains as active, add the variable **`BASE_URL=https://aureliastudio.co.za`**, so
+   links in emails and payment returns use your domain.
 
 ## Part 4: email (Resend)
 
@@ -103,6 +105,7 @@ PAYFAST_CHECK_IP=1
 
 - [ ] Your domain opens with the padlock (HTTPS), and `BASE_URL` is that address
 - [ ] `ADMIN_PASSWORD` and `ALLOW_SANDBOX_PAYMENTS` variables deleted
+- [ ] `/admin` → **Launch checks** shows nothing left to fix
 - [ ] A test email arrived; a PayFast payment published an event by itself
 - [ ] Company address, VAT number and information officer set (`COMPANY_ADDRESS`, `VAT_NUMBER`,
       `INFORMATION_OFFICER_EMAIL`)

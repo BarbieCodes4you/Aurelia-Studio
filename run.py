@@ -37,7 +37,7 @@ class Handler(BaseHTTPRequestHandler):
         body = self.rfile.read(length) if length else b""
         ip = self.client_address[0]
         if config.TRUST_PROXY and self.headers.get("X-Forwarded-For"):
-            ip = self.headers["X-Forwarded-For"].split(",")[0].strip()
+            ip = self.headers["X-Forwarded-For"].split(",")[-1].strip()     # added by the proxy; earlier entries come from the client
         resp = self.app.handle(self.command, self.path, dict(self.headers.items()), body, ip)
         self.send_response(resp.status)
         for k, v in resp.headers:

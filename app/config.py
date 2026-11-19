@@ -60,7 +60,8 @@ for _d in (UPLOAD_DIR, OUTBOX_DIR, REPORT_DIR):
 
 
 def _secret_key() -> str:
-    """SECRET_KEY from env; in development, a random key persisted in the data folder."""
+    """SECRET_KEY from env; otherwise a random key, created once and kept in the data folder (on Railway,
+    the /data volume), so sign-ins survive restarts and updates."""
     key = env("SECRET_KEY")
     if key:
         return key
@@ -107,7 +108,11 @@ TIMEZONE = env("TIMEZONE", "Africa/Johannesburg")
 # --- Server -----------------------------------------------------------------------------
 APP_ENV = env("APP_ENV", "development")            # development | production
 DEBUG = APP_ENV != "production"
-BASE_URL = env("BASE_URL", "http://127.0.0.1:8040").rstrip("/")
+# On Railway the web address and the proxy in front of the app are known, so they need no settings:
+# BASE_URL falls back to the domain Railway generated (set BASE_URL once your own domain is connected).
+ON_RAILWAY = any(env(k) for k in ("RAILWAY_ENVIRONMENT_NAME", "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID"))
+_RAILWAY_URL = f"https://{env('RAILWAY_PUBLIC_DOMAIN')}" if env("RAILWAY_PUBLIC_DOMAIN") else ""
+BASE_URL = env("BASE_URL", _RAILWAY_URL or "http://127.0.0.1:8040").rstrip("/")
 SECRET_KEY = _secret_key()
 DATABASE_PATH = Path(env("DATABASE_PATH", str(DATA_DIR / "aurelia.sqlite3")))
 SESSION_DAYS = env_int("SESSION_DAYS", 14)
@@ -115,7 +120,8 @@ MAX_BODY_BYTES = env_int("MAX_BODY_BYTES", 25 * 1024 * 1024)
 MAX_UPLOAD_BYTES = env_int("MAX_UPLOAD_BYTES", 6 * 1024 * 1024)
 SECURE_COOKIES = env_bool("SECURE_COOKIES", BASE_URL.startswith("https://"))
 # Only trust X-Forwarded-For when a reverse proxy you control (Caddy, Nginx, the host's router) sets it.
-TRUST_PROXY = env_bool("TRUST_PROXY", False)
+# Railway always runs one in front of the app. The address that proxy adds (the last one) is used.
+TRUST_PROXY = env_bool("TRUST_PROXY", ON_RAILWAY)
 
 # --- Email ------------------------------------------------------------------------------
 # EMAIL_PROVIDER: "outbox" (development: writes HTML files to data/outbox, nothing is sent),

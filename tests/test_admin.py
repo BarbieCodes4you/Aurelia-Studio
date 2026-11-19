@@ -7,7 +7,7 @@ from datetime import date, timedelta
 
 from tests.helpers import Client, fresh_app, make_user
 
-from app import auth, catalog, db, events
+from app import config, auth, catalog, db, events
 from app.services import scheduler
 from app.views import admin as admin_views
 
@@ -106,6 +106,18 @@ class AdminActions(unittest.TestCase):
     def setUp(self):
         self.admin = new_user("admin")
         self.c = signed_in(self.app, self.admin)
+
+    def test_launch_checks_list_what_is_left(self):
+        from unittest import mock
+        r = self.c.get("/admin")
+        self.assertIn("Launch checks", r.text)
+        self.assertIn("Emails aren", r.text)                      # outbox in tests
+        self.assertIn("Payments are in test mode", r.text)
+        from app.views import admin as admin_view
+        with mock.patch.object(config, "ON_RAILWAY", True), mock.patch("os.path.ismount", return_value=False):
+            self.assertTrue(any("No volume is attached" in t for _, t in admin_view.launch_checks()))
+        with mock.patch.object(config, "BASE_URL", "https://aurelia.up.railway.app"):
+            self.assertTrue(any("Railway's address" in t for _, t in admin_view.launch_checks()))
 
     def test_edit_package_price(self):
         p = catalog.package("essential")
