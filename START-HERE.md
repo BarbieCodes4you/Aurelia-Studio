@@ -16,7 +16,7 @@ install, and stores data in SQLite on a disk mounted at `/data`.
 | Code (this repository) | https://github.com/BarbieCodes4you/Aurelia-Studio |
 | Preview of the marketing site and templates | https://claude.ai/artifact/UNdUTWgjEoM9xw9M4dLCqT |
 | What a client sees after paying (walkthrough) | https://claude.ai/artifact/17TyBLy7hTbFn9UbuMPuEi |
-| Live site on Railway | *not deployed yet* |
+| Live site on Railway | https://aurelia-studio-production.up.railway.app |
 | Own domain | *not bought yet* (`aureliastudio.co.za` is the placeholder) |
 
 The two preview links are private until you share them from the page's Share menu.
@@ -34,10 +34,11 @@ The two preview links are private until you share them from the page's Share men
 **1. Code on GitHub** ✅ done (19 Nov 2026)
 
 **2. Railway: get it running** (see `DEPLOY-RAILWAY.md` Part 2)
-- [ ] New Project → Deploy from GitHub repo → **Aurelia-Studio**
-- [ ] Settings → Networking → **Generate Domain** (port **8040** if asked)
-- [ ] Add a **Volume** with mount path **`/data`**. Without it, all data is lost on every update.
-- [ ] Variables → Raw Editor: `PORT=8040`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ALLOW_SANDBOX_PAYMENTS=1`
+- [x] New Project → Deploy from GitHub repo → **Aurelia-Studio**
+- [x] Settings → Networking → **Generate Domain**. The domain's port must match `PORT` (8040);
+      a mismatch shows "Application failed to respond".
+- [x] Add a **Volume** with mount path **`/data`**. Without it, all data is lost on every update.
+- [x] Variables → Raw Editor: `PORT=8040`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ALLOW_SANDBOX_PAYMENTS=1`
 - [ ] Sign in at `/login`, open `/admin` and follow **Launch checks**. Delete `ADMIN_PASSWORD` afterwards.
 - [ ] Test the full journey with the test checkout: create an event, pay, see it go live, RSVP as a guest
 
