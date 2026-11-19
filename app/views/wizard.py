@@ -97,6 +97,9 @@ def create(req):
                 return redirect("/")
             cname = f.text("contact_name", "Your name", required=True, max=120)
             cemail = f.email("contact_email", required=True)
+            if cemail and not db.one("SELECT 1 FROM users WHERE email = ?", (cemail,)):
+                from .accounts import _check_new_password
+                _check_new_password(f, req.get("password"), req.get("password_confirm"), cemail)
             if not f.flag("terms"):
                 f.error("terms", "Please accept the terms and privacy notice to continue.")
             if f.ok and auth.rate_limited(f"create-account:{req.ip}", 10, 3600):
@@ -111,7 +114,7 @@ def create(req):
                     check_email = cemail
                 else:
                     from ..services import email as mail
-                    uid_ = db.insert("users", {"email": cemail, "name": cname, "password_hash": "", "role": "customer",
+                    uid_ = db.insert("users", {"email": cemail, "name": cname, "password_hash": auth.hash_password(req.get("password")), "role": "customer",
                                                "marketing_consent": 0, "created_at": db.now()})
                     user = db.one("SELECT * FROM users WHERE id = ?", (uid_,))
                     mail.send(cemail, "welcome", {"first_name": mail.first_name(cname)}, user_id=uid_)
@@ -157,10 +160,12 @@ def create(req):
             f'<a class="text-link tiny" href="/templates/{esc(t["slug"])}" target="_blank" rel="noopener" style="position:relative;z-index:2">Preview</a></span></label>')
     about = ""
     if not req.user:
+        from .accounts import new_password_fields
         about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. Where should we save it?</h2>
-<p class="muted small" style="margin-bottom:16px">So your draft is saved and you can come back to it on any device. No password needed: we email you a sign-in link whenever you want one. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
+<p class="muted small" style="margin-bottom:16px">Create your account so your draft is saved and you can come back to it on any device. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
 <div class="form-row form-row--2">{field("contact_name", "Your name", f.data.get("contact_name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("contact_email", "Your email", f.data.get("contact_email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
+<div class="form-row form-row--2">{new_password_fields(f)}</div>
 <div class="field{' has-error' if 'terms' in f.errors else ''}" data-field="terms">{check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(req.get("terms")))}</div>
 {forms.honeypot()}</div>"""
     body = f"""<section class="page-hero"><div class="grid-texture"></div><div class="container">
@@ -1072,7 +1077,7 @@ def step_review_pay(req, ev):
         status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
                   f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
     share = (f'<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>'
-             f'<p class="small muted">Send this link to your partner or family. They see your website as it is now, with RSVPs switched off. It never appears in search engines.</p>'
+             f'<p class="small muted">Send this link to your partner or family for their opinion. They see your website as it is now, marked “Preview: not published”, with replies switched off. Guests can only use it once you've paid.</p>'
              f'<div class="row" style="gap:8px;flex-wrap:wrap"><input class="input input--sm mono" style="flex:1;min-width:0" readonly value="{esc(events.draft_url(ev))}" aria-label="Draft preview link">'
              f'<button class="btn btn--secondary btn--sm" type="button" data-copy="{esc(events.draft_url(ev))}" data-copied="Draft link copied">{i("copy")} Copy link</button>'
              f'<a class="btn btn--ghost btn--sm" href="https://wa.me/?text={esc(_q("Have a look at our event website draft: " + events.draft_url(ev)))}" target="_blank" rel="noopener">{i("chat")} WhatsApp</a></div></div>')

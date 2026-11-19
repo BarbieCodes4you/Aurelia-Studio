@@ -50,6 +50,28 @@ def send_verification(user) -> None:
               user_id=user["id"])
 
 
+# --- new passwords (sign-up here and on /create) -------------------------------------------------
+PASSWORD_HINT = "At least 10 characters, with upper- and lower-case letters and a number."
+
+
+def _check_new_password(f, pw, confirm, email) -> None:
+    if not pw:
+        f.error("password", "Choose a password for your account.")
+        return
+    for p in auth.password_problems(pw, email):
+        f.error("password", p)
+        break
+    if confirm != pw:
+        f.error("password_confirm", "The passwords don't match.")
+
+
+def new_password_fields(f) -> str:
+    return (field("password", "Password", "", type="password", required=True, errors=f.errors, hint=PASSWORD_HINT,
+                  attrs={"autocomplete": "new-password"})
+            + field("password_confirm", "Confirm password", "", type="password", required=True, errors=f.errors,
+                    attrs={"autocomplete": "new-password"}))
+
+
 # --- register --------------------------------------------------------------------------------
 @router.route("/register", methods=("GET", "POST"))
 def register(req):
@@ -65,18 +87,13 @@ def register(req):
         name = f.text("name", "Your name", required=True, max=120, min=2)
         email = f.email("email", required=True)
         pw = req.get("password")
-        if pw:
-            for p in auth.password_problems(pw, email):
-                f.error("password", p)
-                break
-        if pw and req.get("password_confirm") != pw:
-            f.error("password_confirm", "The passwords don't match.")
+        _check_new_password(f, pw, req.get("password_confirm"), email)
         if not f.flag("terms"):
             f.error("terms", "Please accept the terms and privacy notice to create an account.")
         if email and not f.errors.get("email") and db.one("SELECT 1 FROM users WHERE email = ?", (email,)):
             f.error("email", "An account with this email already exists. Log in or reset your password.")
         if f.ok:
-            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw) if pw else "",
+            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw),
                                       "role": "customer", "marketing_consent": 1 if req.get("marketing") else 0,
                                       "created_at": db.now()})
             user = db.one("SELECT * FROM users WHERE id = ?", (uid,))
@@ -91,10 +108,7 @@ def register(req):
 {errors_summary(f.errors)}
 {field("name", "Your name", d.get("name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("email", "Email", d.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}
-<details class="box" style="padding:14px 16px"{" open" if ("password" in f.errors or "password_confirm" in f.errors) else ""}><summary class="small" style="cursor:pointer">Set a password (optional)</summary>
-<p class="hint" style="margin:8px 0 12px">Without one, we email you a sign-in link whenever you need it.</p>
-{field("password", "Password", "", type="password", errors=f.errors, hint="At least 10 characters, with upper- and lower-case letters and a number.", attrs={"autocomplete": "new-password"})}
-{field("password_confirm", "Confirm password", "", type="password", errors=f.errors, attrs={"autocomplete": "new-password"})}</details>
+{new_password_fields(f)}
 <div class="field{' has-error' if 'terms' in f.errors else ''}">{forms.check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(d.get("terms")))}</div>
 {forms.check("marketing", "Send me occasional tips and new templates (optional).", bool(req.get("marketing")))}
 <button class="btn btn--primary btn--lg btn--block" type="submit">Create account {i("arrow", "i--arrow")}</button></form>"""

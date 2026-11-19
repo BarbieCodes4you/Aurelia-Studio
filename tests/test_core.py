@@ -99,17 +99,22 @@ class WizardTest(unittest.TestCase):
         self.assertEqual((ev["hosts"], ev["name"], ev["slug"]), ("Lerato & Sipho", "Lerato & Sipho's wedding", "lerato-and-sipho"))
         self.assertNotIn("Which package", self.c.get("/create").text)
 
-    def test_create_without_account_needs_only_name_and_email(self):
+    def test_create_without_account_needs_name_email_and_password(self):
         anon = Client(self.app)
         r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle"})
         self.assertEqual(r.status, 200)
         self.assertIn("Your name", r.text)
         r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("Choose a password", r.text)
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
+                                  "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1",
+                                  "password": "Nursery-2027b", "password_confirm": "Nursery-2027b"})
         self.assertEqual(r.status, 303, r.text[:300])
         self.assertIn("/setup/1", r.location)
         user = db.one("SELECT * FROM users WHERE email = ?", ("amahle@example.com",))
-        self.assertEqual(user["password_hash"], "")
+        self.assertNotEqual(user["password_hash"], "")
         ev = db.one("SELECT * FROM events WHERE owner_id = ?", (user["id"],))
         self.assertEqual((ev["selected_package"], ev["name"]), ("essential", "Amahle's baby shower"))
         self.assertEqual(anon.get(r.location).status, 200)      # signed in straight away

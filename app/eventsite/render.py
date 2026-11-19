@@ -256,9 +256,31 @@ def contrast_vars(c: dict) -> str:
         return ""
 
 
+WATERMARK = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='300'>"
+             "<text x='260' y='160' text-anchor='middle' transform='rotate(-24 260 150)' font-family='Arial,sans-serif' "
+             "font-size='24' font-weight='700' letter-spacing='3' fill='rgb(128,128,128)' fill-opacity='.26'>"
+             "PREVIEW · NOT PUBLISHED</text></svg>")
+
+
 def banner(ctx) -> str:
     if ctx["mode"] == "preview":
         ev = ctx["ev"]
+        if not ev.get("paid_package"):
+            # Unpaid: an unmissable strip and a watermark over the whole page (on screen and in print),
+            # so a draft can't stand in for the real invitation.
+            from .. import auth
+            req = ctx.get("req")
+            owner = bool(req and getattr(req, "user", None)) and auth.can_manage_event(req.user, ev)
+            pay = (f' <a class="ev-banner__btn" href="/dashboard/events/{esc(ev["uid"])}/setup/8" target="_top">Pay to publish</a>'
+                   if owner else "")
+            if owner:
+                extra = ctx["notice"] + ". " if ctx["notice"].startswith("Personal link") else ""
+                text = extra + "Only you can see this. Guests can open it once you pay and publish."
+            else:
+                text = (ctx["notice"] + ". " if ctx["notice"] else "") + "Guests can't reply until this website is paid for and published."
+            return (f'<div class="ev-banner ev-banner--draft" role="note"><b>Preview only: not published.</b> '
+                    f'<span>{esc(text)}</span>{pay}</div>'
+                    f'<div class="ev-watermark" aria-hidden="true" style="background-image:url(&quot;{WATERMARK}&quot;)"></div>')
         status = "Draft" if ev.get("status") == "draft" else events.STATUS_LABELS.get(ev.get("status"), "")
         return (f'<div class="ev-banner" role="note">Preview · {esc(status)} · not visible to guests'
                 f'{(" · " + esc(ctx["notice"])) if ctx["notice"] else ""}</div>')

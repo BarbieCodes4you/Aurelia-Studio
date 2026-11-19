@@ -38,13 +38,12 @@ class EaseTests(unittest.TestCase):
         self.assertIn("Check your email", r.text)
         self.assertIsNone(db.one("SELECT 1 FROM email_logs WHERE to_email = 'nobody@example.com'"))
 
-    def test_register_without_password(self):
+    def test_register_requires_password(self):
         anon = Client(self.app)
         r = anon.post("/register", {"name": "Naledi Khumalo", "email": "naledi@example.com", "terms": "1"})
-        self.assertEqual(r.status, 303, r.text[:300])
-        self.assertEqual(db.one("SELECT password_hash FROM users WHERE email = 'naledi@example.com'")["password_hash"], "")
-        r = Client(self.app).post("/login", {"email": "naledi@example.com", "password": "anything"})
-        self.assertIn("no password yet", r.text)
+        self.assertEqual(r.status, 200)
+        self.assertIn("Choose a password", r.text)
+        self.assertIsNone(db.one("SELECT 1 FROM users WHERE email = 'naledi@example.com'"))
 
     # --- draft preview --------------------------------------------------------------------------------
     def test_draft_preview_link(self):
@@ -54,6 +53,9 @@ class EaseTests(unittest.TestCase):
         r = anon.get(url)
         self.assertEqual(r.status, 200)
         self.assertIn("Shared draft", r.text)
+        self.assertIn("Preview only: not published", r.text)
+        self.assertIn("ev-watermark", r.text)
+        self.assertNotIn("Pay to publish", r.text)           # only the organiser gets the pay button
         self.assertIn("noindex", str(r.headers) + r.text)
         self.assertEqual(anon.get(url[:-3] + "abc").status, 404)
         self.assertEqual(anon.get(f"/events/{ev['slug']}").status in (200, 404), True)
