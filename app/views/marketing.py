@@ -80,7 +80,7 @@ def price_cards(highlight_cta: bool = True) -> str:
         btn = "btn--primary" if p["highlight"] else "btn--secondary"
         out.append(f"""<article class="price{' price--highlight' if p['highlight'] else ''}" data-reveal>{badge}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>once-off, VAT incl.</small></div>
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>once-off{', VAT incl.' if config.VAT_REGISTERED else ''}</small></div>
 <ul>{items}</ul><div class="price__limits">{lim}</div>
 <a class="btn {btn} btn--block" href="/create?package={esc(p['code'])}">Choose {esc(p['name'].split()[0])}</a></article>""")
     return f'<div class="price-grid" data-stagger>{"".join(out)}</div>'
@@ -96,7 +96,7 @@ FAQ = [
     ("Can I change details after publishing?",
      "Any time. Update the venue, programme, menu or wording from your dashboard and the website changes immediately. You can also email guests about the update."),
     ("How do payments work?",
-     "Pay securely by card or instant EFT through a South African payment gateway. Your website goes live only after the gateway confirms the payment, and you receive a VAT receipt."),
+     "Pay securely by card or instant EFT through a South African payment gateway. Your website goes live only after the gateway confirms the payment, and you receive a receipt by email."),
     ("How do you handle my guests' personal information?",
      "Guest details are private to your event, protected by your login and never sold or used for marketing. We process them under POPIA on your behalf, and guests can opt out of event emails at any time."),
     ("Can I send invitations on WhatsApp?",
@@ -391,7 +391,7 @@ def pricing(req):
         rows.append(f"<tr><th scope='row' style='font-weight:400'>{esc(label)}</th>{cells}</tr>")
     notes = [
         ("Unlimited link sharing", "Share your event link with as many people as you like, on any channel. It is not unlimited email: each package includes the guest email allowance shown above."),
-        ("Pay once", "One payment per event. No subscriptions, no per-guest or per-invitation charges. Prices include 15% VAT."),
+        ("Pay once", "One payment per event. No subscriptions, no per-guest or per-invitation charges."),
         ("Upgrade any time", "Move to a bigger package from your dashboard and pay only the difference."),
         ("Hosting period", "Your website stays online for the months shown, counted from when it is published, and never goes offline before a month after your event. Extensions are available."),
     ]
@@ -610,7 +610,7 @@ def terms(req):
 <h2>The service</h2><p>We provide tools to create an event website and manage guests, RSVPs, seating, menus, programmes, communication and reports. Features and limits depend on the package you buy, as shown on the pricing page at the time of purchase.</p>
 <h2>Your account</h2><p>Keep your password safe. You are responsible for activity on your account and for the content you publish, including photos you upload, which must be yours to use.</p>
 <h2>Guests and communication</h2><p>You confirm you have a lawful basis to add each guest's details and to email them about your event. Don't use the platform for marketing, spam or anything unlawful. We may suspend events that break these terms.</p>
-<h2>Payments</h2><p>Prices are in South African Rand and include VAT. Your website is published only once our payment gateway confirms payment. Upgrades are charged as the difference between packages.</p>
+<h2>Payments</h2><p>Prices are in South African Rand{' and include VAT' if config.VAT_REGISTERED else ''}. Your website is published only once our payment gateway confirms payment. Upgrades are charged as the difference between packages.</p>
 <h2>Hosting period</h2><p>Your event website stays online for the hosting period of your package from the date it is first published. Whenever you book, it never goes offline before one month after your event date, including if you move the date. We'll remind you before it ends.</p>
 <h2>Email allowance</h2><p>Unlimited link sharing means you can share your link as often as you like. Emails sent through the platform are limited to your package's allowance.</p>
 <h2>Liability</h2><p>We work hard to keep the service available, but we can't guarantee it will be uninterrupted. To the extent the law allows, our liability is limited to the amount you paid for the event concerned. Nothing in these terms limits your rights under the Consumer Protection Act.</p>

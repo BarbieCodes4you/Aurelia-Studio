@@ -267,6 +267,28 @@ class PaymentsTest(unittest.TestCase):
         self.assertIn("Payment confirmed", self.c.get(f"/dashboard/events/{self.ev['uid']}/payment/{order_uid}").text)
         self.assertEqual(self.c.get(f"/dashboard/orders/{order_uid}/receipt").status, 200)
 
+    def test_vat_only_when_registered(self):
+        from app import config
+        order_uid = self.checkout()
+        self.c.post(f"/pay/sandbox/{order_uid}", {"decision": "approve"})
+        db.run("UPDATE orders SET mode = 'live' WHERE uid = ?", (order_uid,))
+        url = f"/dashboard/orders/{order_uid}/receipt"
+        old = (config.VAT_NUMBER, config.VAT_REGISTERED)
+        try:
+            config.VAT_NUMBER, config.VAT_REGISTERED = "", False
+            t = self.c.get(url).text
+            self.assertNotIn("Tax invoice", t)
+            self.assertNotIn("VAT", t)
+            self.assertNotIn("VAT", self.c.get("/pricing").text)
+            self.assertEqual(self.c.get(url + "?format=pdf").status, 200)
+            config.VAT_NUMBER, config.VAT_REGISTERED = "4123456789", True
+            t = self.c.get(url).text
+            self.assertIn("Tax invoice", t)
+            self.assertIn("4123456789", t)
+            self.assertIn("VAT incl.", self.c.get("/pricing").text)
+        finally:
+            config.VAT_NUMBER, config.VAT_REGISTERED = old
+
     def test_decline_keeps_draft(self):
         order_uid = self.checkout()
         self.c.post(f"/pay/sandbox/{order_uid}", {"decision": "decline"})

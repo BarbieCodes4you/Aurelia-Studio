@@ -1064,7 +1064,7 @@ def step_review_pay(req, ev):
                       f'{" disabled" if missing_needed else ""}>{label}</button>')
         cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div>{action}<ul>{bl}</ul>
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else ("VAT incl." if config.VAT_REGISTERED else "once-off")}</small></div>{action}<ul>{bl}</ul>
 <details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">{lim}</div></details>{gap_html}</article>""")
     sandbox = ""
     if payments.gateway().mode == "sandbox":
@@ -1101,7 +1101,7 @@ def step_review_pay(req, ev):
                           ("Gallery", str(len(events.uploads(ev["id"], "gallery"))) + " photos" if events.uploads(ev["id"], "gallery") else "")]),
     ])
     pay_note = ("Finish the details marked “needed” above, then pay." if missing_needed else
-                "Secure payment by card or instant EFT. Prices include 15% VAT. Your website goes live as soon as the payment is confirmed, and you get a receipt by email.")
+                "Secure payment by card or instant EFT. Your website goes live as soon as the payment is confirmed, and you get a receipt by email.")
     inner = f"""{status}{sandbox}{checklist}
 <form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}<input type="hidden" name="accept" value="1">
 <div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">{"".join(cards)}</div>

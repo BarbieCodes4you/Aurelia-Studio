@@ -148,6 +148,9 @@ PAYFAST_SANDBOX = env_bool("PAYFAST_SANDBOX", True)
 ALLOW_SANDBOX_PAYMENTS = env_bool("ALLOW_SANDBOX_PAYMENTS", DEBUG)
 VAT_RATE = float(env("VAT_RATE", "0.15"))
 VAT_NUMBER = env("VAT_NUMBER", "")                 # [TBC] shown on receipts when set
+# Only a VAT-registered business may charge VAT or issue tax invoices (SARS). Until VAT_NUMBER is set,
+# prices and receipts say nothing about VAT and receipts are plain receipts, not tax invoices.
+VAT_REGISTERED = bool(VAT_NUMBER)
 
 # --- Background jobs --------------------------------------------------------------------
 SCHEDULER_ENABLED = env_bool("SCHEDULER_ENABLED", True)

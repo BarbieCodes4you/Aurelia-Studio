@@ -62,13 +62,13 @@ def sandbox_checkout(req, order_uid):
             # Same path as an incoming webhook: signature, freshness and amount are verified.
             payments.apply(gw.verify(body, sig), "sandbox")
         return redirect(f"/dashboard/events/{ev['uid']}/payment/{order['uid']}")
-    excl, vat = payments.vat_breakdown(order["amount_cents"])
+    vat_rows = _vat_rows(order)
     body = f"""<section class="page-hero" style="padding-bottom:var(--section-y)"><div class="grid-texture"></div><div class="container container--narrow">
 <span class="demo-flag">Sandbox · test payment, no money moves</span>
 <h1 style="margin-top:16px">Test checkout</h1><p class="lead">This page stands in for the payment gateway while {esc(config.BRAND_NAME)} runs in development. Choose an outcome to send a signed test notification to the server.</p>
 <div class="glass glass--strong panel" style="margin-top:28px;display:grid;gap:14px">
 <dl class="dl"><dt>Order</dt><dd class="mono">{esc(order['uid'])}</dd><dt>Item</dt><dd>{esc(order['description'])}</dd>
-<dt>Amount excl. VAT</dt><dd class="mono">{catalog.money(excl, True)}</dd><dt>VAT ({int(config.VAT_RATE * 100)}%)</dt><dd class="mono">{catalog.money(vat, True)}</dd>
+{vat_rows}
 <dt><b>Total</b></dt><dd class="mono"><b>{catalog.money(order['amount_cents'], True)}</b></dd><dt>Status</dt><dd><span class="pill pill--{esc(order['status'])}">{esc(order['status'])}</span></dd></dl>
 {'' if order['status'] != 'pending' else f'''<form method="post" class="btn-row">{csrf(req)}
 <button class="btn btn--primary" name="decision" value="approve" type="submit">{i("check")} Approve test payment</button>
@@ -159,7 +159,16 @@ def billing(req):
         table = f'<div class="table-wrap"><table class="table"><thead><tr><th>Order</th><th>Event</th><th class="num">Amount</th><th>Status</th><th></th></tr></thead><tbody>{trs}</tbody></table></div>'
     else:
         table = f'<div class="empty"><span class="icon-tile">{i("card")}</span><h2 style="font-size:1.2rem">No orders yet</h2><p>When you choose a package for an event, your orders and receipts appear here.</p></div>'
-    return account_page(req, "Orders and receipts", page_head("Orders and receipts", "Every payment and its VAT receipt.") + table, "/dashboard/billing")
+    return account_page(req, "Orders and receipts", page_head("Orders and receipts", "Every payment and its receipt.") + table, "/dashboard/billing")
+
+
+def _vat_rows(order) -> str:
+    """Excl.-VAT and VAT lines, shown only when the business is VAT-registered."""
+    if not config.VAT_REGISTERED:
+        return ""
+    excl, vat = payments.vat_breakdown(order["amount_cents"])
+    return (f'<dt>Amount excl. VAT</dt><dd class="mono">{catalog.money(excl, True)}</dd>'
+            f'<dt>VAT ({int(config.VAT_RATE * 100)}%)</dt><dd class="mono">{catalog.money(vat, True)}</dd>')
 
 
 @router.get("/dashboard/orders/<order_uid>/receipt")
@@ -171,27 +180,32 @@ def receipt(req, order_uid):
     ev = events.by_id(order["event_id"])
     excl, vat = payments.vat_breakdown(order["amount_cents"])
     sandbox_note = "SANDBOX TEST PAYMENT. NOT A TAX INVOICE." if order["mode"] == "sandbox" else ""
+    tax_invoice = config.VAT_REGISTERED and not sandbox_note
+    title = "Tax invoice" if tax_invoice else "Receipt"
     if req.arg("format") == "pdf":
         try:
             from ..services.pdf import PDF
         except ImportError:
             raise HTTPError(404)
-        doc = PDF(f"{config.BRAND_NAME} receipt", sandbox_note or "Tax invoice")
+        doc = PDF(f"{config.BRAND_NAME} receipt", sandbox_note or title)
         doc.kv([("Invoice", order["invoice_no"] or ""), ("Order", order["uid"]), ("Paid", fmt_dt(order["paid_at"])),
-                ("Billed to", f"{user['name']} <{user['email']}>"), ("Event", ev["name"]),
-                ("VAT number", config.VAT_NUMBER or "To be confirmed")])
+                ("Billed to", f"{user['name']} <{user['email']}>"), ("Event", ev["name"])]
+               + ([("VAT number", config.VAT_NUMBER)] if config.VAT_REGISTERED else []))
         doc.spacer(10)
-        doc.table(["Description", "Excl. VAT", "VAT", "Total"],
-                  [[order["description"], catalog.money(excl, True), catalog.money(vat, True), catalog.money(order["amount_cents"], True)]],
-                  widths=[0.52, 0.16, 0.14, 0.18])
+        if config.VAT_REGISTERED:
+            doc.table(["Description", "Excl. VAT", "VAT", "Total"],
+                      [[order["description"], catalog.money(excl, True), catalog.money(vat, True), catalog.money(order["amount_cents"], True)]],
+                      widths=[0.52, 0.16, 0.14, 0.18])
+        else:
+            doc.table(["Description", "Total"], [[order["description"], catalog.money(order["amount_cents"], True)]], widths=[0.8, 0.2])
         doc.spacer(10)
         doc.text(f"{config.BRAND_NAME} · {config.COMPANY_ADDRESS} · {config.SUPPORT_EMAIL}", size=8, muted=True)
         return download(doc.output(), f"{order['invoice_no'] or order['uid']}.pdf", "application/pdf")
     body = f"""{page_head("Receipt", "", f'<a class="btn btn--secondary btn--sm" href="?format=pdf">{i("download")} PDF</a><button class="btn btn--ghost btn--sm no-print" type="button" onclick="window.print()">{i("print")} Print</button>')}
 <article class="box" style="max-width:760px">{f'<p class="demo-flag" style="margin-bottom:16px">{esc(sandbox_note)}</p>' if sandbox_note else ''}
-<div class="row row--between" style="align-items:flex-start"><div><h2 style="font-size:1.4rem">{"Tax invoice" if not sandbox_note else "Receipt"}</h2><p class="muted small">{esc(config.BRAND_NAME)} · {esc(config.COMPANY_ADDRESS)}<br>VAT no. {esc(config.VAT_NUMBER or "to be confirmed")}</p></div>
+<div class="row row--between" style="align-items:flex-start"><div><h2 style="font-size:1.4rem">{title}</h2><p class="muted small">{esc(config.BRAND_NAME)} · {esc(config.COMPANY_ADDRESS)}{"<br>VAT no. " + esc(config.VAT_NUMBER) if config.VAT_REGISTERED else ""}</p></div>
 <div class="small" style="text-align:right"><b class="mono">{esc(order['invoice_no'] or '')}</b><br><span class="muted">{esc(fmt_dt(order['paid_at']))}</span></div></div><hr>
 <dl class="dl"><dt>Billed to</dt><dd>{esc(user['name'])}<br><span class="muted">{esc(user['email'])}</span></dd><dt>Event</dt><dd>{esc(ev['name'])}</dd><dt>Order</dt><dd class="mono">{esc(order['uid'])}</dd>
-<dt>Description</dt><dd>{esc(order['description'])}</dd><dt>Amount excl. VAT</dt><dd class="mono">{catalog.money(excl, True)}</dd><dt>VAT ({int(config.VAT_RATE * 100)}%)</dt><dd class="mono">{catalog.money(vat, True)}</dd>
+<dt>Description</dt><dd>{esc(order['description'])}</dd>{_vat_rows(order)}
 <dt><b>Total paid</b></dt><dd class="mono"><b>{catalog.money(order['amount_cents'], True)}</b></dd><dt>Status</dt><dd><span class="pill pill--{esc(order['status'])}">{esc(order['status'])}</span></dd></dl></article>"""
     return account_page(req, "Receipt", body, "/dashboard/billing")

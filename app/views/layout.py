@@ -108,7 +108,7 @@ def footer() -> str:
 <div><h3>Events</h3><ul><li><a href="/weddings">Weddings</a></li><li><a href="/baby-celebrations">Baby celebrations</a></li><li><a href="/parties">Parties</a></li><li><a href="/celebrations">Other events</a></li></ul></div>
 <div><h3>Platform</h3><ul><li><a href="/templates">Templates</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/help-me-set-up">We'll set it up for you</a></li><li><a href="/faq">FAQ</a></li></ul></div>
 <div><h3>Company</h3><ul><li><a href="/contact">Contact &amp; support</a></li><li><a href="/privacy">Privacy (POPIA)</a></li><li><a href="/terms">Terms of service</a></li><li><a href="/refunds">Refund policy</a></li></ul></div></div>
-<div class="footer-bottom"><span>© {year} {esc(config.BRAND_NAME)}. Prices in South African Rand, VAT inclusive.</span><div class="socials">{social}</div></div>
+<div class="footer-bottom"><span>© {year} {esc(config.BRAND_NAME)}. Prices in South African Rand{', VAT inclusive' if config.VAT_REGISTERED else ''}.</span><div class="socials">{social}</div></div>
 <div class="wordmark-giant" aria-hidden="true"><span>A</span>urelia</div></div></footer>{chat}"""
 
 

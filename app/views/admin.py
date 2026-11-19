@@ -763,7 +763,7 @@ def _package_form(req, p, errors: dict, values: Optional[dict] = None) -> str:
     return f"""{errors_summary(errors)}<form method="post" class="form">{csrf(req)}
 <section class="box"><div class="box__head"><h2>Details</h2></div><div class="form">
 <div class="form-row form-row--2">{field("name", "Name", v.get("name", p["name"]), required=True, errors=errors)}
-{field("price", "Price (Rand, VAT inclusive)", price, required=True, errors=errors, hint="For example 12999 or 12 999.00", attrs={"inputmode": "decimal"})}</div>
+{field("price", "Price in Rand (what the client pays)", price, required=True, errors=errors, hint="For example 12999 or 12 999.00", attrs={"inputmode": "decimal"})}</div>
 {field("tagline", "Tagline", v.get("tagline", p["tagline"]), errors=errors)}
 <div class="form-row form-row--3">{field("rank", "Rank (upgrade order)", v.get("rank", p["rank"]), type="number", errors=errors, attrs={"min": 0, "max": 100})}
 <div class="field"><span class="label">Visibility</span>{switch("active", "Show on pricing page", bool(v.get("active", p["active"])))}</div>
