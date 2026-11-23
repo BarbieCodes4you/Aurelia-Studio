@@ -195,13 +195,44 @@ def backup(req):
     return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
 
 
+# Settings whose example values in the guides look like "<id>", "re_..." or "your-domain.co.za".
+_CHECKED_SETTINGS = ("BASE_URL", "ADMIN_EMAIL", "ADMIN_PASSWORD", "SUPPORT_EMAIL", "EMAIL_FROM", "EMAIL_REPLY_TO",
+                     "RESEND_API_KEY", "SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "PAYFAST_MERCHANT_ID",
+                     "PAYFAST_MERCHANT_KEY", "PAYFAST_PASSPHRASE", "COMPANY_ADDRESS", "VAT_NUMBER",
+                     "INFORMATION_OFFICER_EMAIL", "WHATSAPP_NUMBER", "SECRET_KEY")
+_PLACEHOLDER = re.compile(r"<[^>]*>|\.\.\.|your-domain|you@example\.com")
+
+
+def _is_placeholder(value: str) -> bool:
+    return bool(value) and bool(_PLACEHOLDER.search(value))
+
+
 def launch_checks() -> list:
-    """(level, text) for set-up that still needs attention, in launch order. Shown on the admin overview."""
+    """(level, text) for set-up that still needs attention, in launch order. Shown on the admin overview.
+    Messages name a setting but never show its value, so the box is safe to screenshot."""
     import os
     out = []
     if config.ON_RAILWAY and not os.path.ismount(config.DATA_DIR):
         out.append(("error", f"No volume is attached at {config.DATA_DIR}, so the database and photos are lost on every update. "
                              f"In Railway, add a volume to this service with mount path {config.DATA_DIR}."))
+    for key in _CHECKED_SETTINGS:
+        if _is_placeholder(os.environ.get(key, "")):
+            out.append(("error", f"{key} still holds example text from the guide (such as <...>, \"...\" or your-domain). "
+                                 "In Railway → Variables, replace it with the real value, or delete it if you don't have it yet."))
+    if config.EMAIL_PROVIDER == "resend" and (not config.RESEND_API_KEY or _is_placeholder(config.RESEND_API_KEY)):
+        out.append(("error", "EMAIL_PROVIDER is resend, but there's no RESEND_API_KEY, so no emails can be sent. Add the key "
+                             "(deploy guide, part 4), or delete EMAIL_PROVIDER until you have it."))
+    elif config.EMAIL_PROVIDER == "smtp" and not (config.SMTP_HOST and config.SMTP_USER and config.SMTP_PASSWORD):
+        out.append(("error", "EMAIL_PROVIDER is smtp, but SMTP_HOST, SMTP_USER or SMTP_PASSWORD is missing, so no emails can be sent."))
+    if config.PAYMENT_GATEWAY == "payfast" and not all(v and not _is_placeholder(v) for v in (config.PAYFAST_MERCHANT_ID,
+                                                                                            config.PAYFAST_MERCHANT_KEY)):
+        out.append(("error", "PAYMENT_GATEWAY is payfast, but the PayFast merchant ID or key is missing, so checkout can't work. "
+                             "Add them (deploy guide, part 5), or delete PAYMENT_GATEWAY to use the test checkout until then."))
+    if config.ON_RAILWAY and config.APP_ENV != "production":
+        out.append(("warn", "APP_ENV isn't production, so test-only behaviour is switched on. Set APP_ENV=production, or delete it "
+                            "(production is the default)."))
+    if config.ON_RAILWAY and config.BASE_URL.startswith("http://") and not re.match(r"^http://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
+        out.append(("error", "BASE_URL starts with http://. Use https://aureliastudios.co.za so links are secure."))
     if re.match(r"^https?://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
         out.append(("error" if not config.DEBUG else "info",
                     f"Links in emails and payment returns point to {config.BASE_URL}. Set BASE_URL to your public address, "

@@ -3,6 +3,23 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-25 (evening): domain live, safer launch checks
+
+**Changes**
+- aureliastudios.co.za is live on Railway through Cloudflare DNS (CNAME at the root, DNS only) and
+  www redirects to it with a Cloudflare redirect rule (the Railway trial allows one custom domain).
+- Launch checks on /admin now also catch settings pasted from the guides with example text still in
+  them (`<...>`, `...`, `your-domain`), Resend or SMTP chosen without its keys, PayFast chosen without a
+  merchant ID or key, APP_ENV other than production on Railway, and an http:// BASE_URL. They name the
+  setting but never show its value, so the box is safe to screenshot.
+
+**Checked**
+- 113 tests pass.
+
+**Waiting on**
+- BASE_URL=https://aureliastudios.co.za in Railway (edit the existing variable), then a look at the
+  launch checks to tidy the other variables.
+
 ## 2026-11-25 (later): Aurelia Studios, GoDaddy domain
 
 **Changes**

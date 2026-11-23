@@ -1001,12 +1001,29 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=c83631e23a247bb94663eeb9dc18d8e8941017ef24ec33d006629c41f1b1bb4c nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=e3106095ee291eb36a08a1692dc6ee05e7413f9d278261f0c6004a9bd60bc6a1 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-25 (evening): domain live, safer launch checks
+
+**Changes**
+- aureliastudios.co.za is live on Railway through Cloudflare DNS (CNAME at the root, DNS only) and
+  www redirects to it with a Cloudflare redirect rule (the Railway trial allows one custom domain).
+- Launch checks on /admin now also catch settings pasted from the guides with example text still in
+  them (`<...>`, `...`, `your-domain`), Resend or SMTP chosen without its keys, PayFast chosen without a
+  merchant ID or key, APP_ENV other than production on Railway, and an http:// BASE_URL. They name the
+  setting but never show its value, so the box is safe to screenshot.
+
+**Checked**
+- 113 tests pass.
+
+**Waiting on**
+- BASE_URL=https://aureliastudios.co.za in Railway (edit the existing variable), then a look at the
+  launch checks to tidy the other variables.
 
 ## 2026-11-25 (later): Aurelia Studios, GoDaddy domain
 
@@ -8072,7 +8089,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=ae900b80865cd4911d6002c36464151b23c75bb2ae8460bc5fbcaa7b82eb26c2 nl=1 -->
+<!-- FILE: app/views/admin.py sha256=a7812cab7a7168b958a02151e1b80639a1b83fe9bd446e3696617d4e2f527179 nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -8271,13 +8288,44 @@ def backup(req):
     return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
 
 
+# Settings whose example values in the guides look like "<id>", "re_..." or "your-domain.co.za".
+_CHECKED_SETTINGS = ("BASE_URL", "ADMIN_EMAIL", "ADMIN_PASSWORD", "SUPPORT_EMAIL", "EMAIL_FROM", "EMAIL_REPLY_TO",
+                     "RESEND_API_KEY", "SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "PAYFAST_MERCHANT_ID",
+                     "PAYFAST_MERCHANT_KEY", "PAYFAST_PASSPHRASE", "COMPANY_ADDRESS", "VAT_NUMBER",
+                     "INFORMATION_OFFICER_EMAIL", "WHATSAPP_NUMBER", "SECRET_KEY")
+_PLACEHOLDER = re.compile(r"<[^>]*>|\.\.\.|your-domain|you@example\.com")
+
+
+def _is_placeholder(value: str) -> bool:
+    return bool(value) and bool(_PLACEHOLDER.search(value))
+
+
 def launch_checks() -> list:
-    """(level, text) for set-up that still needs attention, in launch order. Shown on the admin overview."""
+    """(level, text) for set-up that still needs attention, in launch order. Shown on the admin overview.
+    Messages name a setting but never show its value, so the box is safe to screenshot."""
     import os
     out = []
     if config.ON_RAILWAY and not os.path.ismount(config.DATA_DIR):
         out.append(("error", f"No volume is attached at {config.DATA_DIR}, so the database and photos are lost on every update. "
                              f"In Railway, add a volume to this service with mount path {config.DATA_DIR}."))
+    for key in _CHECKED_SETTINGS:
+        if _is_placeholder(os.environ.get(key, "")):
+            out.append(("error", f"{key} still holds example text from the guide (such as <...>, \"...\" or your-domain). "
+                                 "In Railway → Variables, replace it with the real value, or delete it if you don't have it yet."))
+    if config.EMAIL_PROVIDER == "resend" and (not config.RESEND_API_KEY or _is_placeholder(config.RESEND_API_KEY)):
+        out.append(("error", "EMAIL_PROVIDER is resend, but there's no RESEND_API_KEY, so no emails can be sent. Add the key "
+                             "(deploy guide, part 4), or delete EMAIL_PROVIDER until you have it."))
+    elif config.EMAIL_PROVIDER == "smtp" and not (config.SMTP_HOST and config.SMTP_USER and config.SMTP_PASSWORD):
+        out.append(("error", "EMAIL_PROVIDER is smtp, but SMTP_HOST, SMTP_USER or SMTP_PASSWORD is missing, so no emails can be sent."))
+    if config.PAYMENT_GATEWAY == "payfast" and not all(v and not _is_placeholder(v) for v in (config.PAYFAST_MERCHANT_ID,
+                                                                                            config.PAYFAST_MERCHANT_KEY)):
+        out.append(("error", "PAYMENT_GATEWAY is payfast, but the PayFast merchant ID or key is missing, so checkout can't work. "
+                             "Add them (deploy guide, part 5), or delete PAYMENT_GATEWAY to use the test checkout until then."))
+    if config.ON_RAILWAY and config.APP_ENV != "production":
+        out.append(("warn", "APP_ENV isn't production, so test-only behaviour is switched on. Set APP_ENV=production, or delete it "
+                            "(production is the default)."))
+    if config.ON_RAILWAY and config.BASE_URL.startswith("http://") and not re.match(r"^http://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
+        out.append(("error", "BASE_URL starts with http://. Use https://aureliastudios.co.za so links are secure."))
     if re.match(r"^https?://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
         out.append(("error" if not config.DEBUG else "info",
                     f"Links in emails and payment returns point to {config.BASE_URL}. Set BASE_URL to your public address, "
@@ -19377,7 +19425,7 @@ def find(pattern: str, text: str) -> str:
 
 ### `tests/test_admin.py`
 
-<!-- FILE: tests/test_admin.py sha256=2fed1304accf28ee9359aa34f2a4b6c41792ec68b380a621f010ddec201916ac nl=1 -->
+<!-- FILE: tests/test_admin.py sha256=da8b8889423233289320c1b82e4016c1e0801c5463e7fc75249534f3c1905975 nl=1 -->
 ```python
 """Admin dashboard permissions and actions, plus the background scheduler."""
 from __future__ import annotations
@@ -19499,6 +19547,24 @@ class AdminActions(unittest.TestCase):
             self.assertTrue(any("No volume is attached" in t for _, t in admin_view.launch_checks()))
         with mock.patch.object(config, "BASE_URL", "https://aurelia.up.railway.app"):
             self.assertTrue(any("Railway's address" in t for _, t in admin_view.launch_checks()))
+
+    def test_launch_checks_catch_example_values_and_missing_keys(self):
+        from unittest import mock
+        from app.views import admin as admin_view
+        secret = "<id>"
+        env = {"PAYFAST_MERCHANT_ID": secret, "RESEND_API_KEY": "re_...", "EMAIL_FROM": "Aurelia <invites@your-domain.co.za>"}
+        with mock.patch.dict("os.environ", env), mock.patch.object(config, "PAYMENT_GATEWAY", "payfast"), \
+                mock.patch.object(config, "PAYFAST_MERCHANT_ID", secret), mock.patch.object(config, "PAYFAST_MERCHANT_KEY", ""), \
+                mock.patch.object(config, "EMAIL_PROVIDER", "resend"), mock.patch.object(config, "RESEND_API_KEY", "re_..."):
+            texts = [t for _, t in admin_view.launch_checks()]
+        for key in env:
+            self.assertTrue(any(t.startswith(key + " still holds example text") for t in texts), key)
+        self.assertTrue(any("no RESEND_API_KEY" in t for t in texts))
+        self.assertTrue(any("merchant ID or key is missing" in t for t in texts))
+        self.assertFalse(any(secret in t for t in texts))                  # values are never shown
+        with mock.patch.object(config, "ON_RAILWAY", True), mock.patch.object(config, "APP_ENV", "development"), \
+                mock.patch("os.path.ismount", return_value=True):
+            self.assertTrue(any("APP_ENV isn't production" in t for _, t in admin_view.launch_checks()))
 
     def test_edit_package_price(self):
         p = catalog.package("essential")

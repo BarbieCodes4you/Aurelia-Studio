@@ -119,6 +119,24 @@ class AdminActions(unittest.TestCase):
         with mock.patch.object(config, "BASE_URL", "https://aurelia.up.railway.app"):
             self.assertTrue(any("Railway's address" in t for _, t in admin_view.launch_checks()))
 
+    def test_launch_checks_catch_example_values_and_missing_keys(self):
+        from unittest import mock
+        from app.views import admin as admin_view
+        secret = "<id>"
+        env = {"PAYFAST_MERCHANT_ID": secret, "RESEND_API_KEY": "re_...", "EMAIL_FROM": "Aurelia <invites@your-domain.co.za>"}
+        with mock.patch.dict("os.environ", env), mock.patch.object(config, "PAYMENT_GATEWAY", "payfast"), \
+                mock.patch.object(config, "PAYFAST_MERCHANT_ID", secret), mock.patch.object(config, "PAYFAST_MERCHANT_KEY", ""), \
+                mock.patch.object(config, "EMAIL_PROVIDER", "resend"), mock.patch.object(config, "RESEND_API_KEY", "re_..."):
+            texts = [t for _, t in admin_view.launch_checks()]
+        for key in env:
+            self.assertTrue(any(t.startswith(key + " still holds example text") for t in texts), key)
+        self.assertTrue(any("no RESEND_API_KEY" in t for t in texts))
+        self.assertTrue(any("merchant ID or key is missing" in t for t in texts))
+        self.assertFalse(any(secret in t for t in texts))                  # values are never shown
+        with mock.patch.object(config, "ON_RAILWAY", True), mock.patch.object(config, "APP_ENV", "development"), \
+                mock.patch("os.path.ismount", return_value=True):
+            self.assertTrue(any("APP_ENV isn't production" in t for _, t in admin_view.launch_checks()))
+
     def test_edit_package_price(self):
         p = catalog.package("essential")
         data = {"name": p["name"], "tagline": p["tagline"], "price": "9 499.00", "rank": "1", "active": "1",
