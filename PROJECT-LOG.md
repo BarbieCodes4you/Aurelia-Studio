@@ -3,6 +3,27 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-24: liquid-glass look
+
+**Changes**
+- The site and the app take an iOS-style "liquid glass" look: a pearl-grey base with white cells
+  and soft shadows, frosted glass with a bright rim, and graphite capsule buttons with a glossy top
+  edge and a light sweep on hover. Dark mode is near-black with luminous glass and pearl buttons.
+- Gold is now a thread rather than a fill: the logo (champagne and silver), the line under section
+  headings, the seating and RSVP rings, and a few small icons and links. The serif keyword has a
+  champagne-steel-rose sheen.
+- The header turns into a floating glass capsule when you scroll. Heroes have a soft pearl light
+  field with a fine grain, and the glow drifts slowly (still when reduced motion is on).
+- Checkboxes, radios and switches are graphite (pearl in dark mode), with stronger outlines when off.
+- Emails and PDF reports follow the new palette.
+- Fixed: the hidden "Skip to content" link took 48px at the top of every page.
+- Layout, pages and behaviour are unchanged. Event-website templates keep their own designs.
+
+**Checked**
+- 108 tests pass. Text contrast meets WCAG AA in light and dark mode. Checked on desktop and phone,
+  light and dark: home, pricing, templates, FAQ, sign-up, wizard, dashboard, guests, seating, admin,
+  mobile menu and a sample email.
+
 ## 2026-11-23: golden-thread colours
 
 **Changes**

@@ -16,9 +16,9 @@ if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t
 document.documentElement.classList.add('js');})();</script>"""
 
 BRAND_MARK = """<svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#B8914A"/><stop offset=".5" stop-color="#D9B977"/><stop offset="1" stop-color="#9C7533"/></linearGradient></defs>
+<stop offset="0" stop-color="#C4A776"/><stop offset=".5" stop-color="#A3A3AB"/><stop offset="1" stop-color="#B39361"/></linearGradient></defs>
 <circle cx="12" cy="16" r="8.2" fill="none" stroke="url(#bm)" stroke-width="2"/><circle cx="20" cy="16" r="8.2" fill="none" stroke="url(#bm)" stroke-width="2"/>
-<circle cx="16" cy="16" r="1.8" fill="#8A6A2E"/></svg>"""
+<circle cx="16" cy="16" r="1.8" fill="#B39361"/></svg>"""
 
 NAV = [
     ("Weddings", "/weddings"),
@@ -45,7 +45,7 @@ def head(title: str, description: str = "", extra: str = "", noindex: bool = Fal
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(full)}</title>
 <meta name="description" content="{esc(desc)}">{robots}
 <meta property="og:title" content="{esc(full)}"><meta property="og:description" content="{esc(desc)}">
-<meta name="theme-color" content="#FAF8F4">
+<meta name="theme-color" content="#F4F4F6">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
