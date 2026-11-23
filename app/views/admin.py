@@ -240,6 +240,9 @@ def launch_checks() -> list:
     elif config.BASE_URL.endswith(".up.railway.app"):
         out.append(("info", f"Using Railway's address ({config.BASE_URL}). Once aureliastudios.co.za shows as active in Railway, "
                             "set BASE_URL=https://aureliastudios.co.za (deploy guide, part 3)."))
+    if config.BASE_URL.startswith("https://") and not config.SECURE_COOKIES:
+        out.append(("warn", "Sign-in cookies aren't marked secure. In Railway → Variables, delete SECURE_COOKIES "
+                            "(it switches on by itself for an https address)."))
     if config.ADMIN_PASSWORD:
         out.append(("warn", "Delete the ADMIN_PASSWORD variable now that you can sign in. Your account keeps its password."))
     if config.EMAIL_PROVIDER == "outbox":

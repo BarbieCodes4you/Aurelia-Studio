@@ -382,16 +382,25 @@ class HostingDefaultsTest(unittest.TestCase):
                if k not in ("BASE_URL", "TRUST_PROXY", "SECRET_KEY") and not k.startswith("RAILWAY_")}
         env.update(extra, AURELIA_DATA_DIR=tempfile.mkdtemp())
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY), config.CANONICAL_HOST or '-')"
+        code = ("from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY), "
+                "config.CANONICAL_HOST or '-', config.SECURE_COOKIES, config.APP_ENV)")
         out = subprocess.run([sys.executable, "-c", code], cwd=root, env=env, capture_output=True, text=True, check=True)
         return out.stdout.split()
 
+    def test_empty_settings_count_as_not_set(self):
+        rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
+        out = self.settings(**rw, BASE_URL="https://aureliastudios.co.za", SECURE_COOKIES="", APP_ENV=" ")
+        self.assertEqual(out[4], "True")              # an empty SECURE_COOKIES no longer turns secure cookies off
+        self.assertEqual(out[5], "production")        # blank APP_ENV on Railway means production
+        self.assertEqual(self.settings(**rw, BASE_URL="")[0], "https://aurelia.up.railway.app")
+
     def test_railway_needs_no_address_proxy_or_secret_settings(self):
         rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
-        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64", "-"])
+        self.assertEqual(self.settings(**rw)[:4], ["https://aurelia.up.railway.app", "True", "64", "-"])
         own = self.settings(**rw, BASE_URL="https://aureliastudios.co.za")
         self.assertEqual((own[0], own[3]), ("https://aureliastudios.co.za", "aureliastudios.co.za"))
         self.assertEqual(self.settings()[:2], ["http://127.0.0.1:8040", "False"])     # elsewhere: nothing assumed
+        self.assertEqual(self.settings()[5], "development")                              # and test mode stays the local default
 
 
 class OwnDomainTest(unittest.TestCase):

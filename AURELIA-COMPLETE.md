@@ -629,8 +629,11 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=6cdc74022c1e1ad1f50a6bfd254d463f8832a735f973f0a27abeb240588b6ab7 nl=1 -->
+<!-- FILE: .env.example sha256=ddcfa92b32e3f019cfdadf156a8776d22cadcfb6efa755c5147bec294f6d1232 nl=1 -->
 ```
+# Settings for running Aurelia Studios on your own computer (copy to .env).
+# Don't paste this file into Railway: its values are for local testing (APP_ENV=development,
+# BASE_URL=http://127.0.0.1:8040). For Railway, follow DEPLOY-RAILWAY.md.
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
 BASE_URL=http://127.0.0.1:8040      # public address, used in emails and payment callbacks (on Railway: Railway's domain until you set yours)
@@ -676,7 +679,7 @@ ADMIN_PASSWORD=
 
 SCHEDULER_ENABLED=1
 SCHEDULER_INTERVAL_SECONDS=300
-SECURE_COOKIES=                     # defaults to on when BASE_URL is https
+# SECURE_COOKIES=1                  # leave unset: it switches on by itself when BASE_URL is https
 
 # Hosting
 TRUST_PROXY=0                       # 1 only behind a reverse proxy you control (Caddy, Nginx, Render, Railway, Fly)
@@ -1001,12 +1004,34 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=e3106095ee291eb36a08a1692dc6ee05e7413f9d278261f0c6004a9bd60bc6a1 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=73bc0500e6def886c3fb6fbd0a5b2dcb4c36ddede7fab8553f5133a7b597b478 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-25 (night): settings copied from the example file
+
+**Found**
+- The live site runs with BASE_URL=http://127.0.0.1:8040 and a non-production APP_ENV: robots.txt
+  names that address, static files are served with no-cache, and cookies lack the Secure flag. The
+  Railway variables were likely pasted from `.env.example`, which is meant for a local computer.
+
+**Changes**
+- An empty or blank variable now counts as not set, so its default applies. Before, `SECURE_COOKIES=`
+  (empty, as in `.env.example`) switched secure cookies off.
+- On Railway, APP_ENV defaults to production.
+- Launch checks warn when cookies aren't secure on an https address.
+- `.env.example` says it's for running on a computer, not for pasting into Railway, and no longer
+  has an empty SECURE_COOKIES line.
+
+**Checked**
+- 114 tests pass.
+
+**Waiting on**
+- In Railway: BASE_URL=https://aureliastudios.co.za, APP_ENV=production (or delete it), then the
+  launch checks screenshot.
 
 ## 2026-11-25 (evening): domain live, safer launch checks
 
@@ -2432,7 +2457,7 @@ def limit(event, key: str, default: int = 0) -> int:
 
 ### `app/config.py`
 
-<!-- FILE: app/config.py sha256=0f97b878a469b2bb0f0ef72eb157efd9730460cc0aa138a9667f1500d77784d7 nl=1 -->
+<!-- FILE: app/config.py sha256=1eefa1d04ae55384473b07f0fa5b1c98adb735ee5f0adadf3b22c62c8c63ce1f nl=1 -->
 ```python
 """Runtime configuration.
 
@@ -2469,19 +2494,25 @@ _load_dotenv(ROOT / ".env")
 
 
 def env(key: str, default: str = "") -> str:
-    return os.environ.get(key, default)
+    """A setting from the environment. Empty or blank counts as not set, so the default applies
+    (hosts often keep a variable that was pasted without a value)."""
+    v = os.environ.get(key)
+    return default if v is None or not v.strip() else v
 
 
 def env_bool(key: str, default: bool = False) -> bool:
     v = os.environ.get(key)
-    if v is None:
+    if v is None or not v.strip():
         return default
     return v.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def env_int(key: str, default: int) -> int:
+    v = os.environ.get(key)
+    if v is None or not v.strip():
+        return default
     try:
-        return int(os.environ.get(key, default))
+        return int(v)
     except (TypeError, ValueError):
         return default
 
@@ -2542,11 +2573,11 @@ CURRENCY = "ZAR"
 TIMEZONE = env("TIMEZONE", "Africa/Johannesburg")
 
 # --- Server -----------------------------------------------------------------------------
-APP_ENV = env("APP_ENV", "development")            # development | production
-DEBUG = APP_ENV != "production"
 # On Railway the web address and the proxy in front of the app are known, so they need no settings:
 # BASE_URL falls back to the domain Railway generated (set BASE_URL once your own domain is connected).
 ON_RAILWAY = any(env(k) for k in ("RAILWAY_ENVIRONMENT_NAME", "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID"))
+APP_ENV = env("APP_ENV", "production" if ON_RAILWAY else "development")   # development | production
+DEBUG = APP_ENV != "production"
 _RAILWAY_URL = f"https://{env('RAILWAY_PUBLIC_DOMAIN')}" if env("RAILWAY_PUBLIC_DOMAIN") else ""
 BASE_URL = env("BASE_URL", _RAILWAY_URL or "http://127.0.0.1:8040").rstrip("/")
 # The site's own domain (e.g. aureliastudios.co.za), once BASE_URL is set to it. Visitors who arrive on
@@ -8089,7 +8120,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=a7812cab7a7168b958a02151e1b80639a1b83fe9bd446e3696617d4e2f527179 nl=1 -->
+<!-- FILE: app/views/admin.py sha256=e29817958daa5ef6a0bcd1e4501f0ce30796188a2612f82af8b132529d9877b0 nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -8333,6 +8364,9 @@ def launch_checks() -> list:
     elif config.BASE_URL.endswith(".up.railway.app"):
         out.append(("info", f"Using Railway's address ({config.BASE_URL}). Once aureliastudios.co.za shows as active in Railway, "
                             "set BASE_URL=https://aureliastudios.co.za (deploy guide, part 3)."))
+    if config.BASE_URL.startswith("https://") and not config.SECURE_COOKIES:
+        out.append(("warn", "Sign-in cookies aren't marked secure. In Railway → Variables, delete SECURE_COOKIES "
+                            "(it switches on by itself for an https address)."))
     if config.ADMIN_PASSWORD:
         out.append(("warn", "Delete the ADMIN_PASSWORD variable now that you can sign in. Your account keeps its password."))
     if config.EMAIL_PROVIDER == "outbox":
@@ -19758,7 +19792,7 @@ class BackupTest(unittest.TestCase):
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=9cc1e84ca903a56b48d5c4e2dbb4866991e094dc65c86a40c4fe185a5b738753 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=e37f0a3853773ecf2253400da9bc8cc956b3729f66e6f58216b45d9378c3ea79 nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -20144,16 +20178,25 @@ class HostingDefaultsTest(unittest.TestCase):
                if k not in ("BASE_URL", "TRUST_PROXY", "SECRET_KEY") and not k.startswith("RAILWAY_")}
         env.update(extra, AURELIA_DATA_DIR=tempfile.mkdtemp())
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY), config.CANONICAL_HOST or '-')"
+        code = ("from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY), "
+                "config.CANONICAL_HOST or '-', config.SECURE_COOKIES, config.APP_ENV)")
         out = subprocess.run([sys.executable, "-c", code], cwd=root, env=env, capture_output=True, text=True, check=True)
         return out.stdout.split()
 
+    def test_empty_settings_count_as_not_set(self):
+        rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
+        out = self.settings(**rw, BASE_URL="https://aureliastudios.co.za", SECURE_COOKIES="", APP_ENV=" ")
+        self.assertEqual(out[4], "True")              # an empty SECURE_COOKIES no longer turns secure cookies off
+        self.assertEqual(out[5], "production")        # blank APP_ENV on Railway means production
+        self.assertEqual(self.settings(**rw, BASE_URL="")[0], "https://aurelia.up.railway.app")
+
     def test_railway_needs_no_address_proxy_or_secret_settings(self):
         rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
-        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64", "-"])
+        self.assertEqual(self.settings(**rw)[:4], ["https://aurelia.up.railway.app", "True", "64", "-"])
         own = self.settings(**rw, BASE_URL="https://aureliastudios.co.za")
         self.assertEqual((own[0], own[3]), ("https://aureliastudios.co.za", "aureliastudios.co.za"))
         self.assertEqual(self.settings()[:2], ["http://127.0.0.1:8040", "False"])     # elsewhere: nothing assumed
+        self.assertEqual(self.settings()[5], "development")                              # and test mode stays the local default
 
 
 class OwnDomainTest(unittest.TestCase):

@@ -3,6 +3,28 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-25 (night): settings copied from the example file
+
+**Found**
+- The live site runs with BASE_URL=http://127.0.0.1:8040 and a non-production APP_ENV: robots.txt
+  names that address, static files are served with no-cache, and cookies lack the Secure flag. The
+  Railway variables were likely pasted from `.env.example`, which is meant for a local computer.
+
+**Changes**
+- An empty or blank variable now counts as not set, so its default applies. Before, `SECURE_COOKIES=`
+  (empty, as in `.env.example`) switched secure cookies off.
+- On Railway, APP_ENV defaults to production.
+- Launch checks warn when cookies aren't secure on an https address.
+- `.env.example` says it's for running on a computer, not for pasting into Railway, and no longer
+  has an empty SECURE_COOKIES line.
+
+**Checked**
+- 114 tests pass.
+
+**Waiting on**
+- In Railway: BASE_URL=https://aureliastudios.co.za, APP_ENV=production (or delete it), then the
+  launch checks screenshot.
+
 ## 2026-11-25 (evening): domain live, safer launch checks
 
 **Changes**

@@ -33,19 +33,25 @@ _load_dotenv(ROOT / ".env")
 
 
 def env(key: str, default: str = "") -> str:
-    return os.environ.get(key, default)
+    """A setting from the environment. Empty or blank counts as not set, so the default applies
+    (hosts often keep a variable that was pasted without a value)."""
+    v = os.environ.get(key)
+    return default if v is None or not v.strip() else v
 
 
 def env_bool(key: str, default: bool = False) -> bool:
     v = os.environ.get(key)
-    if v is None:
+    if v is None or not v.strip():
         return default
     return v.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def env_int(key: str, default: int) -> int:
+    v = os.environ.get(key)
+    if v is None or not v.strip():
+        return default
     try:
-        return int(os.environ.get(key, default))
+        return int(v)
     except (TypeError, ValueError):
         return default
 
@@ -106,11 +112,11 @@ CURRENCY = "ZAR"
 TIMEZONE = env("TIMEZONE", "Africa/Johannesburg")
 
 # --- Server -----------------------------------------------------------------------------
-APP_ENV = env("APP_ENV", "development")            # development | production
-DEBUG = APP_ENV != "production"
 # On Railway the web address and the proxy in front of the app are known, so they need no settings:
 # BASE_URL falls back to the domain Railway generated (set BASE_URL once your own domain is connected).
 ON_RAILWAY = any(env(k) for k in ("RAILWAY_ENVIRONMENT_NAME", "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID"))
+APP_ENV = env("APP_ENV", "production" if ON_RAILWAY else "development")   # development | production
+DEBUG = APP_ENV != "production"
 _RAILWAY_URL = f"https://{env('RAILWAY_PUBLIC_DOMAIN')}" if env("RAILWAY_PUBLIC_DOMAIN") else ""
 BASE_URL = env("BASE_URL", _RAILWAY_URL or "http://127.0.0.1:8040").rstrip("/")
 # The site's own domain (e.g. aureliastudios.co.za), once BASE_URL is set to it. Visitors who arrive on
