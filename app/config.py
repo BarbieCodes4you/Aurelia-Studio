@@ -113,6 +113,11 @@ DEBUG = APP_ENV != "production"
 ON_RAILWAY = any(env(k) for k in ("RAILWAY_ENVIRONMENT_NAME", "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID"))
 _RAILWAY_URL = f"https://{env('RAILWAY_PUBLIC_DOMAIN')}" if env("RAILWAY_PUBLIC_DOMAIN") else ""
 BASE_URL = env("BASE_URL", _RAILWAY_URL or "http://127.0.0.1:8040").rstrip("/")
+# The site's own domain (e.g. aureliastudios.co.za), once BASE_URL is set to it. Visitors who arrive on
+# www. or on Railway's generated address are then sent there (page views only; see app._canonical_redirect).
+_BASE_HOST = (BASE_URL.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]).lower()
+CANONICAL_HOST = (_BASE_HOST if env("BASE_URL") and BASE_URL.startswith("https://")
+                  and not _BASE_HOST.endswith(".up.railway.app") and env_bool("CANONICAL_REDIRECT", True) else "")
 SECRET_KEY = _secret_key()
 DATABASE_PATH = Path(env("DATABASE_PATH", str(DATA_DIR / "aurelia.sqlite3")))
 SESSION_DAYS = env_int("SESSION_DAYS", 14)

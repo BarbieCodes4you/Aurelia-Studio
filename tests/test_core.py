@@ -382,12 +382,49 @@ class HostingDefaultsTest(unittest.TestCase):
                if k not in ("BASE_URL", "TRUST_PROXY", "SECRET_KEY") and not k.startswith("RAILWAY_")}
         env.update(extra, AURELIA_DATA_DIR=tempfile.mkdtemp())
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY))"
+        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY), config.CANONICAL_HOST or '-')"
         out = subprocess.run([sys.executable, "-c", code], cwd=root, env=env, capture_output=True, text=True, check=True)
         return out.stdout.split()
 
     def test_railway_needs_no_address_proxy_or_secret_settings(self):
         rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
-        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64"])
-        self.assertEqual(self.settings(**rw, BASE_URL="https://aureliastudio.co.za")[0], "https://aureliastudio.co.za")
+        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64", "-"])
+        own = self.settings(**rw, BASE_URL="https://aureliastudios.co.za")
+        self.assertEqual((own[0], own[3]), ("https://aureliastudios.co.za", "aureliastudios.co.za"))
         self.assertEqual(self.settings()[:2], ["http://127.0.0.1:8040", "False"])     # elsewhere: nothing assumed
+
+
+class OwnDomainTest(unittest.TestCase):
+    """Once BASE_URL names the site's own domain, www. and Railway's address send page views there."""
+
+    def setUp(self):
+        self.app = fresh_app("domain")
+        self.old = (config.BASE_URL, config.CANONICAL_HOST)
+        config.BASE_URL, config.CANONICAL_HOST = "https://aureliastudios.co.za", "aureliastudios.co.za"
+
+    def tearDown(self):
+        config.BASE_URL, config.CANONICAL_HOST = self.old
+
+    def test_www_and_railway_address_move_to_the_domain(self):
+        c = Client(self.app)
+        r = c.get("/pricing?x=1", headers={"Host": "www.aureliastudios.co.za"})
+        self.assertEqual((r.status, r.location), (301, "https://aureliastudios.co.za/pricing?x=1"))
+        r = c.get("/templates", headers={"Host": "aurelia-studio-production.up.railway.app"})
+        self.assertEqual((r.status, r.location), (301, "https://aureliastudios.co.za/templates"))
+
+    def test_the_domain_itself_and_other_requests_are_served(self):
+        c = Client(self.app)
+        self.assertEqual(c.get("/pricing", headers={"Host": "aureliastudios.co.za"}).status, 200)
+        self.assertEqual(c.get("/healthz", headers={"Host": "healthcheck.railway.app"}).status, 200)
+        self.assertEqual(c.get("/healthz", headers={"Host": "aurelia-studio-production.up.railway.app"}).status, 200)
+        # payment notifications and form posts are never redirected
+        r = c.post("/webhooks/payments/payfast", {"x": "1"}, headers={"Host": "aurelia-studio-production.up.railway.app"})
+        self.assertNotEqual(r.status, 301)
+        r = c.post("/login", {"email": "a@example.com", "password": "x"}, headers={"Host": "www.aureliastudios.co.za"})
+        self.assertNotEqual(r.status, 301)
+
+    def test_no_redirects_until_the_domain_is_set(self):
+        config.CANONICAL_HOST = ""
+        c = Client(self.app)
+        self.assertEqual(c.get("/pricing", headers={"Host": "aurelia-studio-production.up.railway.app"}).status, 200)
+

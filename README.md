@@ -132,7 +132,7 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 
 ## Still to confirm before launch
 
-- Brand name, domain, company address, VAT number, information officer (support email is invitesaurelia@gmail.com; no phone number is shown)
+- Brand name, company address, VAT number, information officer (the domain is aureliastudios.co.za) (support email is invitesaurelia@gmail.com; no phone number is shown)
   (`.env`; placeholders are marked `[TBC]`).
 - Legal pages (`/privacy`, `/terms`, `/refunds`) are drafts marked for legal review.
 - Customer reviews: the home page section stays hidden until real reviews are added (`TESTIMONIALS`).

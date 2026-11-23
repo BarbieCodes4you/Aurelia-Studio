@@ -152,8 +152,8 @@ def render_body(body: str, vars: dict) -> tuple[str, str]:
         if m:
             label, href = fill(m.group(1), vars, True), fill(m.group(2), vars, False).strip()
             html_parts.append(
-                f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 22px"><tr><td style="border-radius:999px;background:#1D1D1F;background-image:linear-gradient(180deg,#48484C,#26262A 48%,#161618)">'
-                f'<a href="{esc(href)}" style="display:inline-block;padding:14px 26px;color:#FFFFFF;font:600 15px/1 Helvetica,Arial,sans-serif;text-decoration:none;border-radius:999px">{label}</a></td></tr></table>')
+                f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 22px"><tr><td style="border-radius:999px;background:#EDCF86;background-image:linear-gradient(180deg,#F8E7B9,#EDCF86 48%,#DDB563)">'
+                f'<a href="{esc(href)}" style="display:inline-block;padding:14px 26px;color:#2A1F0A;font:600 15px/1 Helvetica,Arial,sans-serif;text-decoration:none;border-radius:999px">{label}</a></td></tr></table>')
             text_parts.append(f"{fill(m.group(1), vars, False)}: {href}")
             continue
         filled_html = fill(block, vars, True)
@@ -174,17 +174,17 @@ def wrap(inner: str, preheader: str = "", footer_note: str = "") -> str:
     brand = esc(config.BRAND_NAME)
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta name="color-scheme" content="light"><title>{brand}</title></head>
-<body style="margin:0;padding:0;background:#F4F4F6">
+<body style="margin:0;padding:0;background:#FBF8F2">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0">{esc(preheader)}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4F4F6"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF8F2"><tr><td align="center" style="padding:32px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
-<tr><td style="padding:0 8px 18px;font:italic 400 26px/1 Georgia,'Times New Roman',serif;color:#1D1D1F">
-<span style="color:#B39361">&#9675;&#9675;</span>&nbsp;{brand}</td></tr>
-<tr><td style="background:#ffffff;border:1px solid #E6E6EB;border-radius:20px;padding:32px 30px;font:400 16px/1.6 Helvetica,Arial,sans-serif;color:#1D1D1F">
-<div style="height:2px;width:48px;margin:0 0 24px;background:linear-gradient(96deg,#B39361,#D9C59C,#B39361);border-radius:2px"></div>
+<tr><td style="padding:0 8px 18px;font:italic 400 26px/1 Georgia,'Times New Roman',serif;color:#1F1A12">
+<span style="color:#C99A3C">&#10022;</span>&nbsp;{brand}</td></tr>
+<tr><td style="background:#ffffff;border:1px solid #EDE4D2;border-radius:20px;padding:32px 30px;font:400 16px/1.6 Helvetica,Arial,sans-serif;color:#1F1A12">
+<div style="height:2px;width:48px;margin:0 0 24px;background:linear-gradient(96deg,#C99A3C,#EBCB7E,#C99A3C);border-radius:2px"></div>
 {inner}</td></tr>
-<tr><td style="padding:20px 10px;font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#67676C;text-align:center">
-{footer_note}{brand} · {esc(config.COMPANY_ADDRESS)} · <a href="mailto:{esc(config.SUPPORT_EMAIL)}" style="color:#6F5B37">{esc(config.SUPPORT_EMAIL)}</a></td></tr>
+<tr><td style="padding:20px 10px;font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#6A6152;text-align:center">
+{footer_note}{brand} · {esc(config.COMPANY_ADDRESS)} · <a href="mailto:{esc(config.SUPPORT_EMAIL)}" style="color:#87651C">{esc(config.SUPPORT_EMAIL)}</a></td></tr>
 </table></td></tr></table></body></html>"""
 
 
@@ -203,7 +203,7 @@ def compose(key: str, vars: dict, subject_override: str = "", body_override: str
     note = ""
     if t["audience"] == "guest" and v.get("unsubscribe_url"):
         note = (f'You received this because {esc(v.get("hosts", "the host"))} invited you. '
-                f'<a href="{esc(v["unsubscribe_url"])}" style="color:#6F5B37">Stop event emails</a>.<br>')
+                f'<a href="{esc(v["unsubscribe_url"])}" style="color:#87651C">Stop event emails</a>.<br>')
         text += f"\n\nStop event emails: {v['unsubscribe_url']}"
     return {"subject": subject, "html": wrap(inner, preheader=subject, footer_note=note), "text": text,
             "audience": t["audience"], "key": key}

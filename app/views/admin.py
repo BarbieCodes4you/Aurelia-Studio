@@ -205,9 +205,10 @@ def launch_checks() -> list:
     if re.match(r"^https?://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
         out.append(("error" if not config.DEBUG else "info",
                     f"Links in emails and payment returns point to {config.BASE_URL}. Set BASE_URL to your public address, "
-                    "e.g. https://aureliastudio.co.za."))
+                    "e.g. https://aureliastudios.co.za."))
     elif config.BASE_URL.endswith(".up.railway.app"):
-        out.append(("info", f"Using Railway's address ({config.BASE_URL}). When your own domain is connected, set BASE_URL to it."))
+        out.append(("info", f"Using Railway's address ({config.BASE_URL}). Once aureliastudios.co.za shows as active in Railway, "
+                            "set BASE_URL=https://aureliastudios.co.za (deploy guide, part 3)."))
     if config.ADMIN_PASSWORD:
         out.append(("warn", "Delete the ADMIN_PASSWORD variable now that you can sign in. Your account keeps its password."))
     if config.EMAIL_PROVIDER == "outbox":

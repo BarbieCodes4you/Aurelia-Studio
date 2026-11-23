@@ -1,6 +1,6 @@
 # Aurelia Studio: complete project and hosting guide
 
-Generated 2026-11-19 from the working project. **79 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-23 from the working project. **80 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -492,6 +492,8 @@ is manual today, by design).
 | POST | `/dashboard/events/<uid>/settings/admins` | dashboard |
 | POST | `/dashboard/events/<uid>/settings/admins/<int:user_id>/remove` | dashboard |
 | POST | `/dashboard/events/<uid>/settings/delete` | dashboard |
+| GET | `/robots.txt` | marketing |
+| GET | `/sitemap.xml` | marketing |
 | GET | `/healthz` | marketing |
 | GET | `/` | marketing |
 | GET | `/weddings` | marketing |
@@ -539,6 +541,7 @@ is manual today, by design).
 - `GO-LIVE-GUIDE.md`
 - `PROJECT-LOG.md`
 - `README.md`
+- `START-HERE.md`
 - `railway.json`
 - `run.py`
 - `wsgi.py`
@@ -626,11 +629,12 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=6dd35d813eacef35474db25ea19fe0d2587e544b3b39a62c3e572bf3ee9e4afc nl=1 -->
+<!-- FILE: .env.example sha256=f49e3c7c4291785df6613a42c4fd694bc89a508a63df614d60c23da3e55c9e42 nl=1 -->
 ```
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
 BASE_URL=http://127.0.0.1:8040      # public address, used in emails and payment callbacks (on Railway: Railway's domain until you set yours)
+# Live: BASE_URL=https://aureliastudios.co.za  (www. and the Railway address then redirect there; CANONICAL_REDIRECT=0 turns that off)
 SECRET_KEY=                         # optional: if empty, a random key is created once and kept in the data folder
 # TRUST_PROXY=0                     # 1 behind a reverse proxy you control; on by itself on Railway
 # AURELIA_DATA_DIR=./data           # database, uploads, email outbox
@@ -648,7 +652,7 @@ VAT_NUMBER=                         # shown on tax invoices
 
 # Email: outbox (dev, writes files to data/outbox), resend, or smtp. On Railway use resend (SMTP is blocked on Hobby).
 EMAIL_PROVIDER=outbox
-EMAIL_FROM=Aurelia Studio <no-reply@aurelia.example>
+EMAIL_FROM=Aurelia Studio <no-reply@aurelia.example>   # live: Aurelia Studio <invites@aureliastudios.co.za>
 EMAIL_REPLY_TO=
 RESEND_API_KEY=
 SMTP_HOST=
@@ -681,7 +685,7 @@ SCHEDULER_IN_WSGI=0                 # wsgi.py only; prefer cron: python3 run.py 
 
 ### `.gitignore`
 
-<!-- FILE: .gitignore sha256=b97afeeda15bb3a0be013244b28d27a0c220f30379f8d7f27fdd8c7ed4786a0f nl=1 -->
+<!-- FILE: .gitignore sha256=6af2dd97fb5946f9425be0b4f3fcaa48b571852d2b44ab9084eada631482d538 nl=1 -->
 ```
 __pycache__/
 *.pyc
@@ -690,11 +694,12 @@ data/
 .DS_Store
 preview_build/
 dist/
+*.zip
 ```
 
 ### `DEPLOY-RAILWAY.md`
 
-<!-- FILE: DEPLOY-RAILWAY.md sha256=fab90f54948c5b7c84e5cf6ebe825d3cabe495bc94e6718f256bcacf447e3440 nl=1 -->
+<!-- FILE: DEPLOY-RAILWAY.md sha256=7e62c57f04c4956b6dbea74f6b0bd5a5577240711068fea9c30c523b733870bc nl=1 -->
 ````markdown
 # Aurelia Studio: launch on Railway with your own domain
 
@@ -745,27 +750,41 @@ ALLOW_SANDBOX_PAYMENTS=1
 7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
    (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
 
-## Part 3: your domain
+## Part 3: your domain, aureliastudios.co.za
 
-1. **Buy the domain** at a South African registrar (for a `.co.za`, e.g. Domains.co.za, Afrihost or
-   Xneelo). Compare yearly prices; you only need the domain, not their hosting or email.
-2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain
-   (`aureliastudio.co.za`, without www) at it; Cloudflare can. Sign up at **cloudflare.com** → **Add a
-   site** → your domain → Free plan. Cloudflare gives you two **nameservers**.
-3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours.
-4. In Railway: service → Settings → Networking → **Custom Domain** → add `aureliastudio.co.za`, then add
-   `www.aureliastudio.co.za` too. For each, Railway shows the DNS record to create.
-5. In Cloudflare → DNS → **Add record** exactly as Railway shows (usually a CNAME; for the bare domain use
-   name `@`). Set the cloud icon to **DNS only** (grey) so Railway can issue the HTTPS certificate.
-6. When Railway shows both domains as active, add the variable **`BASE_URL=https://aureliastudio.co.za`**, so
-   links in emails and payment returns use your domain.
+1. **Own the domain.** `aureliastudios.co.za` is registered at a South African registrar (for example
+   Domains.co.za, Afrihost or Xneelo). You only need the domain, not their hosting or email.
+2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain (without
+   www) at it, and Cloudflare can. Sign up at **cloudflare.com** → **Add a site** → `aureliastudios.co.za`
+   → Free plan. Cloudflare gives you two **nameservers**.
+3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours;
+   Cloudflare emails you when it's done.
+4. In Railway: click the service → **Settings → Networking → Custom Domain** → add `aureliastudios.co.za`,
+   then add `www.aureliastudios.co.za` too. For each one Railway shows a **target** (it ends in
+   `.up.railway.app`), and sometimes a TXT record to prove you own the domain.
+5. In Cloudflare → **DNS → Records → Add record**, create exactly what Railway shows:
+
+   | Type  | Name  | Target / content                                    | Proxy status         |
+   | ----- | ----- | --------------------------------------------------- | -------------------- |
+   | CNAME | `@`   | the target Railway shows for `aureliastudios.co.za`  | **DNS only** (grey)  |
+   | CNAME | `www` | the target Railway shows for `www.aureliastudios.co.za` | **DNS only** (grey) |
+   | TXT   | as Railway shows | as Railway shows (only if Railway lists one) | n/a            |
+
+   "DNS only" matters: it lets Railway issue the HTTPS certificate.
+6. Wait until Railway shows both domains with a green tick. That usually takes minutes, sometimes an hour.
+7. Railway → **Variables** → add **`BASE_URL=https://aureliastudios.co.za`**. After the redeploy:
+   - links in emails, receipts and payment returns use `https://aureliastudios.co.za`;
+   - anyone who opens `www.aureliastudios.co.za` or the `.up.railway.app` address is sent to
+     `https://aureliastudios.co.za` automatically. Only page views move; payment notifications, forms
+     and the health check are never redirected.
+8. Ask Claude to check the domain: it opens the site, the www redirect and a sample page.
 
 ## Part 4: email (Resend)
 
 Railway's Hobby plan blocks ordinary email sending (SMTP), so the platform sends through Resend's
 secure web connection instead.
 
-1. Sign up at **resend.com** → **Domains → Add domain** → your domain.
+1. Sign up at **resend.com** → **Domains → Add domain** → `aureliastudios.co.za`.
 2. Add the DNS records Resend lists in Cloudflare (DNS only). Wait for Resend to show "Verified".
 3. **API Keys → Create** (sending access) and copy it.
 4. Railway variables:
@@ -773,7 +792,7 @@ secure web connection instead.
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=<the key from Resend>
-EMAIL_FROM=Aurelia Studio <invites@aureliastudio.co.za>
+EMAIL_FROM=Aurelia Studio <invites@aureliastudios.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -976,12 +995,102 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=3d8669b098d1392334ef221e98281dcb0b30c896cd5335978666193682ec222a nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=12417fb8a04f2f571ef4417af1f902c3b66fbd60f29d51f3b16eb79c891c6662 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-25: golden-moment colours, new logo, aureliastudios.co.za
+
+**Changes**
+- Colours follow the name (Aurelia, the golden moment): warm white and ivory with charcoal text, and a
+  classic light gold for the calls to action (glossy, dark text, a soft gold glow). Gold accents stay
+  restrained: links and small labels in deeper gold, lines and rings in light metallic gold. Dark mode
+  is espresso with gold. The liquid-glass shapes (glass, capsule header, glossy buttons) stay.
+- On pricing, only the recommended package's button is gold, so it is the obvious choice.
+- Logo: the two rings are light gold, with a sparkle where they meet (the moment) and a small glint;
+  "STUDIO" is set in gold. The browser icon shows the mark in gold on a dark tile.
+- Emails, notifications and PDF reports use the same palette; the email header shows a gold sparkle.
+- Domain: aureliastudios.co.za everywhere (guides, admin launch checks, previews). Once BASE_URL is set
+  to it, page views on www. or on the Railway address redirect there (301); payment notifications,
+  forms and the health check are never redirected. CANONICAL_REDIRECT=0 turns this off.
+- The deploy guide's part 3 lists the exact Railway and Cloudflare records for this domain.
+
+**Checked**
+- 111 tests pass (new: redirects to the domain, and nothing redirected before BASE_URL is set).
+  Contrast meets WCAG AA in light and dark mode. Checked on desktop and phone, light and dark.
+
+**Waiting on**
+- The domain doesn't answer yet. Connect it with the deploy guide, part 3, then set BASE_URL.
+
+## 2026-11-24: liquid-glass look
+
+**Changes**
+- The site and the app take an iOS-style "liquid glass" look: a pearl-grey base with white cells
+  and soft shadows, frosted glass with a bright rim, and graphite capsule buttons with a glossy top
+  edge and a light sweep on hover. Dark mode is near-black with luminous glass and pearl buttons.
+- Gold is now a thread rather than a fill: the logo (champagne and silver), the line under section
+  headings, the seating and RSVP rings, and a few small icons and links. The serif keyword has a
+  champagne-steel-rose sheen.
+- The header turns into a floating glass capsule when you scroll. Heroes have a soft pearl light
+  field with a fine grain, and the glow drifts slowly (still when reduced motion is on).
+- Checkboxes, radios and switches are graphite (pearl in dark mode), with stronger outlines when off.
+- Emails and PDF reports follow the new palette.
+- Fixed: the hidden "Skip to content" link took 48px at the top of every page.
+- Layout, pages and behaviour are unchanged. Event-website templates keep their own designs.
+
+**Checked**
+- 108 tests pass. Text contrast meets WCAG AA in light and dark mode. Checked on desktop and phone,
+  light and dark: home, pricing, templates, FAQ, sign-up, wizard, dashboard, guests, seating, admin,
+  mobile menu and a sample email.
+
+## 2026-11-23: golden-thread colours
+
+**Changes**
+- The site's colours move from lilac and pastel to a "golden thread": warm ivory and ink, with a muted
+  antique gold used sparingly (logo, links, checked controls, the serif keyword, the thin line under
+  headings). Buttons have a pale champagne sheen with dark text. Dark mode is warm charcoal with gold.
+- The same palette is applied to the logo, favicon, emails, notifications and PDF reports.
+- The home page now features Champagne, Atelier and Heritage first; the large sample is Champagne.
+- Layout, pages, behaviour and phone layouts are unchanged. Event-website templates keep their own
+  palettes.
+
+**Checked**
+- 108 tests pass. Text contrast meets WCAG AA in light and dark mode.
+
+## 2026-11-19 (evening): sign-up, previews, VAT, honest claims
+
+**Changes**
+- Sign-up asks for a password, both on `/register` and on the "Create your event" page. Sign-in links
+  stay as a second way in.
+- Unpaid previews (shared draft links and the organiser's own preview) show a striped "Preview only:
+  not published" strip and a watermark across the page, also when printed. The organiser's strip has
+  a "Pay to publish" button.
+- VAT is only mentioned once `VAT_NUMBER` is set. Until then, prices don't say "VAT incl." and receipts
+  are titled "Receipt", not "Tax invoice". Only VAT-registered businesses may charge VAT.
+- "Most chosen" became "Recommended" (no sales yet), and "Ten distinct designs" became "Eleven".
+- `/robots.txt` and `/sitemap.xml` added. Event websites, dashboards and admin are kept out of search.
+
+**Checked**
+- 108 tests pass.
+
+**Waiting on**
+- Stock photos for the templates. Fetching them from Unsplash was blocked in the cloud session.
+  Either allow it, or download photos and add them with `tools/add_photos.py`.
+
+## 2026-11-19 (later): moved into the GitHub repository
+
+**Changes**
+- The project and its full history are now on GitHub at `BarbieCodes4you/Aurelia-Studio`, and work
+  continues from there. `START-HERE.md` lists the links, the guides and the launch checklist.
+
+**Checked**
+- 106 tests pass after the move.
+
+**Waiting on**
+- Railway: deploy from the repository (`DEPLOY-RAILWAY.md`, Part 2).
 
 ## 2026-11-19: fewer Railway settings, launch checks
 
@@ -1207,7 +1316,7 @@ The 21 pain points from the journey review, fixed in both the hosted app and the
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=13780e97329014d5dbe38af4fbee5ffac4102de47e4dad6695250c2caffce7db nl=1 -->
+<!-- FILE: README.md sha256=31ff404a31c2a390689cbd051380ba9a64612d41b628d27889d456686a77c8c5 nl=1 -->
 ````markdown
 # Aurelia Studio — digital event experience platform
 
@@ -1343,7 +1452,7 @@ confirms each notification with PayFast's validate endpoint. It has been unit-te
 
 ## Still to confirm before launch
 
-- Brand name, domain, company address, VAT number, information officer (support email is invitesaurelia@gmail.com; no phone number is shown)
+- Brand name, company address, VAT number, information officer (the domain is aureliastudios.co.za) (support email is invitesaurelia@gmail.com; no phone number is shown)
   (`.env`; placeholders are marked `[TBC]`).
 - Legal pages (`/privacy`, `/terms`, `/refunds`) are drafts marked for legal review.
 - Customer reviews: the home page section stays hidden until real reviews are added (`TESTIMONIALS`).
@@ -1403,6 +1512,84 @@ test checkout is refused unless `ALLOW_SANDBOX_PAYMENTS=1`.
 The Claude preview server can't read the Desktop, so it runs a copy in the session scratchpad
 (`.claude/launch.json` → `aurelia`). Bash can run `python3 run.py` here directly.
 ````
+
+### `START-HERE.md`
+
+<!-- FILE: START-HERE.md sha256=6cfb34d53bddb29832c2eb98814c68272bef19e53a397be7e8c0fc19ded8166d nl=1 -->
+```markdown
+# Aurelia Studio: start here
+
+Everything for Aurelia Studio now lives in this repository, and future work happens here.
+
+## What this is
+
+A platform where clients choose a template, add their event details, pay once through PayFast and get
+an event website. It covers RSVPs, the guest list, seating, menus, the programme, WhatsApp invitations,
+emails and reports, plus an admin area for us. It runs on Python's standard library, with no packages to
+install, and stores data in SQLite on a disk mounted at `/data`.
+
+## Links
+
+| What | Where |
+| --- | --- |
+| Code (this repository) | https://github.com/BarbieCodes4you/Aurelia-Studio |
+| Preview of the marketing site and templates | https://claude.ai/artifact/UNdUTWgjEoM9xw9M4dLCqT |
+| What a client sees after paying (walkthrough) | https://claude.ai/artifact/17TyBLy7hTbFn9UbuMPuEi |
+| Live site on Railway | https://aurelia-studio-production.up.railway.app |
+| Own domain | **aureliastudios.co.za** (to connect: `DEPLOY-RAILWAY.md`, part 3) |
+
+The two preview links are private until you share them from the page's Share menu.
+
+## Guides in this repository
+
+- `DEPLOY-RAILWAY.md`: **the launch guide**, covering Railway, domain, email and PayFast, step by step
+- `PROJECT-LOG.md`: decisions, changes and open items, newest first
+- `README.md`: how the code is organised, settings, and what's still to confirm
+- `GO-LIVE-GUIDE.md`: an older, simpler route (static site on Netlify), kept for reference
+- `AURELIA-COMPLETE.md`: the whole project bundled into one file
+
+## Launch checklist
+
+**1. Code on GitHub** ✅ done (19 Nov 2026)
+
+**2. Railway: get it running** (see `DEPLOY-RAILWAY.md` Part 2)
+- [x] New Project → Deploy from GitHub repo → **Aurelia-Studio**
+- [x] Settings → Networking → **Generate Domain**. The domain's port must match `PORT` (8040);
+      a mismatch shows "Application failed to respond".
+- [x] Add a **Volume** with mount path **`/data`**. Without it, all data is lost on every update.
+- [x] Variables → Raw Editor: `PORT=8040`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ALLOW_SANDBOX_PAYMENTS=1`
+- [ ] Sign in at `/login`, open `/admin` and follow **Launch checks**. Delete `ADMIN_PASSWORD` afterwards.
+- [ ] Test the full journey with the test checkout: create an event, pay, see it go live, RSVP as a guest
+
+**3. Domain** (Part 3)
+- [x] Domain chosen: **aureliastudios.co.za**
+- [ ] Point it at Cloudflare (free DNS), then add `aureliastudios.co.za` and `www.aureliastudios.co.za` as
+      Custom Domains in Railway
+- [ ] Set `BASE_URL=https://aureliastudios.co.za` once both show a green tick
+
+**4. Email through Resend** (Part 4)
+- [ ] Verify the domain in Resend and create an API key
+- [ ] Set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_REPLY_TO`
+- [ ] `/admin/emails` → **Send test to me**
+
+**5. PayFast** (Part 5)
+- [ ] Open and verify a merchant account; set a passphrase
+- [ ] Test in sandbox (`PAYFAST_SANDBOX=1`), then switch to live (`PAYFAST_SANDBOX=0`)
+- [ ] **Delete `ALLOW_SANDBOX_PAYMENTS`** so nobody can publish without paying
+
+**6. Before announcing**
+- [ ] Company address, VAT number, information officer (`COMPANY_ADDRESS`, `VAT_NUMBER`,
+      `INFORMATION_OFFICER_EMAIL`)
+- [ ] Legal pages reviewed by someone qualified: `/privacy`, `/terms`, `/refunds`
+- [ ] Package limits checked at `/admin/packages`
+- [ ] Optional: `WHATSAPP_NUMBER`, social links, real customer reviews
+- [ ] First backup downloaded (`/admin` → **Download a backup**), then weekly
+
+## Known gaps (from README)
+
+- Custom domains for Signature clients are advertised, but connecting a client's domain is still manual.
+- Uploads are stored on the Railway volume only. There is no cloud storage yet.
+```
 
 ### `railway.json`
 
@@ -1614,7 +1801,7 @@ def application(environ, start_response):
 
 ### `app/app.py`
 
-<!-- FILE: app/app.py sha256=2a4b1de95d663d3dfa6bdbbe36758d3a731b66899a2ebc2151969c137c218c72 nl=1 -->
+<!-- FILE: app/app.py sha256=83de9eabf290e3885b9ebaa1e948f47e8676cb387d6c0292c06f9d3aba9f58d5 nl=1 -->
 ```python
 """Request dispatch: sessions, CSRF, flash messages, error pages, security headers."""
 from __future__ import annotations
@@ -1633,6 +1820,21 @@ def _load_views() -> None:
     # Importing a views module registers its routes on the shared router.
     from .views import (accounts, admin, dashboard, marketing, media, payments_views,  # noqa: F401
                         public_event, wizard, manage)
+
+
+def _canonical_redirect(req: Request) -> str:
+    """Where to send a visitor who opened the site on www. or on Railway's generated address, once
+    BASE_URL names the site's own domain; "" to serve the request as it is. Only page views (GET and
+    HEAD) move: form posts, payment notifications (/webhooks/) and the health check are never
+    redirected, so nothing in flight is lost."""
+    host = config.CANONICAL_HOST
+    if not host or req.method not in ("GET", "HEAD") or req.path == "/healthz" or req.path.startswith("/webhooks/"):
+        return ""
+    got = (req.headers.get("x-forwarded-host", "") if config.TRUST_PROXY else "") or req.headers.get("host", "")
+    got = got.split(",")[0].strip().lower().split(":")[0]
+    if got and got != host and (got == "www." + host or got.endswith(".up.railway.app")):
+        return config.BASE_URL + req.full_path
+    return ""
 
 
 class App:
@@ -1677,6 +1879,9 @@ class App:
         return resp
 
     def _dispatch(self, req: Request) -> Response:
+        moved = _canonical_redirect(req)
+        if moved:
+            raise Redirect(moved, 301)
         if req.path.startswith("/static/"):
             cache = "no-cache" if config.DEBUG else "public, max-age=86400"
             return serve_file(config.STATIC_DIR, req.path[len("/static/"):], cache)
@@ -2184,7 +2389,7 @@ def limit(event, key: str, default: int = 0) -> int:
 
 ### `app/config.py`
 
-<!-- FILE: app/config.py sha256=3ccdd6d3424d975d53bc3aa3aee579a591af557f62ec0ec0b412bc1346ac7e07 nl=1 -->
+<!-- FILE: app/config.py sha256=29f0d24d0fd6b1c45010daeef71c2b36a7b6e88109533779aa6e0fe487ef6d81 nl=1 -->
 ```python
 """Runtime configuration.
 
@@ -2301,6 +2506,11 @@ DEBUG = APP_ENV != "production"
 ON_RAILWAY = any(env(k) for k in ("RAILWAY_ENVIRONMENT_NAME", "RAILWAY_ENVIRONMENT", "RAILWAY_PROJECT_ID"))
 _RAILWAY_URL = f"https://{env('RAILWAY_PUBLIC_DOMAIN')}" if env("RAILWAY_PUBLIC_DOMAIN") else ""
 BASE_URL = env("BASE_URL", _RAILWAY_URL or "http://127.0.0.1:8040").rstrip("/")
+# The site's own domain (e.g. aureliastudios.co.za), once BASE_URL is set to it. Visitors who arrive on
+# www. or on Railway's generated address are then sent there (page views only; see app._canonical_redirect).
+_BASE_HOST = (BASE_URL.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0]).lower()
+CANONICAL_HOST = (_BASE_HOST if env("BASE_URL") and BASE_URL.startswith("https://")
+                  and not _BASE_HOST.endswith(".up.railway.app") and env_bool("CANONICAL_REDIRECT", True) else "")
 SECRET_KEY = _secret_key()
 DATABASE_PATH = Path(env("DATABASE_PATH", str(DATA_DIR / "aurelia.sqlite3")))
 SESSION_DAYS = env_int("SESSION_DAYS", 14)
@@ -2336,6 +2546,9 @@ PAYFAST_SANDBOX = env_bool("PAYFAST_SANDBOX", True)
 ALLOW_SANDBOX_PAYMENTS = env_bool("ALLOW_SANDBOX_PAYMENTS", DEBUG)
 VAT_RATE = float(env("VAT_RATE", "0.15"))
 VAT_NUMBER = env("VAT_NUMBER", "")                 # [TBC] shown on receipts when set
+# Only a VAT-registered business may charge VAT or issue tax invoices (SARS). Until VAT_NUMBER is set,
+# prices and receipts say nothing about VAT and receipts are plain receipts, not tax invoices.
+VAT_REGISTERED = bool(VAT_NUMBER)
 
 # --- Background jobs --------------------------------------------------------------------
 SCHEDULER_ENABLED = env_bool("SCHEDULER_ENABLED", True)
@@ -3753,7 +3966,7 @@ LAYOUTS = {
 
 ### `app/eventsite/render.py`
 
-<!-- FILE: app/eventsite/render.py sha256=40d7b39689669fea60cb06caac72bf90b0cf6dcf1be366b4574defaab8c78e56 nl=1 -->
+<!-- FILE: app/eventsite/render.py sha256=5d024672fbf74e4fb5d0d7370fe73dca1fdafe5ffb7946ab6825f93300ad76a4 nl=1 -->
 ```python
 """Turn an event (from the database or a demo dict) into a complete event website.
 
@@ -4013,9 +4226,31 @@ def contrast_vars(c: dict) -> str:
         return ""
 
 
+WATERMARK = ("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='300'>"
+             "<text x='260' y='160' text-anchor='middle' transform='rotate(-24 260 150)' font-family='Arial,sans-serif' "
+             "font-size='24' font-weight='700' letter-spacing='3' fill='rgb(128,128,128)' fill-opacity='.26'>"
+             "PREVIEW · NOT PUBLISHED</text></svg>")
+
+
 def banner(ctx) -> str:
     if ctx["mode"] == "preview":
         ev = ctx["ev"]
+        if not ev.get("paid_package"):
+            # Unpaid: an unmissable strip and a watermark over the whole page (on screen and in print),
+            # so a draft can't stand in for the real invitation.
+            from .. import auth
+            req = ctx.get("req")
+            owner = bool(req and getattr(req, "user", None)) and auth.can_manage_event(req.user, ev)
+            pay = (f' <a class="ev-banner__btn" href="/dashboard/events/{esc(ev["uid"])}/setup/8" target="_top">Pay to publish</a>'
+                   if owner else "")
+            if owner:
+                extra = ctx["notice"] + ". " if ctx["notice"].startswith("Personal link") else ""
+                text = extra + "Only you can see this. Guests can open it once you pay and publish."
+            else:
+                text = (ctx["notice"] + ". " if ctx["notice"] else "") + "Guests can't reply until this website is paid for and published."
+            return (f'<div class="ev-banner ev-banner--draft" role="note"><b>Preview only: not published.</b> '
+                    f'<span>{esc(text)}</span>{pay}</div>'
+                    f'<div class="ev-watermark" aria-hidden="true" style="background-image:url(&quot;{WATERMARK}&quot;)"></div>')
         status = "Draft" if ev.get("status") == "draft" else events.STATUS_LABELS.get(ev.get("status"), "")
         return (f'<div class="ev-banner" role="note">Preview · {esc(status)} · not visible to guests'
                 f'{(" · " + esc(ctx["notice"])) if ctx["notice"] else ""}</div>')
@@ -4760,7 +4995,7 @@ UPDATE seating_tables SET pos_y = ROUND(pos_y * 6.4);
 
 ### `app/notify.py`
 
-<!-- FILE: app/notify.py sha256=6d0e2a236554d2cf9e1b695559f638209e43ce57a7f5afe8c5bdf247f2577ae0 nl=1 -->
+<!-- FILE: app/notify.py sha256=c33c8f74469890286cbdfe8a4136383661d455b5d1964b6793277a0e917c606a nl=1 -->
 ```python
 """Common email variables and organiser/guest notification helpers."""
 from __future__ import annotations
@@ -4844,7 +5079,7 @@ def summary_table_html(stats: dict) -> str:
             ("Still to reply", stats["pending"]), ("Plus-ones", stats["plus_ones"]), ("Children", stats["children"]),
             ("Total headcount", stats["headcount"])]
     cells = "".join(
-        f"<tr><td style='padding:8px 0;border-bottom:1px solid #EEE;color:#625D5E'>{esc(k)}</td>"
+        f"<tr><td style='padding:8px 0;border-bottom:1px solid #EEE;color:#6A6152'>{esc(k)}</td>"
         f"<td style='padding:8px 0;border-bottom:1px solid #EEE;text-align:right;font-weight:600'>{v}</td></tr>"
         for k, v in rows)
     return f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{cells}</table>"
@@ -4853,9 +5088,9 @@ def summary_table_html(stats: dict) -> str:
 def steps_html(steps) -> str:
     """Numbered (title, why, url, link text) steps for the "Next steps" email."""
     rows = "".join(
-        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#6A4FC4'>{n}</td>"
-        f"<td style='padding:0 0 18px;vertical-align:top'><b>{esc(t)}</b><br><span style='color:#625D5E'>{esc(w)}</span><br>"
-        f"<a href='{esc(url)}' style='color:#5B3FC4;font-weight:600'>{esc(link)}</a></td></tr>"
+        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#87651C'>{n}</td>"
+        f"<td style='padding:0 0 18px;vertical-align:top'><b>{esc(t)}</b><br><span style='color:#6A6152'>{esc(w)}</span><br>"
+        f"<a href='{esc(url)}' style='color:#87651C;font-weight:600'>{esc(link)}</a></td></tr>"
         for n, (t, w, url, link) in enumerate(steps, 1))
     return f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{rows}</table>"
 
@@ -4879,7 +5114,7 @@ def rsvp_details_html(ev, g) -> str:
         parts.append(("Note", g["special_requests"]))
     if not parts:
         return ""
-    cells = "".join(f"<tr><td style='padding:6px 12px 6px 0;color:#625D5E'>{esc(k)}</td><td style='padding:6px 0'>{esc(v)}</td></tr>"
+    cells = "".join(f"<tr><td style='padding:6px 12px 6px 0;color:#6A6152'>{esc(k)}</td><td style='padding:6px 0'>{esc(v)}</td></tr>"
                     for k, v in parts)
     return f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{cells}</table>"
 
@@ -5146,7 +5381,7 @@ def run() -> None:
 
 ### `app/services/email.py`
 
-<!-- FILE: app/services/email.py sha256=d13d177517d2da175512dae93e64660e4c4feb4a9cbea3fd4eba184fdae7d71c nl=1 -->
+<!-- FILE: app/services/email.py sha256=2925efd540667fe2e3077d6fdae83bd3e60dccd5c837893b38de8d6ec240d62f nl=1 -->
 ```python
 """Email delivery behind a provider interface, with editable templates and a delivery log.
 
@@ -5302,8 +5537,8 @@ def render_body(body: str, vars: dict) -> tuple[str, str]:
         if m:
             label, href = fill(m.group(1), vars, True), fill(m.group(2), vars, False).strip()
             html_parts.append(
-                f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 22px"><tr><td style="border-radius:999px;background:#CDBFF4;background-image:linear-gradient(180deg,#E4DBFB,#CDBFF4 52%,#BBA9EE)">'
-                f'<a href="{esc(href)}" style="display:inline-block;padding:14px 26px;color:#231A3E;font:600 15px/1 Helvetica,Arial,sans-serif;text-decoration:none;border-radius:999px">{label}</a></td></tr></table>')
+                f'<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 22px"><tr><td style="border-radius:999px;background:#EDCF86;background-image:linear-gradient(180deg,#F8E7B9,#EDCF86 48%,#DDB563)">'
+                f'<a href="{esc(href)}" style="display:inline-block;padding:14px 26px;color:#2A1F0A;font:600 15px/1 Helvetica,Arial,sans-serif;text-decoration:none;border-radius:999px">{label}</a></td></tr></table>')
             text_parts.append(f"{fill(m.group(1), vars, False)}: {href}")
             continue
         filled_html = fill(block, vars, True)
@@ -5324,17 +5559,17 @@ def wrap(inner: str, preheader: str = "", footer_note: str = "") -> str:
     brand = esc(config.BRAND_NAME)
     return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta name="color-scheme" content="light"><title>{brand}</title></head>
-<body style="margin:0;padding:0;background:#F8F6FC">
+<body style="margin:0;padding:0;background:#FBF8F2">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0">{esc(preheader)}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F6FC"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF8F2"><tr><td align="center" style="padding:32px 16px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px">
-<tr><td style="padding:0 8px 18px;font:italic 400 26px/1 Georgia,'Times New Roman',serif;color:#221C33">
-<span style="color:#8B73D8">&#9675;&#9675;</span>&nbsp;{brand}</td></tr>
-<tr><td style="background:#ffffff;border:1px solid #E7E1F2;border-radius:20px;padding:32px 30px;font:400 16px/1.6 Helvetica,Arial,sans-serif;color:#221C33">
-<div style="height:2px;width:48px;margin:0 0 24px;background:linear-gradient(96deg,#B8A4F0,#F2A7C3,#F5C09A);border-radius:2px"></div>
+<tr><td style="padding:0 8px 18px;font:italic 400 26px/1 Georgia,'Times New Roman',serif;color:#1F1A12">
+<span style="color:#C99A3C">&#10022;</span>&nbsp;{brand}</td></tr>
+<tr><td style="background:#ffffff;border:1px solid #EDE4D2;border-radius:20px;padding:32px 30px;font:400 16px/1.6 Helvetica,Arial,sans-serif;color:#1F1A12">
+<div style="height:2px;width:48px;margin:0 0 24px;background:linear-gradient(96deg,#C99A3C,#EBCB7E,#C99A3C);border-radius:2px"></div>
 {inner}</td></tr>
-<tr><td style="padding:20px 10px;font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#625B74;text-align:center">
-{footer_note}{brand} · {esc(config.COMPANY_ADDRESS)} · <a href="mailto:{esc(config.SUPPORT_EMAIL)}" style="color:#5A44A3">{esc(config.SUPPORT_EMAIL)}</a></td></tr>
+<tr><td style="padding:20px 10px;font:400 12px/1.6 Helvetica,Arial,sans-serif;color:#6A6152;text-align:center">
+{footer_note}{brand} · {esc(config.COMPANY_ADDRESS)} · <a href="mailto:{esc(config.SUPPORT_EMAIL)}" style="color:#87651C">{esc(config.SUPPORT_EMAIL)}</a></td></tr>
 </table></td></tr></table></body></html>"""
 
 
@@ -5353,7 +5588,7 @@ def compose(key: str, vars: dict, subject_override: str = "", body_override: str
     note = ""
     if t["audience"] == "guest" and v.get("unsubscribe_url"):
         note = (f'You received this because {esc(v.get("hosts", "the host"))} invited you. '
-                f'<a href="{esc(v["unsubscribe_url"])}" style="color:#5A44A3">Stop event emails</a>.<br>')
+                f'<a href="{esc(v["unsubscribe_url"])}" style="color:#87651C">Stop event emails</a>.<br>')
         text += f"\n\nStop event emails: {v['unsubscribe_url']}"
     return {"subject": subject, "html": wrap(inner, preheader=subject, footer_note=note), "text": text,
             "audience": t["audience"], "key": key}
@@ -5756,7 +5991,7 @@ def vat_breakdown(amount_cents: int) -> tuple[int, int]:
 
 ### `app/services/pdf.py`
 
-<!-- FILE: app/services/pdf.py sha256=fbc3b1815a7faf7d2c218236b52dc68966b21d2ab9bd61f965c921f1d2a608fc nl=1 -->
+<!-- FILE: app/services/pdf.py sha256=497ed935fbe775b4fdfd84cf8c1bf03fd4d77ebe2e1b39fc2dc4bf67d387ef9d nl=1 -->
 ```python
 """A small hand-written PDF 1.4 writer for reports.
 
@@ -5780,11 +6015,11 @@ CONTENT_W = PAGE_W - 2 * MARGIN
 TOP = PAGE_H - MARGIN
 BOTTOM = MARGIN + 28          # leave room for the footer
 
-INK = (0.133, 0.110, 0.200)        # #221C33
-MUTED = (0.384, 0.357, 0.455)      # #625B74
-GOLD = (0.545, 0.451, 0.847)       # accent rule, lilac #8B73D8
-LINE = (0.886, 0.863, 0.933)       # #E2DCEE
-FILL = (0.961, 0.949, 0.988)       # #F5F2FC
+INK = (0.122, 0.102, 0.071)        # #1F1A12
+MUTED = (0.416, 0.380, 0.322)      # #6A6152
+GOLD = (0.788, 0.604, 0.235)       # accent rule, gold #C99A3C
+LINE = (0.929, 0.894, 0.824)       # #EDE4D2
+FILL = (0.984, 0.961, 0.910)       # #FBF5E8
 
 _REG = [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278] + [556] * 10 + \
        [278, 278, 584, 584, 584, 556, 1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778,
@@ -7428,7 +7663,7 @@ def guess_kind(title: str) -> str:
 
 ### `app/views/accounts.py`
 
-<!-- FILE: app/views/accounts.py sha256=cd7707e80f54d4eabe8487d6bd1b5d02e3dcfd6b5bb7feba5ca4dfb509531f6f nl=1 -->
+<!-- FILE: app/views/accounts.py sha256=5fd22598e679b2d166faef0312526b64e5374d64e376e5489bf999b0bf8367cb nl=1 -->
 ```python
 """Registration, login, logout, password reset, email verification and the account page."""
 from __future__ import annotations
@@ -7482,6 +7717,28 @@ def send_verification(user) -> None:
               user_id=user["id"])
 
 
+# --- new passwords (sign-up here and on /create) -------------------------------------------------
+PASSWORD_HINT = "At least 10 characters, with upper- and lower-case letters and a number."
+
+
+def _check_new_password(f, pw, confirm, email) -> None:
+    if not pw:
+        f.error("password", "Choose a password for your account.")
+        return
+    for p in auth.password_problems(pw, email):
+        f.error("password", p)
+        break
+    if confirm != pw:
+        f.error("password_confirm", "The passwords don't match.")
+
+
+def new_password_fields(f) -> str:
+    return (field("password", "Password", "", type="password", required=True, errors=f.errors, hint=PASSWORD_HINT,
+                  attrs={"autocomplete": "new-password"})
+            + field("password_confirm", "Confirm password", "", type="password", required=True, errors=f.errors,
+                    attrs={"autocomplete": "new-password"}))
+
+
 # --- register --------------------------------------------------------------------------------
 @router.route("/register", methods=("GET", "POST"))
 def register(req):
@@ -7497,18 +7754,13 @@ def register(req):
         name = f.text("name", "Your name", required=True, max=120, min=2)
         email = f.email("email", required=True)
         pw = req.get("password")
-        if pw:
-            for p in auth.password_problems(pw, email):
-                f.error("password", p)
-                break
-        if pw and req.get("password_confirm") != pw:
-            f.error("password_confirm", "The passwords don't match.")
+        _check_new_password(f, pw, req.get("password_confirm"), email)
         if not f.flag("terms"):
             f.error("terms", "Please accept the terms and privacy notice to create an account.")
         if email and not f.errors.get("email") and db.one("SELECT 1 FROM users WHERE email = ?", (email,)):
             f.error("email", "An account with this email already exists. Log in or reset your password.")
         if f.ok:
-            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw) if pw else "",
+            uid = db.insert("users", {"email": email, "name": name, "password_hash": auth.hash_password(pw),
                                       "role": "customer", "marketing_consent": 1 if req.get("marketing") else 0,
                                       "created_at": db.now()})
             user = db.one("SELECT * FROM users WHERE id = ?", (uid,))
@@ -7523,10 +7775,7 @@ def register(req):
 {errors_summary(f.errors)}
 {field("name", "Your name", d.get("name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("email", "Email", d.get("email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}
-<details class="box" style="padding:14px 16px"{" open" if ("password" in f.errors or "password_confirm" in f.errors) else ""}><summary class="small" style="cursor:pointer">Set a password (optional)</summary>
-<p class="hint" style="margin:8px 0 12px">Without one, we email you a sign-in link whenever you need it.</p>
-{field("password", "Password", "", type="password", errors=f.errors, hint="At least 10 characters, with upper- and lower-case letters and a number.", attrs={"autocomplete": "new-password"})}
-{field("password_confirm", "Confirm password", "", type="password", errors=f.errors, attrs={"autocomplete": "new-password"})}</details>
+{new_password_fields(f)}
 <div class="field{' has-error' if 'terms' in f.errors else ''}">{forms.check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(d.get("terms")))}</div>
 {forms.check("marketing", "Send me occasional tips and new templates (optional).", bool(req.get("marketing")))}
 <button class="btn btn--primary btn--lg btn--block" type="submit">Create account {i("arrow", "i--arrow")}</button></form>"""
@@ -7797,7 +8046,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=ea5fa9feca4716992753dac21dd7c3103acf9c0800b531d43b223151d36bdf00 nl=1 -->
+<!-- FILE: app/views/admin.py sha256=0c60654924e189279e8ed6493ad1e46ec3b12cdb7498230a11a34240d3ccf6d4 nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -8006,9 +8255,10 @@ def launch_checks() -> list:
     if re.match(r"^https?://(127\.0\.0\.1|localhost)\b", config.BASE_URL):
         out.append(("error" if not config.DEBUG else "info",
                     f"Links in emails and payment returns point to {config.BASE_URL}. Set BASE_URL to your public address, "
-                    "e.g. https://aureliastudio.co.za."))
+                    "e.g. https://aureliastudios.co.za."))
     elif config.BASE_URL.endswith(".up.railway.app"):
-        out.append(("info", f"Using Railway's address ({config.BASE_URL}). When your own domain is connected, set BASE_URL to it."))
+        out.append(("info", f"Using Railway's address ({config.BASE_URL}). Once aureliastudios.co.za shows as active in Railway, "
+                            "set BASE_URL=https://aureliastudios.co.za (deploy guide, part 3)."))
     if config.ADMIN_PASSWORD:
         out.append(("warn", "Delete the ADMIN_PASSWORD variable now that you can sign in. Your account keeps its password."))
     if config.EMAIL_PROVIDER == "outbox":
@@ -8564,7 +8814,7 @@ def _package_form(req, p, errors: dict, values: Optional[dict] = None) -> str:
     return f"""{errors_summary(errors)}<form method="post" class="form">{csrf(req)}
 <section class="box"><div class="box__head"><h2>Details</h2></div><div class="form">
 <div class="form-row form-row--2">{field("name", "Name", v.get("name", p["name"]), required=True, errors=errors)}
-{field("price", "Price (Rand, VAT inclusive)", price, required=True, errors=errors, hint="For example 12999 or 12 999.00", attrs={"inputmode": "decimal"})}</div>
+{field("price", "Price in Rand (what the client pays)", price, required=True, errors=errors, hint="For example 12999 or 12 999.00", attrs={"inputmode": "decimal"})}</div>
 {field("tagline", "Tagline", v.get("tagline", p["tagline"]), errors=errors)}
 <div class="form-row form-row--3">{field("rank", "Rank (upgrade order)", v.get("rank", p["rank"]), type="number", errors=errors, attrs={"min": 0, "max": 100})}
 <div class="field"><span class="label">Visibility</span>{switch("active", "Show on pricing page", bool(v.get("active", p["active"])))}</div>
@@ -10027,7 +10277,7 @@ def slugify(text: str, max_len: int = 60) -> str:
 
 ### `app/views/layout.py`
 
-<!-- FILE: app/views/layout.py sha256=7387adc8c897bfbdd6bdb7ceefb4bb1dc0a984e06ce2e0f2dc8d90630707f74f nl=1 -->
+<!-- FILE: app/views/layout.py sha256=0ba63b8148374aaebc58bf6310106a01a151afcadf0dc284dca91d1b99404484 nl=1 -->
 ```python
 """Page shells: the marketing site (header, drawer, footer), the app shell (dashboard and admin),
 toasts, and the error page."""
@@ -10047,9 +10297,11 @@ if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t
 document.documentElement.classList.add('js');})();</script>"""
 
 BRAND_MARK = """<svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#9F87E6"/><stop offset=".5" stop-color="#E58DB3"/><stop offset="1" stop-color="#F0A77E"/></linearGradient></defs>
+<stop offset="0" stop-color="#E9C977"/><stop offset=".5" stop-color="#C29433"/><stop offset="1" stop-color="#E2BC66"/></linearGradient>
+<linearGradient id="bs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F3D98F"/><stop offset="1" stop-color="#C08F2E"/></linearGradient></defs>
 <circle cx="12" cy="16" r="8.2" fill="none" stroke="url(#bm)" stroke-width="2"/><circle cx="20" cy="16" r="8.2" fill="none" stroke="url(#bm)" stroke-width="2"/>
-<circle cx="16" cy="16" r="1.8" fill="#8B73D8"/></svg>"""
+<path d="M16 12.8c.32 1.92 1.28 2.88 3.2 3.2-1.92.32-2.88 1.28-3.2 3.2-.32-1.92-1.28-2.88-3.2-3.2 1.92-.32 2.88-1.28 3.2-3.2z" fill="url(#bs)"/>
+<path d="M27 4.4c.16.96.64 1.44 1.6 1.6-.96.16-1.44.64-1.6 1.6-.16-.96-.64-1.44-1.6-1.6.96-.16 1.44-.64 1.6-1.6z" fill="url(#bs)" opacity=".85"/></svg>"""
 
 NAV = [
     ("Weddings", "/weddings"),
@@ -10076,7 +10328,7 @@ def head(title: str, description: str = "", extra: str = "", noindex: bool = Fal
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(full)}</title>
 <meta name="description" content="{esc(desc)}">{robots}
 <meta property="og:title" content="{esc(full)}"><meta property="og:description" content="{esc(desc)}">
-<meta name="theme-color" content="#F8F6FC">
+<meta name="theme-color" content="#FBF8F2">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
@@ -10139,7 +10391,7 @@ def footer() -> str:
 <div><h3>Events</h3><ul><li><a href="/weddings">Weddings</a></li><li><a href="/baby-celebrations">Baby celebrations</a></li><li><a href="/parties">Parties</a></li><li><a href="/celebrations">Other events</a></li></ul></div>
 <div><h3>Platform</h3><ul><li><a href="/templates">Templates</a></li><li><a href="/pricing">Pricing</a></li><li><a href="/how-it-works">How it works</a></li><li><a href="/help-me-set-up">We'll set it up for you</a></li><li><a href="/faq">FAQ</a></li></ul></div>
 <div><h3>Company</h3><ul><li><a href="/contact">Contact &amp; support</a></li><li><a href="/privacy">Privacy (POPIA)</a></li><li><a href="/terms">Terms of service</a></li><li><a href="/refunds">Refund policy</a></li></ul></div></div>
-<div class="footer-bottom"><span>© {year} {esc(config.BRAND_NAME)}. Prices in South African Rand, VAT inclusive.</span><div class="socials">{social}</div></div>
+<div class="footer-bottom"><span>© {year} {esc(config.BRAND_NAME)}. Prices in South African Rand{', VAT inclusive' if config.VAT_REGISTERED else ''}.</span><div class="socials">{social}</div></div>
 <div class="wordmark-giant" aria-hidden="true"><span>A</span>urelia</div></div></footer>{chat}"""
 
 
@@ -11662,7 +11914,7 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=17f7608e858cee9f6a0a9fca1fe6437077a519bb924e35baee5a4c62b4b73a60 nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=5893c2fef531e513a1ebcbbca310cb3c98cf64b0841c8718e895c678c05343ca nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
@@ -11742,11 +11994,11 @@ def price_cards(highlight_cta: bool = True) -> str:
         lim = "".join(
             f'<div><span>{esc(label)}</span><b>{esc(limits.get(k, "-")) if limits.get(k, 0) else "Not included"}</b></div>'
             for k, label in catalog.LIMIT_LABELS.items())
-        badge = '<span class="price__badge">Most chosen</span>' if p["highlight"] else ""
+        badge = '<span class="price__badge">Recommended</span>' if p["highlight"] else ""
         btn = "btn--primary" if p["highlight"] else "btn--secondary"
         out.append(f"""<article class="price{' price--highlight' if p['highlight'] else ''}" data-reveal>{badge}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>once-off, VAT incl.</small></div>
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>once-off{', VAT incl.' if config.VAT_REGISTERED else ''}</small></div>
 <ul>{items}</ul><div class="price__limits">{lim}</div>
 <a class="btn {btn} btn--block" href="/create?package={esc(p['code'])}">Choose {esc(p['name'].split()[0])}</a></article>""")
     return f'<div class="price-grid" data-stagger>{"".join(out)}</div>'
@@ -11762,7 +12014,7 @@ FAQ = [
     ("Can I change details after publishing?",
      "Any time. Update the venue, programme, menu or wording from your dashboard and the website changes immediately. You can also email guests about the update."),
     ("How do payments work?",
-     "Pay securely by card or instant EFT through a South African payment gateway. Your website goes live only after the gateway confirms the payment, and you receive a VAT receipt."),
+     "Pay securely by card or instant EFT through a South African payment gateway. Your website goes live only after the gateway confirms the payment, and you receive a receipt by email."),
     ("How do you handle my guests' personal information?",
      "Guest details are private to your event, protected by your login and never sold or used for marketing. We process them under POPIA on your behalf, and guests can opt out of event emails at any time."),
     ("Can I send invitations on WhatsApp?",
@@ -11818,7 +12070,7 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 </div>"""
 
 FEATURES = [
-    ("globe", "A website for your event", "Ten distinct designs, made mobile-first, filled with your details and photos."),
+    ("globe", "A website for your event", "Eleven distinct designs, made for phones first and filled with your details and photos."),
     ("check", "RSVPs that count themselves", "Attending, declined and pending at a glance, with plus-ones, children and meal choices."),
     ("users", "Guest list and families", "Import a spreadsheet, group families, mark VIPs and send personal invitation links."),
     ("seat", "Drag-and-drop seating", "Build your floor plan, seat parties at tables, and print the final chart."),
@@ -11849,6 +12101,29 @@ def why_digital() -> str:
             f'<p class="tiny muted" style="margin-top:10px">Printing estimate based on South African prices of about R30 to R50 per printed invitation.</p></div></section>')
 
 
+SITEMAP_PATHS = ["/", "/weddings", "/baby-celebrations", "/parties", "/celebrations", "/templates", "/pricing",
+                 "/how-it-works", "/faq", "/help-me-set-up", "/contact", "/privacy", "/terms", "/refunds"]
+
+
+@router.get("/robots.txt")
+def robots(req):
+    """Marketing pages may be indexed; event websites, accounts and admin may not."""
+    from ..web import Response
+    body = ("User-agent: *\nDisallow: /events/\nDisallow: /dashboard\nDisallow: /admin\nDisallow: /media/\n"
+            "Disallow: /login\nDisallow: /register\nDisallow: /pay/\n"
+            f"Sitemap: {config.BASE_URL}/sitemap.xml\n")
+    return Response(body, content_type="text/plain; charset=utf-8")
+
+
+@router.get("/sitemap.xml")
+def sitemap(req):
+    from ..web import Response
+    paths = SITEMAP_PATHS + [f"/templates/{t['slug']}" for t in db.q("SELECT slug FROM templates WHERE active = 1 ORDER BY sort, id")]
+    urls = "".join(f"<url><loc>{esc(config.BASE_URL + p)}</loc></url>" for p in paths)
+    return Response(f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>',
+                    content_type="application/xml; charset=utf-8")
+
+
 @router.get("/healthz")
 def healthz(req):
     """For the host's health check: answers once the database is reachable."""
@@ -11861,8 +12136,8 @@ def healthz(req):
 
 @router.get("/")
 def home(req):
-    pastel_first = ["bloom", "confetti", "aurora", "cradle", "atelier", "linea"]
-    templates = sorted(catalog.templates(), key=lambda t: pastel_first.index(t["slug"]) if t["slug"] in pastel_first else 99)[:6]
+    featured = ["champagne", "atelier", "heritage", "bloom", "cradle", "confetti"]   # gold-friendly first
+    templates = sorted(catalog.templates(), key=lambda t: featured.index(t["slug"]) if t["slug"] in featured else 99)[:6]
     tpl_cards = "".join(template_card(t) for t in templates)
     feats = "".join(f'<div class="feature card" data-reveal><span class="icon-tile">{i(ic)}</span><h3>{esc(t)}</h3><p>{esc(d)}</p></div>'
                     for ic, t, d in FEATURES)
@@ -11891,7 +12166,7 @@ def home(req):
 <section class="section section--surface"><div class="container">
 {section_head("Finished event websites", "Real layouts, filled with sample content. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
 <div class="showcase">
-<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/aurora/preview?group=weddings" width="1280" title="Aurora wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Aurora · a glass-and-light wedding</figcaption></figure>
+<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/champagne/preview?group=weddings" width="1280" title="Champagne wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Champagne · a black-tie wedding</figcaption></figure>
 <figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/bloom/preview?group=baby" width="390" title="Bloom baby shower sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Bloom · a baby shower</figcaption></figure>
 <figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/confetti/preview?group=parties" width="390" title="Confetti party sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Confetti · a first birthday</figcaption></figure>
 </div></div></section>
@@ -12057,7 +12332,7 @@ def pricing(req):
         rows.append(f"<tr><th scope='row' style='font-weight:400'>{esc(label)}</th>{cells}</tr>")
     notes = [
         ("Unlimited link sharing", "Share your event link with as many people as you like, on any channel. It is not unlimited email: each package includes the guest email allowance shown above."),
-        ("Pay once", "One payment per event. No subscriptions, no per-guest or per-invitation charges. Prices include 15% VAT."),
+        ("Pay once", "One payment per event. No subscriptions, no per-guest or per-invitation charges."),
         ("Upgrade any time", "Move to a bigger package from your dashboard and pay only the difference."),
         ("Hosting period", "Your website stays online for the months shown, counted from when it is published, and never goes offline before a month after your event. Extensions are available."),
     ]
@@ -12276,7 +12551,7 @@ def terms(req):
 <h2>The service</h2><p>We provide tools to create an event website and manage guests, RSVPs, seating, menus, programmes, communication and reports. Features and limits depend on the package you buy, as shown on the pricing page at the time of purchase.</p>
 <h2>Your account</h2><p>Keep your password safe. You are responsible for activity on your account and for the content you publish, including photos you upload, which must be yours to use.</p>
 <h2>Guests and communication</h2><p>You confirm you have a lawful basis to add each guest's details and to email them about your event. Don't use the platform for marketing, spam or anything unlawful. We may suspend events that break these terms.</p>
-<h2>Payments</h2><p>Prices are in South African Rand and include VAT. Your website is published only once our payment gateway confirms payment. Upgrades are charged as the difference between packages.</p>
+<h2>Payments</h2><p>Prices are in South African Rand{' and include VAT' if config.VAT_REGISTERED else ''}. Your website is published only once our payment gateway confirms payment. Upgrades are charged as the difference between packages.</p>
 <h2>Hosting period</h2><p>Your event website stays online for the hosting period of your package from the date it is first published. Whenever you book, it never goes offline before one month after your event date, including if you move the date. We'll remind you before it ends.</p>
 <h2>Email allowance</h2><p>Unlimited link sharing means you can share your link as often as you like. Emails sent through the platform are limited to your package's allowance.</p>
 <h2>Liability</h2><p>We work hard to keep the service available, but we can't guarantee it will be uninterrupted. To the extent the law allows, our liability is limited to the amount you paid for the event concerned. Nothing in these terms limits your rights under the Consumer Protection Act.</p>
@@ -12327,7 +12602,7 @@ def media(req, key):
 
 ### `app/views/payments_views.py`
 
-<!-- FILE: app/views/payments_views.py sha256=184d7531058b904fc774c4d351e7ce343b80c6c632055447a69e1f519a4236ed nl=1 -->
+<!-- FILE: app/views/payments_views.py sha256=136642aedbd91ea9ccfc2a4fc356643b0ba54f671d78ab19cb06add14b15cd45 nl=1 -->
 ```python
 """Checkout, the sandbox test checkout, gateway webhooks, payment status, billing and receipts."""
 from __future__ import annotations
@@ -12393,13 +12668,13 @@ def sandbox_checkout(req, order_uid):
             # Same path as an incoming webhook: signature, freshness and amount are verified.
             payments.apply(gw.verify(body, sig), "sandbox")
         return redirect(f"/dashboard/events/{ev['uid']}/payment/{order['uid']}")
-    excl, vat = payments.vat_breakdown(order["amount_cents"])
+    vat_rows = _vat_rows(order)
     body = f"""<section class="page-hero" style="padding-bottom:var(--section-y)"><div class="grid-texture"></div><div class="container container--narrow">
 <span class="demo-flag">Sandbox · test payment, no money moves</span>
 <h1 style="margin-top:16px">Test checkout</h1><p class="lead">This page stands in for the payment gateway while {esc(config.BRAND_NAME)} runs in development. Choose an outcome to send a signed test notification to the server.</p>
 <div class="glass glass--strong panel" style="margin-top:28px;display:grid;gap:14px">
 <dl class="dl"><dt>Order</dt><dd class="mono">{esc(order['uid'])}</dd><dt>Item</dt><dd>{esc(order['description'])}</dd>
-<dt>Amount excl. VAT</dt><dd class="mono">{catalog.money(excl, True)}</dd><dt>VAT ({int(config.VAT_RATE * 100)}%)</dt><dd class="mono">{catalog.money(vat, True)}</dd>
+{vat_rows}
 <dt><b>Total</b></dt><dd class="mono"><b>{catalog.money(order['amount_cents'], True)}</b></dd><dt>Status</dt><dd><span class="pill pill--{esc(order['status'])}">{esc(order['status'])}</span></dd></dl>
 {'' if order['status'] != 'pending' else f'''<form method="post" class="btn-row">{csrf(req)}
 <button class="btn btn--primary" name="decision" value="approve" type="submit">{i("check")} Approve test payment</button>
@@ -12490,7 +12765,16 @@ def billing(req):
         table = f'<div class="table-wrap"><table class="table"><thead><tr><th>Order</th><th>Event</th><th class="num">Amount</th><th>Status</th><th></th></tr></thead><tbody>{trs}</tbody></table></div>'
     else:
         table = f'<div class="empty"><span class="icon-tile">{i("card")}</span><h2 style="font-size:1.2rem">No orders yet</h2><p>When you choose a package for an event, your orders and receipts appear here.</p></div>'
-    return account_page(req, "Orders and receipts", page_head("Orders and receipts", "Every payment and its VAT receipt.") + table, "/dashboard/billing")
+    return account_page(req, "Orders and receipts", page_head("Orders and receipts", "Every payment and its receipt.") + table, "/dashboard/billing")
+
+
+def _vat_rows(order) -> str:
+    """Excl.-VAT and VAT lines, shown only when the business is VAT-registered."""
+    if not config.VAT_REGISTERED:
+        return ""
+    excl, vat = payments.vat_breakdown(order["amount_cents"])
+    return (f'<dt>Amount excl. VAT</dt><dd class="mono">{catalog.money(excl, True)}</dd>'
+            f'<dt>VAT ({int(config.VAT_RATE * 100)}%)</dt><dd class="mono">{catalog.money(vat, True)}</dd>')
 
 
 @router.get("/dashboard/orders/<order_uid>/receipt")
@@ -12502,28 +12786,33 @@ def receipt(req, order_uid):
     ev = events.by_id(order["event_id"])
     excl, vat = payments.vat_breakdown(order["amount_cents"])
     sandbox_note = "SANDBOX TEST PAYMENT. NOT A TAX INVOICE." if order["mode"] == "sandbox" else ""
+    tax_invoice = config.VAT_REGISTERED and not sandbox_note
+    title = "Tax invoice" if tax_invoice else "Receipt"
     if req.arg("format") == "pdf":
         try:
             from ..services.pdf import PDF
         except ImportError:
             raise HTTPError(404)
-        doc = PDF(f"{config.BRAND_NAME} receipt", sandbox_note or "Tax invoice")
+        doc = PDF(f"{config.BRAND_NAME} receipt", sandbox_note or title)
         doc.kv([("Invoice", order["invoice_no"] or ""), ("Order", order["uid"]), ("Paid", fmt_dt(order["paid_at"])),
-                ("Billed to", f"{user['name']} <{user['email']}>"), ("Event", ev["name"]),
-                ("VAT number", config.VAT_NUMBER or "To be confirmed")])
+                ("Billed to", f"{user['name']} <{user['email']}>"), ("Event", ev["name"])]
+               + ([("VAT number", config.VAT_NUMBER)] if config.VAT_REGISTERED else []))
         doc.spacer(10)
-        doc.table(["Description", "Excl. VAT", "VAT", "Total"],
-                  [[order["description"], catalog.money(excl, True), catalog.money(vat, True), catalog.money(order["amount_cents"], True)]],
-                  widths=[0.52, 0.16, 0.14, 0.18])
+        if config.VAT_REGISTERED:
+            doc.table(["Description", "Excl. VAT", "VAT", "Total"],
+                      [[order["description"], catalog.money(excl, True), catalog.money(vat, True), catalog.money(order["amount_cents"], True)]],
+                      widths=[0.52, 0.16, 0.14, 0.18])
+        else:
+            doc.table(["Description", "Total"], [[order["description"], catalog.money(order["amount_cents"], True)]], widths=[0.8, 0.2])
         doc.spacer(10)
         doc.text(f"{config.BRAND_NAME} · {config.COMPANY_ADDRESS} · {config.SUPPORT_EMAIL}", size=8, muted=True)
         return download(doc.output(), f"{order['invoice_no'] or order['uid']}.pdf", "application/pdf")
     body = f"""{page_head("Receipt", "", f'<a class="btn btn--secondary btn--sm" href="?format=pdf">{i("download")} PDF</a><button class="btn btn--ghost btn--sm no-print" type="button" onclick="window.print()">{i("print")} Print</button>')}
 <article class="box" style="max-width:760px">{f'<p class="demo-flag" style="margin-bottom:16px">{esc(sandbox_note)}</p>' if sandbox_note else ''}
-<div class="row row--between" style="align-items:flex-start"><div><h2 style="font-size:1.4rem">{"Tax invoice" if not sandbox_note else "Receipt"}</h2><p class="muted small">{esc(config.BRAND_NAME)} · {esc(config.COMPANY_ADDRESS)}<br>VAT no. {esc(config.VAT_NUMBER or "to be confirmed")}</p></div>
+<div class="row row--between" style="align-items:flex-start"><div><h2 style="font-size:1.4rem">{title}</h2><p class="muted small">{esc(config.BRAND_NAME)} · {esc(config.COMPANY_ADDRESS)}{"<br>VAT no. " + esc(config.VAT_NUMBER) if config.VAT_REGISTERED else ""}</p></div>
 <div class="small" style="text-align:right"><b class="mono">{esc(order['invoice_no'] or '')}</b><br><span class="muted">{esc(fmt_dt(order['paid_at']))}</span></div></div><hr>
 <dl class="dl"><dt>Billed to</dt><dd>{esc(user['name'])}<br><span class="muted">{esc(user['email'])}</span></dd><dt>Event</dt><dd>{esc(ev['name'])}</dd><dt>Order</dt><dd class="mono">{esc(order['uid'])}</dd>
-<dt>Description</dt><dd>{esc(order['description'])}</dd><dt>Amount excl. VAT</dt><dd class="mono">{catalog.money(excl, True)}</dd><dt>VAT ({int(config.VAT_RATE * 100)}%)</dt><dd class="mono">{catalog.money(vat, True)}</dd>
+<dt>Description</dt><dd>{esc(order['description'])}</dd>{_vat_rows(order)}
 <dt><b>Total paid</b></dt><dd class="mono"><b>{catalog.money(order['amount_cents'], True)}</b></dd><dt>Status</dt><dd><span class="pill pill--{esc(order['status'])}">{esc(order['status'])}</span></dd></dl></article>"""
     return account_page(req, "Receipt", body, "/dashboard/billing")
 ```
@@ -12966,7 +13255,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=f9c6adb75a04117a3a59a068c4240da2c5fe745f1a9d6c3c390fbdee1158c9b4 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=bb2acd6105596459a35d3bc09c948116edc7f16a73b672acbf1f074655a13bd5 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -13067,6 +13356,9 @@ def create(req):
                 return redirect("/")
             cname = f.text("contact_name", "Your name", required=True, max=120)
             cemail = f.email("contact_email", required=True)
+            if cemail and not db.one("SELECT 1 FROM users WHERE email = ?", (cemail,)):
+                from .accounts import _check_new_password
+                _check_new_password(f, req.get("password"), req.get("password_confirm"), cemail)
             if not f.flag("terms"):
                 f.error("terms", "Please accept the terms and privacy notice to continue.")
             if f.ok and auth.rate_limited(f"create-account:{req.ip}", 10, 3600):
@@ -13081,7 +13373,7 @@ def create(req):
                     check_email = cemail
                 else:
                     from ..services import email as mail
-                    uid_ = db.insert("users", {"email": cemail, "name": cname, "password_hash": "", "role": "customer",
+                    uid_ = db.insert("users", {"email": cemail, "name": cname, "password_hash": auth.hash_password(req.get("password")), "role": "customer",
                                                "marketing_consent": 0, "created_at": db.now()})
                     user = db.one("SELECT * FROM users WHERE id = ?", (uid_,))
                     mail.send(cemail, "welcome", {"first_name": mail.first_name(cname)}, user_id=uid_)
@@ -13127,10 +13419,12 @@ def create(req):
             f'<a class="text-link tiny" href="/templates/{esc(t["slug"])}" target="_blank" rel="noopener" style="position:relative;z-index:2">Preview</a></span></label>')
     about = ""
     if not req.user:
+        from .accounts import new_password_fields
         about = f"""<div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">4. Where should we save it?</h2>
-<p class="muted small" style="margin-bottom:16px">So your draft is saved and you can come back to it on any device. No password needed: we email you a sign-in link whenever you want one. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
+<p class="muted small" style="margin-bottom:16px">Create your account so your draft is saved and you can come back to it on any device. Already have an account? <a class="text-link" href="{esc(url('/login', next=url('/create', category=cat_slug, template=tpl_slug, package=pkg)))}">Log in</a>.</p>
 <div class="form-row form-row--2">{field("contact_name", "Your name", f.data.get("contact_name", ""), required=True, errors=f.errors, attrs={"autocomplete": "name"})}
 {field("contact_email", "Your email", f.data.get("contact_email", ""), type="email", required=True, errors=f.errors, attrs={"autocomplete": "email"})}</div>
+<div class="form-row form-row--2">{new_password_fields(f)}</div>
 <div class="field{' has-error' if 'terms' in f.errors else ''}" data-field="terms">{check("terms", 'I accept the <a class="text-link" href="/terms" target="_blank">terms of service</a> and the <a class="text-link" href="/privacy" target="_blank">privacy notice</a>.', bool(req.get("terms")))}</div>
 {forms.honeypot()}</div>"""
     body = f"""<section class="page-hero"><div class="grid-texture"></div><div class="container">
@@ -14027,9 +14321,9 @@ def step_review_pay(req, ev):
             label = f"Upgrade for {catalog.money(price)}" if paid else f"Pay {catalog.money(price)}"
             action = (f'<button class="btn {"btn--primary" if p["highlight"] else "btn--secondary"} btn--block" type="submit" name="package" value="{esc(p["code"])}"'
                       f'{" disabled" if missing_needed else ""}>{label}</button>')
-        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Most chosen</span>' if p['highlight'] and not paid else ''}
+        cards.append(f"""<article class="price{' price--highlight' if p['highlight'] and not paid else ''}">{'<span class="price__badge">Recommended</span>' if p['highlight'] and not paid else ''}
 <div><h3>{esc(p['name'])}</h3><p class="muted small" style="margin-top:6px">{esc(p['tagline'])}</p></div>
-<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else "VAT incl."}</small></div>{action}<ul>{bl}</ul>
+<div class="price__amount">{catalog.money(p['price_cents'])}<small>{"paid" if is_paid else ("VAT incl." if config.VAT_REGISTERED else "once-off")}</small></div>{action}<ul>{bl}</ul>
 <details><summary class="small" style="cursor:pointer">Limits</summary><div class="price__limits" style="margin-top:8px">{lim}</div></details>{gap_html}</article>""")
     sandbox = ""
     if payments.gateway().mode == "sandbox":
@@ -14042,7 +14336,7 @@ def step_review_pay(req, ev):
         status = (f'<div class="notice">{i("clock")}<span>A payment for {catalog.money(pending["amount_cents"])} was started and hasn\'t been confirmed yet. '
                   f'<a class="text-link" href="/dashboard/events/{ev["uid"]}/payment/{pending["uid"]}">Check its status</a> or start again below.</span></div>')
     share = (f'<div class="box" style="display:grid;gap:10px"><h3 style="font-size:1.0625rem">Show someone before you pay</h3>'
-             f'<p class="small muted">Send this link to your partner or family. They see your website as it is now, with RSVPs switched off. It never appears in search engines.</p>'
+             f'<p class="small muted">Send this link to your partner or family for their opinion. They see your website as it is now, marked “Preview: not published”, with replies switched off. Guests can only use it once you\'ve paid.</p>'
              f'<div class="row" style="gap:8px;flex-wrap:wrap"><input class="input input--sm mono" style="flex:1;min-width:0" readonly value="{esc(events.draft_url(ev))}" aria-label="Draft preview link">'
              f'<button class="btn btn--secondary btn--sm" type="button" data-copy="{esc(events.draft_url(ev))}" data-copied="Draft link copied">{i("copy")} Copy link</button>'
              f'<a class="btn btn--ghost btn--sm" href="https://wa.me/?text={esc(_q("Have a look at our event website draft: " + events.draft_url(ev)))}" target="_blank" rel="noopener">{i("chat")} WhatsApp</a></div></div>')
@@ -14066,7 +14360,7 @@ def step_review_pay(req, ev):
                           ("Gallery", str(len(events.uploads(ev["id"], "gallery"))) + " photos" if events.uploads(ev["id"], "gallery") else "")]),
     ])
     pay_note = ("Finish the details marked “needed” above, then pay." if missing_needed else
-                "Secure payment by card or instant EFT. Prices include 15% VAT. Your website goes live as soon as the payment is confirmed, and you get a receipt by email.")
+                "Secure payment by card or instant EFT. Your website goes live as soon as the payment is confirmed, and you get a receipt by email.")
     inner = f"""{status}{sandbox}{checklist}
 <form method="post" action="/dashboard/events/{ev['uid']}/checkout" class="form" novalidate>{csrf(req)}<input type="hidden" name="accept" value="1">
 <div class="price-grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">{"".join(cards)}</div>
@@ -15057,7 +15351,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `preview_site/journey.js`
 
-<!-- FILE: preview_site/journey.js sha256=f350fb6f2a3b34db5777282a133aaaf5c0d088b09b11fce0f95b19756012708f nl=1 -->
+<!-- FILE: preview_site/journey.js sha256=a0db2f941860871058b6db246a91cad9c8487a771390909b39f47140c65a8855 nl=1 -->
 ```javascript
 /* Aurelia customer journey for the shareable site: choose occasion and template, the 10-step set-up,
    live preview, package choice and booking request. Runs entirely in the visitor's browser; drafts are
@@ -15594,7 +15888,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
     refreshPreview(true);
   }
   function previewFrame(height) {
-    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(cur())) + "</span>" +
+    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudios.co.za/events/' + esc(slugOf(cur())) + "</span>" +
       '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
       '<div class="preview-frame__stage" style="height:' + (height || 680) + 'px"><iframe title="Live preview of your event website" data-live></iframe></div></div>';
   }
@@ -16084,7 +16378,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
       '<p class="small muted">' + (connected ? "Secure payment with PayFast: card, instant EFT and more. " : "") + "Prices include 15% VAT. By paying, you accept the " +
       '<a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>.</p>' + share +
       '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">See everything you\'ve entered</summary><div style="display:grid;gap:16px;margin-top:16px">' +
-      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudio.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
+      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudios.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
       previewFrame(560) + review + "</div></details>" +
       '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-7">' + icon("arrow-left") + ' Back</a><span></span></div>' +
       '<p class="small muted" style="margin-top:14px">Questions first, or rather have us finish the set-up? <a class="text-link" href="#help-me-set-up">Ask us to help</a>.</p>';
@@ -16234,7 +16528,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
       root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.hosts || ev.name) +
         '</h1><p>A draft of this event website, shared with you before it goes live. RSVPs open once it\'s published.</p></div>' +
         '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#create">Create your own event</a></div></div>' +
-        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(ev)) + "</span>" +
+        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudios.co.za/events/' + esc(slugOf(ev)) + "</span>" +
         '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
         '<div class="preview-frame__stage" style="height:' + Math.max(560, window.innerHeight - 220) + 'px"><iframe title="Shared draft of an event website" data-shared></iframe></div></div></div></section>';
       document.querySelector("iframe[data-shared]").srcdoc = R.render(ev, "preview");
@@ -16622,51 +16916,59 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=78a986e69091e5709a054563da852a5f528ca192813bde254ee7f052fe34b6df nl=1 -->
+<!-- FILE: static/css/app.css sha256=541cafe09e5b95a306d27927950f721203cea67afa02d5c05faabe2b5108d979 nl=1 -->
 ```css
 /* Aurelia design system
-   Built from docs/website-style-playbook.md (STS Holdings, Oct 2026): one gold accent used as a
-   signal, an off-white base, hairline grid texture, a glass header, Geist with tight tracking.
-   Added for Aurelia: a glossy/transparent layer (frosted glass panels with a specular top edge,
-   glossy gold buttons), an editorial serif for one keyword per page, and the app shell.
+   Built from docs/website-style-playbook.md (STS Holdings, Oct 2026). Colours since 25 Nov 2026:
+   "golden moment" (Aurelia means golden). Warm white and ivory with rich charcoal text, a classic
+   light gold for the calls to action, and gold accents used with restraint. The shapes are "liquid
+   glass": frosted glass with a bright rim, white cells with soft shadows, glossy capsule buttons and
+   a floating header. An editorial serif for one keyword per page, and the app shell.
    Sections: 1 tokens · 2 base · 3 layout · 4 buttons · 5 pills/chips · 6 cards & glass · 7 header
    · 8 heroes · 9 marketing blocks · 10 forms · 11 notices · 12 auth · 13 app shell · 14 tables
    · 15 wizard · 16 seating · 17 footer · 18 motion · 19 phones · 20 print */
 
 /* 1. Tokens ------------------------------------------------------------------------------ */
-/* Pastel palette (16 Nov 2026): lilac as the signal colour, with blush, mint, peach and sky as
-   soft washes. Pastels are used for surfaces, glows and glossy buttons (with dark text); deeper
-   tones of the same hues carry small text and checked controls so contrast stays AA.
-   (--gold-sheen keeps its name for compatibility; it is now the pastel button sheen.) */
+/* Golden-moment palette (25 Nov 2026). Light gold is the action colour: primary buttons, the
+   recommended package, selected steps. Deeper golds carry small text, links and checked controls so
+   contrast stays AA; a light metallic gold draws lines, rings and icons. Everything else stays warm
+   white, ivory and charcoal, so the gold stands out where people should click. Glows are golden-hour
+   light. (Older names are kept: --gold-sheen is the primary button's surface; --pastel-* are the
+   warm tints.) */
 :root {
   color-scheme: only light;
-  --color-accent: #B8A4F0;          /* lilac, decorative */
-  --color-accent-dark: #6A52B5;     /* white text 6.0:1; checked controls */
-  --color-accent-text: #5A44A3;     /* small text and links, 7.0:1 */
-  --color-accent-soft: #EEE8FD;
-  --champagne: #F6EEFA;
-  --pastel-lilac: #E6DEFB;
-  --pastel-blush: #F9DCE6;
-  --pastel-mint: #D3F0E4;
-  --pastel-peach: #FDE6D3;
-  --pastel-sky: #DCE8FB;
-  --grad: linear-gradient(96deg, #7E66D4 0%, #C9649C 55%, #C46A4A 100%);
-  --gold-sheen: linear-gradient(180deg, #E4DBFB 0%, #CDBFF4 52%, #BBA9EE 100%);
-  --gloss: linear-gradient(180deg, rgb(255 255 255 / .7) 0%, rgb(255 255 255 / .18) 48%, rgb(255 255 255 / 0) 52%);
+  --color-accent: #D9B45F;          /* light metallic gold: lines, rings, icons */
+  --color-accent-dark: #9A7424;     /* deep gold */
+  --color-accent-text: #87651C;     /* small gold text and links, 5.1:1 */
+  --color-accent-soft: #FBF1DA;
+  --champagne: #FAF3E3;
+  --pastel-lilac: #F7EFE0;
+  --pastel-blush: #FBEDE6;
+  --pastel-mint: #F5F1E2;
+  --pastel-peach: #FCEFDC;
+  --pastel-sky: #FAF3E3;
+  --grad: linear-gradient(100deg, #8C6519 0%, #B08327 38%, #9A7020 64%, #A67A22 100%);
+  --thread: linear-gradient(90deg, #C99A3C 0%, #EBCB7E 55%, rgb(235 203 126 / 0) 100%);
+  --gold-sheen: linear-gradient(180deg, #F8E7B9 0%, #EDCF86 48%, #DDB563 100%);
+  --gold-sheen-hover: linear-gradient(180deg, #FBEDC8 0%, #F2D693 48%, #E3BD6B 100%);
+  --gloss: linear-gradient(180deg, rgb(255 255 255 / .6) 0%, rgb(255 255 255 / .14) 46%, rgb(255 255 255 / 0) 52%);
+  --sheen-sweep: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / .5) 50%, transparent 70%);
 
-  --color-bg: #F8F6FC;
+  --color-bg: #FBF8F2;
   --color-surface: #FFFFFF;
-  --color-surface-2: #F0ECF7;
-  --color-text: #221C33;
-  --color-muted: #625B74;
-  --color-border: #E2DCEE;
-  --color-border-strong: #CBC2DD;
-  --color-line: rgb(34 28 51 / .09);
-  --color-grid: rgb(106 82 181 / .07);
-  --glass: rgb(255 255 255 / .55);
-  --glass-strong: rgb(255 255 255 / .82);
-  --glass-border: rgb(255 255 255 / .75);
+  --color-surface-2: #F5EFE3;
+  --color-text: #1F1A12;
+  --color-muted: #6A6152;
+  --color-border: #EDE4D2;
+  --color-border-strong: #D9CBAE;
+  --color-line: rgb(31 26 18 / .08);
+  --color-grid: rgb(166 124 38 / .05);
+  --field-bg: #FFFFFF;
+  --glass: rgb(255 255 255 / .6);
+  --glass-strong: rgb(255 255 255 / .76);
+  --glass-border: rgb(255 255 255 / .8);
   --glass-edge: linear-gradient(180deg, rgb(255 255 255 / .95), rgb(255 255 255 / .25));
+  --glass-rim: linear-gradient(140deg, rgb(255 255 255 / .95) 0%, rgb(255 255 255 / .2) 38%, rgb(255 255 255 / .05) 62%, rgb(255 255 255 / .7) 100%);
   --inset-hi: inset 0 1px 0 rgb(255 255 255 / .95);
   --hero-glow: #FFFFFF;
   --error: #B42318;
@@ -16674,21 +16976,28 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
   --warn: #9A5B00;
   --info: #2D5B8A;
 
-  --btn-bg: #CDBFF4;
-  --btn-text: #231A3E;
-  --btn-bg-hover: #BFAEF0;
-  --control-on: var(--color-accent-dark);
+  --btn-bg: #EDCF86;
+  --btn-text: #2A1F0A;
+  --btn-bg-hover: #F2D693;
+  --btn-border: rgb(166 124 38 / .35);
+  --btn-shadow: inset 0 1px 0 rgb(255 255 255 / .75), inset 0 -1px 0 rgb(150 110 30 / .22), 0 1px 2px rgb(120 86 20 / .15), 0 10px 24px -10px rgb(190 140 40 / .55);
+  --btn-shadow-hover: inset 0 1px 0 rgb(255 255 255 / .8), 0 2px 4px rgb(120 86 20 / .12), 0 18px 34px -14px rgb(190 140 40 / .65);
+  --control-on: #A27A26;
+  --control-ink: #FFFFFF;
+  --control-off: #958A73;
+  --focus: #87651C;
 
-  --band-bg: #1D1730;
-  --band-bg-2: #2A2242;
-  --band-text: #F6F3FC;
-  --band-muted: #BDB4D3;
+  --band-bg: #120F0A;
+  --band-bg-2: #1E1912;
+  --band-text: #F8F2E6;
+  --band-muted: #BCB09A;
   --band-line: rgb(255 255 255 / .1);
-  --glow-accent: 167 139 250;       /* lilac */
-  --glow-blush: 244 164 196;
-  --glow-mint: 134 214 180;
-  --glow-sky: 150 186 240;
-  --glow-peach: 250 190 150;
+  --glow-accent: 236 200 120;       /* gold */
+  --glow-blush: 246 208 192;        /* rose gold */
+  --glow-mint: 248 232 200;         /* champagne */
+  --glow-sky: 240 222 186;          /* soft amber */
+  --glow-peach: 250 214 166;        /* peach gold */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -16696,12 +17005,13 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
   --container: 1200px;
   --gutter: clamp(16px, 4vw, 40px);
-  --radius: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 28px;
-  --shadow: 0 6px 24px rgb(60 40 110 / .08);
-  --shadow-lg: 0 32px 64px -32px rgb(60 40 110 / .3);
-  --shadow-glass: 0 1px 0 rgb(255 255 255 / .7) inset, 0 24px 48px -28px rgb(60 40 110 / .3);
+  --radius: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --shadow: 0 1px 2px rgb(60 44 16 / .05), 0 8px 24px -8px rgb(60 44 16 / .1);
+  --shadow-lg: 0 2px 6px rgb(60 44 16 / .05), 0 32px 64px -28px rgb(60 44 16 / .24);
+  --shadow-glass: inset 0 1px 0 rgb(255 255 255 / .85), 0 1px 2px rgb(60 44 16 / .05), 0 24px 48px -24px rgb(60 44 16 / .2);
+  --shadow-cell: 0 1px 2px rgb(60 44 16 / .05), 0 6px 20px -12px rgb(60 44 16 / .12);
   --header-h: 64px;
   --section-y: clamp(48px, 6.5vw, 88px);
   --head-gap: clamp(24px, 3vw, 40px);
@@ -16721,57 +17031,64 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-accent: #C7B6FA;
-  --color-accent-dark: #B4A0F5;
-  --color-accent-text: #CDBFFA;
-  --color-accent-soft: #2A2340;
-  --champagne: #241E36;
-  --pastel-lilac: #2A2340;
-  --pastel-blush: #3A2232;
-  --pastel-mint: #1D3530;
-  --pastel-peach: #3A2A20;
-  --pastel-sky: #1E2A40;
-  --grad: linear-gradient(96deg, #C9B8FB 0%, #F3A9CB 55%, #F6C0A0 100%);
-  --gold-sheen: linear-gradient(180deg, #E4DBFB 0%, #CDBFF4 52%, #BBA9EE 100%);
-  --gloss: linear-gradient(180deg, rgb(255 255 255 / .5) 0%, rgb(255 255 255 / .12) 48%, rgb(255 255 255 / 0) 52%);
-  --color-bg: #120F1B;
-  --color-surface: #1A1626;
-  --color-surface-2: #221D31;
-  --color-text: #EEEAF6;
-  --color-muted: #A9A2BC;
-  --color-border: #2F2942;
-  --color-border-strong: #463E5E;
+  --color-accent: #E6C377;
+  --color-accent-dark: #E6C377;
+  --color-accent-text: #EBCF8E;
+  --color-accent-soft: #2A2416;
+  --champagne: #1E1A12;
+  --pastel-lilac: #221D14;
+  --pastel-blush: #2A1F1B;
+  --pastel-mint: #1F1D16;
+  --pastel-peach: #2A2215;
+  --pastel-sky: #241F16;
+  --grad: linear-gradient(100deg, #F6E2AE 0%, #E2BE6E 38%, #FFF0C8 58%, #D9B05C 100%);
+  --thread: linear-gradient(90deg, #E6C377 0%, #9C7E3E 60%, rgb(156 126 62 / 0) 100%);
+  --color-bg: #0F0D09;
+  --color-surface: #18150F;
+  --color-surface-2: #221D15;
+  --color-text: #F8F2E6;
+  --color-muted: #B5AA95;
+  --color-border: #2E281E;
+  --color-border-strong: #4A4132;
   --color-line: rgb(255 255 255 / .08);
-  --color-grid: rgb(199 182 250 / .05);
-  --glass: rgb(34 28 50 / .55);
-  --glass-strong: rgb(26 22 38 / .86);
+  --color-grid: rgb(235 203 126 / .04);
+  --field-bg: #1D1912;
+  --glass: rgb(30 26 19 / .55);
+  --glass-strong: rgb(24 21 15 / .74);
   --glass-border: rgb(255 255 255 / .1);
   --glass-edge: linear-gradient(180deg, rgb(255 255 255 / .22), rgb(255 255 255 / .03));
+  --glass-rim: linear-gradient(140deg, rgb(255 240 200 / .4) 0%, rgb(255 255 255 / .07) 38%, rgb(255 255 255 / .02) 62%, rgb(255 240 200 / .2) 100%);
   --inset-hi: inset 0 1px 0 rgb(255 255 255 / .06);
-  --hero-glow: #1E1830;
+  --hero-glow: #17130C;
   --error: #FF8A7A;
   --success: #6FD3A0;
   --warn: #F2B866;
   --info: #8DB8E8;
-  --btn-bg: #CDBFF4;
-  --btn-text: #1A1430;
-  --btn-bg-hover: #DCD1F8;
-  --control-on: #B4A0F5;
-  --shadow: 0 6px 24px rgb(4 2 10 / .45);
-  --shadow-lg: 0 32px 64px -32px rgb(4 2 10 / .85);
-  --shadow-glass: 0 1px 0 rgb(255 255 255 / .08) inset, 0 24px 48px -28px rgb(0 0 0 / .8);
+  --btn-shadow: inset 0 1px 0 rgb(255 255 255 / .7), inset 0 -1px 0 rgb(150 110 30 / .25), 0 10px 30px -10px rgb(230 190 100 / .4);
+  --btn-shadow-hover: inset 0 1px 0 rgb(255 255 255 / .8), 0 14px 40px -12px rgb(230 190 100 / .5);
+  --control-on: #E6C377;
+  --control-ink: #1F1A12;
+  --control-off: #6F6656;
+  --focus: #EBCF8E;
+  --shadow: 0 1px 2px rgb(0 0 0 / .5), 0 8px 24px -8px rgb(0 0 0 / .6);
+  --shadow-lg: 0 32px 64px -28px rgb(0 0 0 / .9);
+  --shadow-glass: inset 0 1px 0 rgb(255 255 255 / .08), 0 24px 48px -24px rgb(0 0 0 / .8);
+  --shadow-cell: inset 0 1px 0 rgb(255 255 255 / .05), 0 1px 2px rgb(0 0 0 / .4);
 }
 
+/* Dark bands (footer, mobile menu) stay dark in both themes; the gold buttons glow on them. */
 .on-dark {
   --color-text: var(--band-text);
   --color-muted: var(--band-muted);
   --color-line: var(--band-line);
   --color-border: rgb(255 255 255 / .16);
   --color-surface: rgb(255 255 255 / .04);
-  --color-accent-text: #CDBEF8;
+  --color-accent-text: #EBCF8E;
   --glass: rgb(255 255 255 / .07);
   --glass-border: rgb(255 255 255 / .14);
-  --btn-bg: #CDBFF4; --btn-text: #1A1430; --btn-bg-hover: #DCD1F8;
+  --btn-shadow: inset 0 1px 0 rgb(255 255 255 / .7), inset 0 -1px 0 rgb(150 110 30 / .25), 0 10px 30px -10px rgb(230 190 100 / .4);
+  --btn-shadow-hover: inset 0 1px 0 rgb(255 255 255 / .8), 0 14px 40px -12px rgb(230 190 100 / .5);
+  --focus: #EBCF8E;
   color: var(--band-text);
 }
 
@@ -16794,7 +17111,7 @@ p { margin: 0; text-wrap: pretty; }
 a { color: inherit; }
 img, svg { display: block; max-width: 100%; height: auto; }
 button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; border-radius: 6px; }
 ::selection { background: color-mix(in srgb, var(--color-accent) 24%, transparent); }
 .serif { font-family: var(--font-serif); font-weight: 400; font-style: italic; letter-spacing: -.01em; }
 .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
@@ -16804,8 +17121,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tiny { font-size: .8125rem; }
 .lead { font-size: clamp(1.0625rem, 1rem + .45vw, 1.25rem); line-height: 1.55; color: var(--color-muted); max-width: 62ch; }
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.skip-link { position: absolute; left: 12px; top: -80px; z-index: 200; }
-.skip-link:focus { top: 12px; }
+.skip-link, .btn.skip-link { position: absolute; left: 12px; top: -80px; z-index: 200; }
+.skip-link:focus, .btn.skip-link:focus { top: 12px; }
 .text-link { color: var(--color-accent-text); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: .2em; }
 .text-link:hover { text-decoration-color: currentColor; }
 hr { border: 0; border-top: 1px solid var(--color-line); margin: 24px 0; }
@@ -16825,7 +17142,7 @@ hr { border: 0; border-top: 1px solid var(--color-line); margin: 24px 0; }
 .section + .section:not(.section--surface) { padding-top: 0; }
 .section--surface + .section:not(.section--surface) { padding-top: var(--section-y); }
 .section-head { display: grid; gap: 14px; margin-bottom: var(--head-gap); }
-.section-head h2::after { content: ""; display: block; width: 48px; height: 2px; margin-top: 16px; border-radius: 2px; background: var(--grad); }
+.section-head h2::after { content: ""; display: block; width: 64px; height: 2px; margin-top: 16px; border-radius: 2px; background: var(--thread); }
 .section-head__intro { max-width: 62ch; color: var(--color-muted); }
 @media (min-width: 900px) {
   .section-head--pair { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: 40px; }
@@ -16863,16 +17180,18 @@ hr { border: 0; border-top: 1px solid var(--color-line); margin: 24px 0; }
   font: 500 .9375rem/1 var(--font-sans); letter-spacing: -.005em; text-decoration: none; white-space: nowrap; cursor: pointer;
   transition: transform var(--t-move) var(--ease-out), background-color var(--t-fast), box-shadow var(--t-move) var(--ease-out), border-color var(--t-fast);
 }
-.btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -16px rgb(60 40 110 / .45); }
-.btn:active { transform: translateY(0) scale(.98); }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -16px rgb(0 0 0 / .35); }
+.btn:active { transform: translateY(0) scale(.97); }
 .btn[disabled], .btn[aria-disabled="true"] { opacity: .5; pointer-events: none; }
-.btn--primary { background-image: var(--gold-sheen); border-color: rgb(255 255 255 / .6); box-shadow: inset 0 1px 0 rgb(255 255 255 / .8), inset 0 -1px 0 rgb(106 82 181 / .18), 0 6px 18px -8px rgb(106 82 181 / .45); }
+.btn--primary { background-image: var(--gold-sheen); border-color: var(--btn-border); box-shadow: var(--btn-shadow); font-weight: 600; }
 .btn--primary::before { content: ""; position: absolute; inset: 1px 1px 50% 1px; z-index: -1; border-radius: 999px 999px 40% 40% / 999px 999px 12px 12px; background: var(--gloss); pointer-events: none; }
-.btn--primary:hover { background-image: linear-gradient(180deg, #DDD2FA 0%, #C3B2F1 52%, #AF9CEA 100%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .8), 0 14px 28px -14px rgb(106 82 181 / .55); }
+.btn--primary::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--sheen-sweep); translate: -110% 0; transition: translate 900ms var(--ease-out); pointer-events: none; }
+.btn--primary:hover::after { translate: 110% 0; }
+.btn--primary:hover { background-image: var(--gold-sheen-hover); box-shadow: var(--btn-shadow-hover); }
 .btn--secondary, .btn--glass {
   background: var(--glass); color: var(--color-text); border-color: var(--color-border);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4);
-  box-shadow: var(--inset-hi);
+  -webkit-backdrop-filter: blur(16px) saturate(1.7); backdrop-filter: blur(16px) saturate(1.7);
+  box-shadow: var(--inset-hi), 0 1px 2px rgb(0 0 0 / .04);
 }
 .btn--secondary:hover, .btn--glass:hover { border-color: var(--color-border-strong); }
 .btn--ghost { background: transparent; color: var(--color-text); border-color: transparent; }
@@ -16913,11 +17232,11 @@ a.chip, button.chip { min-height: 44px; }
 .card {
   position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0;
   padding: var(--pad-card); border: 1px solid var(--color-line); border-radius: var(--radius-lg);
-  background: var(--color-surface); box-shadow: var(--inset-hi);
+  background: var(--color-surface); box-shadow: var(--shadow-cell);
   transition: transform var(--t-move) var(--ease-out), border-color var(--t-fast), box-shadow var(--t-move) var(--ease-out);
 }
 .section--surface .card { background: var(--color-bg); }
-.card--link:hover { transform: translateY(var(--lift)); border-color: color-mix(in srgb, var(--color-text) 18%, transparent); box-shadow: var(--inset-hi), var(--shadow-lg); }
+.card--link:hover { transform: translateY(var(--lift)); border-color: color-mix(in srgb, var(--color-text) 14%, transparent); box-shadow: var(--inset-hi), var(--shadow-lg); }
 .card__title { font-size: clamp(1.0625rem, 1rem + .3vw, 1.25rem); font-weight: 600; letter-spacing: -.022em; line-height: 1.25; }
 .card__title a { text-decoration: none; }
 .card__title a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
@@ -16930,8 +17249,15 @@ a.chip, button.chip { min-height: 44px; }
 /* Glass: frosted, transparent, with a specular top edge (the "glossy" layer) */
 .glass {
   position: relative; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius-lg);
-  -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8);
   box-shadow: var(--shadow-glass);
+}
+/* Liquid-glass rim: a 1px edge that is bright where the light catches it and fades elsewhere */
+.glass::before {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: var(--glass-rim);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude;
 }
 .glass::after {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
@@ -16941,7 +17267,7 @@ a.chip, button.chip { min-height: 44px; }
 :root[data-theme="dark"] .glass::after, .on-dark .glass::after { background: linear-gradient(160deg, rgb(255 255 255 / .16) 0%, rgb(255 255 255 / .02) 30%, transparent 55%); mix-blend-mode: normal; }
 .glass--strong { background: var(--glass-strong); }
 .panel { padding: var(--pad-card); border-radius: var(--radius-xl); }
-.icon-tile { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; border: 1px solid var(--color-line); background: var(--color-bg); color: var(--color-text); transition: color var(--t-fast), border-color var(--t-fast), transform var(--t-move) var(--ease-out); }
+.icon-tile { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; border: 1px solid var(--color-line); background: linear-gradient(180deg, var(--color-surface), var(--color-surface-2)); box-shadow: var(--inset-hi), 0 1px 2px rgb(0 0 0 / .05); color: var(--color-text); transition: color var(--t-fast), border-color var(--t-fast), transform var(--t-move) var(--ease-out); }
 .icon-tile .i { width: 24px; height: 24px; }
 .card:hover .icon-tile, .feature:hover .icon-tile { color: var(--color-accent-text); border-color: color-mix(in srgb, var(--color-accent) 45%, transparent); transform: translateY(-2px); }
 .icon-tile--soft { background: var(--color-accent-soft); color: var(--color-accent-text); border-color: transparent; }
@@ -16954,12 +17280,12 @@ a.chip, button.chip { min-height: 44px; }
   border: 1px solid transparent; border-radius: 0;
   transition: height var(--t-move) var(--ease-out), background-color var(--t-move), border-color var(--t-move), box-shadow var(--t-move), border-radius var(--t-move), max-width var(--t-move);
 }
-.site-header.is-scrolled { padding: 8px 8px 0; }
+.site-header.is-scrolled { padding: 10px 10px 0; }
 .site-header.is-scrolled .site-header__bar {
-  height: 60px; border-radius: 18px; max-width: calc(var(--container) + 2 * var(--gutter) - 16px);
+  height: 60px; border-radius: 30px; max-width: calc(var(--container) + 2 * var(--gutter) - 20px);
   background: var(--glass-strong); border-color: var(--glass-border);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
-  box-shadow: var(--shadow), var(--inset-hi);
+  -webkit-backdrop-filter: blur(28px) saturate(1.9); backdrop-filter: blur(28px) saturate(1.9);
+  box-shadow: var(--shadow-glass);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 650; font-size: 1.125rem; letter-spacing: -.03em; }
 .brand__mark { width: 30px; height: 30px; }
@@ -16980,7 +17306,7 @@ a.chip, button.chip { min-height: 44px; }
 :root[data-theme="dark"] .theme-toggle .i--moon { display: inline-block; }
 
 .drawer { position: fixed; inset: 0 0 0 auto; margin: 0 0 0 auto; width: min(100%, 460px); height: 100%; max-height: none; padding: 0; border: 0; color: var(--band-text); background: radial-gradient(120% 60% at 100% 100%, rgb(var(--glow-accent) / .3), transparent 60%), radial-gradient(80% 40% at 0% 0%, rgb(var(--glow-blush) / .16), transparent 60%), linear-gradient(180deg, var(--band-bg-2), var(--band-bg)); }
-.drawer::backdrop { background: rgb(10 8 9 / .45); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.drawer::backdrop { background: rgb(0 0 0 / .4); -webkit-backdrop-filter: blur(8px) saturate(1.4); backdrop-filter: blur(8px) saturate(1.4); }
 .drawer[open] { animation: drawer-in 550ms var(--ease-out); }
 @keyframes drawer-in { from { translate: 100% 0; } }
 .drawer__head { display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 20px; border-bottom: 1px solid var(--band-line); }
@@ -16990,13 +17316,20 @@ a.chip, button.chip { min-height: 44px; }
 
 /* 8. Heroes ------------------------------------------------------------------------------ */
 .hero { position: relative; isolation: isolate; overflow: hidden; padding: calc(var(--header-h) + clamp(40px, 7vw, 96px)) 0 clamp(48px, 7vw, 96px); }
-.hero::before { content: ""; position: absolute; inset: 0; z-index: -2; background:
+.hero::before { content: ""; position: absolute; inset: 0; z-index: -2; -webkit-mask-image: linear-gradient(180deg, #000 72%, transparent); mask-image: linear-gradient(180deg, #000 72%, transparent); background: var(--grain),
   radial-gradient(42% 46% at 8% 12%, rgb(var(--glow-blush) / .32), transparent 70%),
   radial-gradient(40% 50% at 92% 8%, rgb(var(--glow-accent) / .3), transparent 70%),
   radial-gradient(46% 50% at 70% 92%, rgb(var(--glow-mint) / .28), transparent 72%),
   radial-gradient(36% 40% at 22% 88%, rgb(var(--glow-peach) / .26), transparent 70%),
   radial-gradient(90% 60% at 50% 0%, var(--hero-glow), transparent 62%); }
-.hero__haze { position: absolute; z-index: -1; inset: auto -10% -30% -10%; height: 70%; background: radial-gradient(40% 50% at 70% 40%, rgb(var(--glow-sky) / .28), transparent 70%), radial-gradient(40% 45% at 55% 55%, rgb(var(--glow-accent) / .2), transparent 70%); pointer-events: none; }
+.hero__haze { position: absolute; z-index: -1; inset: auto -10% -30% -10%; height: 70%; -webkit-mask-image: linear-gradient(180deg, #000 15%, transparent 55%); mask-image: linear-gradient(180deg, #000 15%, transparent 55%); background: radial-gradient(40% 50% at 70% 40%, rgb(var(--glow-sky) / .28), transparent 70%), radial-gradient(40% 45% at 55% 55%, rgb(var(--glow-accent) / .2), transparent 70%); pointer-events: none; animation: drift 22s ease-in-out infinite alternate; }
+:root:not([data-theme="dark"]) .hero::before { background: var(--grain),
+  radial-gradient(42% 46% at 8% 12%, rgb(var(--glow-blush) / .5), transparent 70%),
+  radial-gradient(40% 50% at 92% 8%, rgb(var(--glow-accent) / .42), transparent 70%),
+  radial-gradient(46% 50% at 70% 92%, rgb(var(--glow-mint) / .6), transparent 72%),
+  radial-gradient(36% 40% at 22% 88%, rgb(var(--glow-peach) / .4), transparent 70%),
+  radial-gradient(90% 60% at 50% 0%, var(--hero-glow), transparent 62%); }
+@keyframes drift { to { transform: translate3d(5%, -7%, 0) scale(1.08); } }
 .hero__title { font-size: clamp(2.4rem, 1rem + 5vw, 4.75rem); font-weight: 650; line-height: 1; letter-spacing: -.055em; max-width: 15ch; }
 .hero__title .serif { font-size: 1.08em; letter-spacing: -.03em; }
 .hero__sub { margin-top: 22px; max-width: 54ch; font-size: clamp(1.0625rem, 1rem + .5vw, 1.3125rem); color: var(--color-muted); }
@@ -17016,24 +17349,24 @@ a.chip, button.chip { min-height: 44px; }
 .orbit__ring--2 { inset: 22%; border-style: dashed; opacity: .7; }
 .phone {
   position: absolute; left: 50%; top: 50%; width: 46%; aspect-ratio: 9 / 18.6; translate: -50% -50%;
-  border-radius: 34px; padding: 9px; background: linear-gradient(160deg, #F3EEFC, #D9CFF3 55%, #C8BBEC);
-  box-shadow: 0 40px 80px -30px rgb(80 50 140 / .45), inset 0 0 0 1px rgb(255 255 255 / .8), inset 0 2px 0 rgb(255 255 255 / .9);
+  border-radius: 34px; padding: 9px; background: linear-gradient(160deg, #FFF6DF 0%, #E9CD8C 26%, #F7E6BD 52%, #D6B064 78%, #F1DDA8 100%);
+  box-shadow: 0 44px 90px -32px rgb(90 62 14 / .42), inset 0 0 0 1px rgb(255 255 255 / .7), inset 0 2px 0 rgb(255 255 255 / .9), inset 0 -2px 3px rgb(120 86 20 / .18);
   transform-style: preserve-3d; transition: transform 700ms var(--ease-out);
 }
-.phone__screen { position: relative; height: 100%; overflow: hidden; border-radius: 26px; background: #FCF8FC; color: #2B2238; }
+.phone__screen { position: relative; height: 100%; overflow: hidden; border-radius: 26px; background: #FFFDF9; color: #1F1A12; box-shadow: 0 0 0 3px #14110C; }
 .phone__screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(125deg, rgb(255 255 255 / .35) 0%, rgb(255 255 255 / 0) 34%); pointer-events: none; }
-.phone__notch { position: absolute; top: 8px; left: 50%; translate: -50% 0; width: 34%; height: 18px; border-radius: 999px; background: #2B2238; z-index: 2; }
-.mini-site { height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 38px 14px 14px; gap: 8px; background: radial-gradient(90% 40% at 20% 0%, #F9DCE6, transparent 70%), radial-gradient(90% 40% at 90% 5%, #E6DEFB, transparent 70%), #FCF8FC; }
-.mini-site__mono { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #B8A4F0; display: grid; place-items: center; font: italic 400 1.1rem/1 var(--font-serif); color: #5A44A3; background: rgb(255 255 255 / .6); }
-.mini-site__kicker { font-size: .5rem; letter-spacing: .24em; text-transform: uppercase; color: #5A44A3; }
+.phone__notch { position: absolute; top: 8px; left: 50%; translate: -50% 0; width: 34%; height: 18px; border-radius: 999px; background: #14110C; z-index: 2; }
+.mini-site { height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 38px 14px 14px; gap: 8px; background: radial-gradient(90% 40% at 20% 0%, #FBEDE6, transparent 70%), radial-gradient(90% 40% at 90% 5%, #FBF1DA, transparent 70%), #FFFDF9; }
+.mini-site__mono { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #D4AA52; display: grid; place-items: center; font: italic 400 1.1rem/1 var(--font-serif); color: #87651C; background: rgb(255 255 255 / .6); }
+.mini-site__kicker { font-size: .5rem; letter-spacing: .24em; text-transform: uppercase; color: #87651C; }
 .mini-site__names { font: italic 400 1.45rem/1.05 var(--font-serif); letter-spacing: -.01em; }
-.mini-site__date { font: 500 .55rem/1.4 var(--font-mono); letter-spacing: .12em; color: #6c615a; }
+.mini-site__date { font: 500 .55rem/1.4 var(--font-mono); letter-spacing: .12em; color: #6A6152; }
 .mini-site__count { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; margin-top: 6px; }
-.mini-site__count div { padding: 6px 0; border-radius: 8px; background: #fff; border: 1px solid #EAE3F7; font: 600 .7rem/1 var(--font-mono); }
-.mini-site__count small { display: block; margin-top: 3px; font: 400 .42rem/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: #8b7f76; }
-.mini-site__btn { margin-top: 8px; width: 100%; padding: 9px 0; border-radius: 999px; background: linear-gradient(180deg, #E4DBFB, #CDBFF4 52%, #BBA9EE); color: #231A3E; font-size: .62rem; font-weight: 600; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .8); }
+.mini-site__count div { padding: 6px 0; border-radius: 8px; background: #fff; border: 1px solid #EFE6D4; font: 600 .7rem/1 var(--font-mono); }
+.mini-site__count small { display: block; margin-top: 3px; font: 400 .42rem/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: #8C8270; }
+.mini-site__btn { margin-top: 8px; width: 100%; padding: 9px 0; border-radius: 999px; background: linear-gradient(180deg, #F8E7B9, #EDCF86 48%, #DDB563); color: #2A1F0A; font-size: .62rem; font-weight: 600; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .75); }
 .mini-site__img { width: 100%; flex: 1; min-height: 40px; border-radius: 12px; background:
-  radial-gradient(60% 80% at 25% 100%, #D3F0E4 0, transparent 60%), radial-gradient(55% 70% at 85% 90%, #F9DCE6 0, transparent 60%), linear-gradient(180deg, #EEE8FD, #DCE8FB); position: relative; overflow: hidden; }
+  radial-gradient(60% 80% at 25% 100%, #F5F1E2 0, transparent 60%), radial-gradient(55% 70% at 85% 90%, #FBEDE6 0, transparent 60%), linear-gradient(180deg, #FBF1DA, #FAF3E3); position: relative; overflow: hidden; }
 .mini-site__img::before { content: ""; position: absolute; inset: 22% 30% 0; border-radius: 999px 999px 0 0; border: 1px solid rgb(255 255 255 / .7); }
 .float-tile { position: absolute; padding: 12px 14px; border-radius: 16px; font-size: .8125rem; min-width: 150px; transition: transform 700ms var(--ease-out); }
 .float-tile b { display: block; font-size: 1.05rem; letter-spacing: -.02em; }
@@ -17042,7 +17375,7 @@ a.chip, button.chip { min-height: 44px; }
 .float-tile--seat { right: 0; top: 30%; }
 .float-tile--menu { left: 2%; bottom: 14%; }
 .float-tile--link { right: 4%; bottom: 6%; display: flex; align-items: center; gap: 10px; border-radius: 999px; padding: 8px 14px 8px 8px; }
-.float-tile--link .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--gold-sheen); color: var(--btn-text); box-shadow: inset 0 1px 0 rgb(255 255 255 / .8); }
+.float-tile--link .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--gold-sheen); color: var(--btn-text); box-shadow: var(--btn-shadow); }
 .float-tile--link .dot .i { width: 16px; height: 16px; }
 .ring-stat { display: flex; align-items: center; gap: 10px; }
 .ring-stat svg { width: 40px; height: 40px; flex: none; rotate: -90deg; }
@@ -17052,7 +17385,7 @@ a.chip, button.chip { min-height: 44px; }
 @media (max-width: 479px) { .float-tile { min-width: 0; padding: 9px 11px; font-size: .75rem; } .float-tile b { font-size: .9rem; } .float-tile--menu { display: none; } }
 
 .page-hero { position: relative; isolation: isolate; overflow: hidden; padding: calc(var(--header-h) + clamp(32px, 6vw, 72px)) 0 clamp(32px, 5vw, 56px); border-bottom: 1px solid var(--color-line); }
-.page-hero::before { content: ""; position: absolute; inset: 0; z-index: -2; background: radial-gradient(45% 80% at 92% 0%, rgb(var(--glow-accent) / .26), transparent 70%), radial-gradient(40% 70% at 65% 0%, rgb(var(--glow-blush) / .22), transparent 70%), radial-gradient(30% 60% at 100% 100%, rgb(var(--glow-mint) / .2), transparent 70%), radial-gradient(70% 70% at 85% 0%, var(--hero-glow), transparent 60%); }
+.page-hero::before { content: ""; position: absolute; inset: 0; z-index: -2; background: var(--grain), radial-gradient(45% 80% at 92% 0%, rgb(var(--glow-accent) / .26), transparent 70%), radial-gradient(40% 70% at 65% 0%, rgb(var(--glow-blush) / .22), transparent 70%), radial-gradient(30% 60% at 100% 100%, rgb(var(--glow-mint) / .2), transparent 70%), radial-gradient(70% 70% at 85% 0%, var(--hero-glow), transparent 60%); }
 .page-hero .grid-texture { -webkit-mask-image: radial-gradient(ellipse 60% 80% at 90% 0%, #000 20%, transparent 70%); mask-image: radial-gradient(ellipse 60% 80% at 90% 0%, #000 20%, transparent 70%); }
 .page-hero h1 { max-width: 22ch; }
 .page-hero .lead { margin-top: 16px; }
@@ -17062,16 +17395,16 @@ a.chip, button.chip { min-height: 44px; }
 .breadcrumbs span[aria-hidden] { opacity: .5; }
 
 /* 9. Marketing blocks -------------------------------------------------------------------- */
-.cat-tile { position: relative; min-height: 260px; padding: var(--pad-card); border-radius: var(--radius-xl); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; text-decoration: none; isolation: isolate; border: 1px solid var(--color-line); background: var(--color-surface); transition: transform var(--t-move) var(--ease-out), box-shadow var(--t-move) var(--ease-out); }
+.cat-tile { position: relative; min-height: 260px; padding: var(--pad-card); border-radius: var(--radius-xl); overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; text-decoration: none; isolation: isolate; border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--shadow-cell); transition: transform var(--t-move) var(--ease-out), box-shadow var(--t-move) var(--ease-out); }
 .cat-tile:hover { transform: translateY(var(--lift)); box-shadow: var(--shadow-lg); }
-.cat-tile__art { position: absolute; inset: 0; z-index: -1; transition: transform var(--t-slow) var(--ease-out); }
+.cat-tile__art { position: absolute; inset: 0; z-index: -1; opacity: .55; transition: transform var(--t-slow) var(--ease-out); }
 .cat-tile:hover .cat-tile__art { transform: scale(var(--zoom)); }
-.cat-tile__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, var(--color-surface) 92%); }
+.cat-tile__art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 20%, color-mix(in srgb, var(--color-surface) 70%, transparent) 55%, var(--color-surface) 88%); }
 .cat-tile h3 { font-size: 1.375rem; }
 .cat-tile p { font-size: .9375rem; color: var(--color-muted); }
 .cat-tile .arrow-link { margin-top: 4px; }
 
-.tpl-card { position: relative; display: flex; flex-direction: column; border-radius: var(--radius-xl); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--inset-hi); overflow: hidden; transition: transform var(--t-move) var(--ease-out), box-shadow var(--t-move) var(--ease-out), border-color var(--t-fast); }
+.tpl-card { position: relative; display: flex; flex-direction: column; border-radius: var(--radius-xl); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--shadow-cell); overflow: hidden; transition: transform var(--t-move) var(--ease-out), box-shadow var(--t-move) var(--ease-out), border-color var(--t-fast); }
 .tpl-card:hover { transform: translateY(var(--lift)); box-shadow: var(--inset-hi), var(--shadow-lg); border-color: color-mix(in srgb, var(--color-text) 16%, transparent); }
 .tpl-card__stage { position: relative; aspect-ratio: 4 / 3.1; overflow: hidden; background: var(--color-surface-2); }
 .tpl-card__stage iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 992px; border: 0; transform-origin: 0 0; pointer-events: none; }
@@ -17100,9 +17433,9 @@ a.chip, button.chip { min-height: 44px; }
 
 .price-grid { display: grid; gap: var(--gap); }
 @media (min-width: 960px) { .price-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; } }
-.price { position: relative; display: flex; flex-direction: column; gap: 18px; padding: clamp(24px, 3vw, 34px); border-radius: var(--radius-xl); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--inset-hi); }
-.price--highlight { border-color: color-mix(in srgb, var(--color-accent) 60%, transparent); box-shadow: var(--inset-hi), 0 40px 80px -48px rgb(var(--glow-accent) / .8); background: radial-gradient(80% 40% at 100% 0%, rgb(var(--glow-blush) / .22), transparent 70%), linear-gradient(180deg, color-mix(in srgb, var(--color-accent-soft) 80%, var(--color-surface)), var(--color-surface) 45%); }
-.price__badge { position: absolute; top: -13px; left: 50%; translate: -50% 0; height: 26px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--gold-sheen); color: var(--btn-text); font-size: .75rem; font-weight: 600; letter-spacing: .02em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .8); }
+.price { position: relative; display: flex; flex-direction: column; gap: 18px; padding: clamp(24px, 3vw, 34px); border-radius: var(--radius-xl); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--shadow-cell); }
+.price--highlight { border-color: transparent; box-shadow: var(--shadow-cell), 0 40px 80px -40px rgb(var(--glow-sky) / .9); background: radial-gradient(80% 40% at 100% 0%, rgb(var(--glow-blush) / .2), transparent 70%) padding-box, linear-gradient(180deg, color-mix(in srgb, var(--pastel-sky) 70%, var(--color-surface)), var(--color-surface) 45%) padding-box, linear-gradient(150deg, rgb(var(--glow-accent)), rgb(var(--glow-sky)) 50%, rgb(var(--glow-blush))) border-box; }
+.price__badge { position: absolute; top: -13px; left: 50%; translate: -50% 0; height: 26px; padding: 0 12px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--gold-sheen); color: var(--btn-text); font-size: .75rem; font-weight: 600; letter-spacing: .02em; box-shadow: var(--btn-shadow); }
 .price h3 { font-size: 1.25rem; }
 .price__amount { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: clamp(2.2rem, 1.6rem + 2vw, 3rem); font-weight: 650; letter-spacing: -.05em; line-height: 1; }
 .price__amount small { font-size: .875rem; font-weight: 400; letter-spacing: 0; color: var(--color-muted); white-space: nowrap; }
@@ -17126,7 +17459,7 @@ a.chip, button.chip { min-height: 44px; }
 .faq details { border-bottom: 1px solid var(--color-line); }
 .faq summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 68px; cursor: pointer; list-style: none; font-weight: 550; font-size: 1.0625rem; letter-spacing: -.015em; }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after { content: "+"; flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-border); font-weight: 400; transition: rotate var(--t-move) var(--ease-out); }
+.faq summary::after { content: "+"; flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--color-border); background: var(--color-surface); box-shadow: var(--shadow-cell); font-weight: 400; transition: rotate var(--t-move) var(--ease-out); }
 .faq details[open] summary::after { rotate: 45deg; }
 .faq details > div { padding: 0 0 22px; color: var(--color-muted); max-width: 70ch; }
 
@@ -17134,7 +17467,7 @@ a.chip, button.chip { min-height: 44px; }
 .quote blockquote { margin: 0; font-family: var(--font-serif); font-size: 1.35rem; line-height: 1.35; letter-spacing: -.01em; }
 .quote figcaption { font-size: .875rem; color: var(--color-muted); }
 
-.cta-panel { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 24px; align-items: center; padding: clamp(28px, 5vw, 56px); border-radius: var(--radius-xl); border: 1px solid var(--glass-border); box-shadow: var(--shadow-glass); color: var(--color-text); background:
+.cta-panel { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 24px; align-items: center; padding: clamp(28px, 5vw, 56px); border-radius: var(--radius-xl); border: 1px solid var(--glass-border); box-shadow: var(--shadow-glass); color: var(--color-text); background: var(--grain),
   radial-gradient(55% 90% at 100% 0%, rgb(var(--glow-accent) / .38), transparent 65%),
   radial-gradient(45% 80% at 0% 100%, rgb(var(--glow-mint) / .38), transparent 65%),
   radial-gradient(40% 70% at 40% 0%, rgb(var(--glow-blush) / .32), transparent 70%),
@@ -17147,7 +17480,7 @@ a.chip, button.chip { min-height: 44px; }
 
 .showcase { display: grid; gap: var(--gap); }
 @media (min-width: 900px) { .showcase { grid-template-columns: 1.2fr .8fr .8fr; align-items: end; } }
-.device { position: relative; border-radius: 22px; padding: 8px; background: linear-gradient(160deg, color-mix(in srgb, var(--color-text) 85%, #000), #000); box-shadow: var(--shadow-lg); }
+.device { position: relative; border-radius: 22px; padding: 8px; background: linear-gradient(160deg, #3A352C, #0E0C08 60%, #1E1A14); box-shadow: inset 0 1px 0 rgb(255 255 255 / .18), inset 0 0 0 1px rgb(255 255 255 / .06), var(--shadow-lg); }
 .device--browser { padding: 30px 8px 8px; border-radius: 16px; }
 .device--browser::before { content: ""; position: absolute; top: 12px; left: 14px; width: 42px; height: 8px; background: radial-gradient(circle at 4px 4px, #ff6159 3.5px, transparent 4px), radial-gradient(circle at 21px 4px, #ffbd2e 3.5px, transparent 4px), radial-gradient(circle at 38px 4px, #28c941 3.5px, transparent 4px); }
 .device__screen { position: relative; overflow: hidden; border-radius: 16px; background: #fff; }
@@ -17178,7 +17511,7 @@ a.chip, button.chip { min-height: 44px; }
 .hint { font-size: .8125rem; color: var(--color-muted); overflow-wrap: anywhere; }
 .input, .select, .textarea {
   width: 100%; min-height: 50px; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: var(--radius);
-  background: var(--color-surface); color: var(--color-text); font-size: 1rem;
+  background: var(--field-bg); color: var(--color-text); font-size: 1rem; box-shadow: inset 0 1px 2px rgb(0 0 0 / .03);
   transition: border-color var(--t-fast), box-shadow var(--t-fast);
 }
 .input--sm, .select--sm { min-height: 40px; padding: 8px 12px; font-size: .9375rem; }
@@ -17191,24 +17524,24 @@ a.chip, button.chip { min-height: 44px; }
 .form-errors { padding: 14px 16px; border-radius: var(--radius); background: color-mix(in srgb, var(--error) 8%, transparent); border: 1px solid color-mix(in srgb, var(--error) 30%, transparent); color: var(--error); font-size: .9375rem; }
 .form-errors ul { margin: 6px 0 0; padding-left: 18px; }
 .check { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding-top: 10px; cursor: pointer; font-size: .9375rem; }
-.check input { appearance: none; flex: none; width: 22px; height: 22px; margin: 0; border-radius: 7px; border: 1px solid var(--color-border-strong); background: var(--color-surface); display: grid; place-items: center; cursor: pointer; transition: background-color var(--t-fast), border-color var(--t-fast); }
-.check input::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2px 2px 0; rotate: 45deg; translate: 0 -1px; opacity: 0; }
+.check input { appearance: none; flex: none; width: 22px; height: 22px; margin: 0; border-radius: 8px; border: 1.5px solid var(--control-off); background: var(--field-bg); display: grid; place-items: center; cursor: pointer; transition: background-color var(--t-fast), border-color var(--t-fast); }
+.check input::after { content: ""; width: 6px; height: 11px; border: solid var(--control-ink); border-width: 0 2px 2px 0; rotate: 45deg; translate: 0 -1px; opacity: 0; }
 .check input:checked { background: var(--control-on); border-color: var(--control-on); }
 .check input:checked::after { opacity: 1; }
 .check input[type="radio"] { border-radius: 50%; }
-.check input[type="radio"]::after { width: 8px; height: 8px; border: 0; border-radius: 50%; background: #fff; rotate: 0deg; translate: 0 0; }
+.check input[type="radio"]::after { width: 8px; height: 8px; border: 0; border-radius: 50%; background: var(--control-ink); rotate: 0deg; translate: 0 0; }
 .choice-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .choice { position: relative; }
 .choice input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
 .choice > span { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 52px; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--color-border); background: var(--color-surface); font-size: .9375rem; font-weight: 500; transition: border-color var(--t-fast), box-shadow var(--t-fast), background-color var(--t-fast); }
 .choice > span small { font-weight: 400; color: var(--color-muted); font-size: .8125rem; }
-.choice input:checked + span { border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent); background: color-mix(in srgb, var(--color-accent-soft) 55%, var(--color-surface)); }
-.choice input:focus-visible + span { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+.choice input:checked + span { border-color: var(--control-on); box-shadow: inset 0 0 0 1px var(--control-on), var(--shadow-cell); background: var(--color-surface); }
+.choice input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 3px; }
 .switch { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; font-size: .9375rem; }
-.switch input { appearance: none; position: relative; flex: none; width: 48px; height: 28px; margin: 0; border-radius: 999px; background: var(--color-border-strong); cursor: pointer; transition: background-color var(--t-fast); }
+.switch input { appearance: none; position: relative; flex: none; width: 48px; height: 28px; margin: 0; border-radius: 999px; background: var(--control-off); cursor: pointer; transition: background-color var(--t-fast); }
 .switch input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: translate var(--t-move) var(--ease-out); }
 .switch input:checked { background: var(--control-on); }
-.switch input:checked::after { translate: 20px 0; }
+.switch input:checked::after { translate: 20px 0; background: var(--control-ink); }
 .color-field { display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 6px 12px 6px 6px; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); }
 .color-field input[type="color"] { width: 38px; height: 38px; padding: 0; border: 0; border-radius: 9px; background: none; cursor: pointer; }
 .color-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
@@ -17252,7 +17585,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .auth__form > div { width: min(100%, 440px); margin-inline: auto; }
 .auth__form h1 { font-size: clamp(2rem, 1.4rem + 2vw, 2.6rem); }
 .auth__art { display: none; position: relative; overflow: hidden; isolation: isolate; }
-@media (min-width: 1024px) { .auth__art { display: grid; place-items: center; padding: 48px; border-left: 1px solid var(--color-line); background:
+@media (min-width: 1024px) { .auth__art { display: grid; place-items: center; padding: 48px; border-left: 1px solid var(--color-line); background: var(--grain),
   radial-gradient(55% 45% at 80% 15%, rgb(var(--glow-accent) / .42), transparent 70%),
   radial-gradient(50% 45% at 15% 30%, rgb(var(--glow-blush) / .38), transparent 70%),
   radial-gradient(55% 50% at 70% 90%, rgb(var(--glow-mint) / .38), transparent 70%),
@@ -17263,7 +17596,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 /* 13. App shell (dashboard + admin) -------------------------------------------------------- */
 .app { display: grid; min-height: 100vh; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1024px) { .app { grid-template-columns: 264px minmax(0, 1fr); } }
-.sidebar { position: sticky; top: 0; height: 100vh; display: none; flex-direction: column; gap: 6px; padding: 18px 14px; border-right: 1px solid var(--color-line); background: color-mix(in srgb, var(--color-surface) 70%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); overflow-y: auto; }
+.sidebar { position: sticky; top: 0; height: 100vh; display: none; flex-direction: column; gap: 6px; padding: 18px 14px; border-right: 1px solid var(--color-line); background: color-mix(in srgb, var(--color-surface) 62%, transparent); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8); overflow-y: auto; }
 @media (min-width: 1024px) { .sidebar { display: flex; } }
 .sidebar .brand { padding: 6px 10px 16px; }
 .side-group { margin-top: 10px; }
@@ -17271,14 +17604,14 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .side-link { display: flex; align-items: center; gap: 12px; min-height: 42px; padding: 0 12px; border-radius: 12px; font-size: .9375rem; font-weight: 500; text-decoration: none; color: color-mix(in srgb, var(--color-text) 78%, transparent); transition: background-color var(--t-fast), color var(--t-fast); }
 .side-link .i { width: 18px; height: 18px; opacity: .8; }
 .side-link:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); color: var(--color-text); }
-.side-link[aria-current="page"] { background: var(--color-surface); color: var(--color-text); box-shadow: var(--inset-hi), 0 1px 2px rgb(0 0 0 / .06); border: 1px solid var(--color-line); }
+.side-link[aria-current="page"] { background: var(--color-surface); color: var(--color-text); box-shadow: var(--inset-hi), var(--shadow-cell); border: 1px solid var(--color-line); }
 .side-link[aria-current="page"] .i { color: var(--color-accent-text); opacity: 1; }
 .side-link .lock { margin-left: auto; width: 14px; height: 14px; opacity: .5; }
 .side-event { margin: 4px 0 6px; padding: 12px; border-radius: 14px; border: 1px solid var(--color-line); background: var(--color-surface); }
 .side-event b { display: block; font-size: .9375rem; letter-spacing: -.01em; line-height: 1.3; }
 .side-event span { font-size: .8125rem; color: var(--color-muted); }
 .sidebar__foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--color-line); }
-.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 var(--gutter); border-bottom: 1px solid var(--color-line); background: var(--glass-strong); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); }
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 var(--gutter); border-bottom: 1px solid var(--color-line); background: var(--glass-strong); -webkit-backdrop-filter: blur(24px) saturate(1.8); backdrop-filter: blur(24px) saturate(1.8); }
 .topbar .brand { display: inline-flex; }
 @media (min-width: 1024px) { .topbar .brand { display: none; } }
 .topbar__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
@@ -17292,12 +17625,12 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .tabs a[aria-current="page"] { color: var(--color-text); border-color: var(--color-accent); }
 .kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 900px) { .kpis { grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); } }
-.kpi { padding: 18px; border-radius: 18px; border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--inset-hi); }
+.kpi { padding: 18px; border-radius: 20px; border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--shadow-cell); }
 .kpi span { font-size: .8125rem; color: var(--color-muted); }
 .kpi b { display: block; margin-top: 6px; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); font-weight: 600; letter-spacing: -.04em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .kpi small { display: block; margin-top: 4px; font-size: .8125rem; color: var(--color-muted); }
 .kpi--accent { background: linear-gradient(160deg, color-mix(in srgb, var(--color-accent-soft) 80%, var(--color-surface)), var(--color-surface)); }
-.box { padding: var(--pad-card); border-radius: var(--radius-lg); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--inset-hi); min-width: 0; }
+.box { padding: var(--pad-card); border-radius: var(--radius-lg); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--shadow-cell); min-width: 0; }
 .box__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .box__head h2 { font-size: 1.125rem; letter-spacing: -.02em; }
 .cols { display: grid; gap: var(--gap); }
@@ -17323,7 +17656,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .app-drawer-nav .side-group__label { color: var(--band-muted); }
 
 /* 14. Tables ------------------------------------------------------------------------------ */
-.table-wrap { overflow-x: auto; border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-surface); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-cell); }
 .table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 .table th { position: sticky; top: 0; text-align: left; font-size: .8125rem; font-weight: 600; color: var(--color-muted); padding: 12px 14px; border-bottom: 1px solid var(--color-line); background: var(--color-surface); white-space: nowrap; }
 .table td { padding: 12px 14px; border-bottom: 1px solid var(--color-line); vertical-align: middle; }
@@ -17347,8 +17680,8 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .stepper a:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); color: var(--color-text); }
 .stepper .n { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--color-border-strong); font: 500 .75rem/1 var(--font-mono); }
 .stepper .is-done .n { background: var(--color-accent-soft); border-color: transparent; color: var(--color-accent-text); }
-.stepper a[aria-current="step"] { background: var(--color-surface); color: var(--color-text); box-shadow: var(--inset-hi); border: 1px solid var(--color-line); font-weight: 500; }
-.stepper a[aria-current="step"] .n { background: var(--btn-bg); background-image: var(--gold-sheen); border-color: transparent; color: var(--btn-text); }
+.stepper a[aria-current="step"] { background: var(--color-surface); color: var(--color-text); box-shadow: var(--inset-hi), var(--shadow-cell); border: 1px solid var(--color-line); font-weight: 500; }
+.stepper a[aria-current="step"] .n { background: var(--btn-bg); background-image: var(--gold-sheen); border-color: transparent; color: var(--btn-text); box-shadow: var(--btn-shadow); }
 .wizard-progress { display: flex; align-items: center; gap: 12px; font-size: .8125rem; color: var(--color-muted); margin-bottom: 18px; }
 .wizard-progress .progress { flex: 1; }
 .wizard-card { padding: clamp(20px, 3vw, 36px); border-radius: var(--radius-xl); }
@@ -17362,10 +17695,10 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .preview-frame__url { font-family: var(--font-mono); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview-frame__stage { display: grid; place-items: start center; padding: 16px; height: 720px; overflow: hidden; }
 .preview-frame__stage iframe { width: 100%; height: 100%; border: 0; border-radius: 10px; background: #fff; box-shadow: var(--shadow); transition: width var(--t-move) var(--ease-out); }
-.preview-frame[data-device="mobile"] iframe { width: 390px; max-width: 100%; border-radius: 28px; border: 8px solid #141213; }
+.preview-frame[data-device="mobile"] iframe { width: 390px; max-width: 100%; border-radius: 28px; border: 8px solid #1E1A14; }
 .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--color-surface-2); }
 .seg button, .seg a { min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font-size: .8125rem; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
-.seg [aria-pressed="true"], .seg [aria-current="page"] { background: var(--color-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .1); }
+.seg [aria-pressed="true"], .seg [aria-current="page"] { background: var(--color-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 3px 8px -2px rgb(0 0 0 / .1); }
 .palette-swatches { display: flex; gap: 4px; }
 .palette-swatches i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgb(0 0 0 / .1); }
 .review-section { display: grid; gap: 10px; padding: 18px 0; border-bottom: 1px solid var(--color-line); }
@@ -17404,7 +17737,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .seat-list-view { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 
 /* 17. Footer ------------------------------------------------------------------------------ */
-.site-footer { position: relative; isolation: isolate; overflow: hidden; margin-top: var(--section-y); padding: clamp(48px, 7vw, 80px) 0 28px; background: radial-gradient(45% 60% at 100% 0%, rgb(var(--glow-accent) / .28), transparent 65%), radial-gradient(40% 55% at 0% 100%, rgb(var(--glow-blush) / .18), transparent 65%), radial-gradient(30% 40% at 55% 100%, rgb(var(--glow-mint) / .12), transparent 70%), linear-gradient(180deg, var(--band-bg-2), var(--band-bg)); color: var(--band-text); }
+.site-footer { position: relative; isolation: isolate; overflow: hidden; margin-top: var(--section-y); padding: clamp(48px, 7vw, 80px) 0 28px; background: var(--grain), radial-gradient(45% 60% at 100% 0%, rgb(var(--glow-accent) / .28), transparent 65%), radial-gradient(40% 55% at 0% 100%, rgb(var(--glow-blush) / .18), transparent 65%), radial-gradient(30% 40% at 55% 100%, rgb(var(--glow-mint) / .12), transparent 70%), linear-gradient(180deg, var(--band-bg-2), var(--band-bg)); color: var(--band-text); }
 .site-footer::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: linear-gradient(rgb(255 255 255 / .035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .035) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%); mask-image: linear-gradient(180deg, #000, transparent 70%); }
 .footer-grid { display: grid; gap: 32px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .footer-grid > :first-child { grid-column: 1 / -1; }
@@ -17511,7 +17844,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 @media print { .wa-float { display: none; } }
 .price__gap { display: flex; gap: 8px; align-items: flex-start; margin: 0; } .price__gap .i { color: var(--warn); flex: none; margin-top: 2px; }
 .how-list li { display: flex; gap: 14px; align-items: flex-start; } .how-list .mono { flex: none; color: var(--color-accent-text); padding-top: 2px; }
-.brand__sub { font-family: var(--font-sans); font-style: normal; font-size: .6875rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--color-muted); margin-left: 2px; vertical-align: .32em; }
+.brand__sub { font-family: var(--font-sans); font-style: normal; font-size: .6875rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent-text); margin-left: 2px; vertical-align: .32em; }
 /* Programme by day */
 .days { display: grid; gap: 16px; margin: 14px 0; }
 .day-block { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--color-line); border-radius: 16px; background: var(--color-surface); }
@@ -17563,14 +17896,14 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .cat-tile__photo { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
 .cat-tile__photo img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--t-slow) var(--ease-out); }
 .cat-tile:hover .cat-tile__photo img { transform: scale(var(--zoom)); }
-.cat-tile__photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 14, 30, 0) 30%, rgba(20, 14, 30, .78) 100%); }
+.cat-tile__photo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 15, 8, 0) 30%, rgba(20, 15, 8, .78) 100%); }
 .cat-tile:has(.cat-tile__photo) h3, .cat-tile:has(.cat-tile__photo) p, .cat-tile:has(.cat-tile__photo) .arrow-link { color: #fff; }
 .vs, .vs * { text-align: left; } .vs-row { justify-items: start; }
 ```
 
 ### `static/css/eventsite.css`
 
-<!-- FILE: static/css/eventsite.css sha256=0a8f5c8b2537335086ee3d1b89af7f3ba8e6280c6e9cb61de09c53c85ceeaa86 nl=1 -->
+<!-- FILE: static/css/eventsite.css sha256=2f269fd0872b9fccf1a3bd41d2f7aac0e6151e5eaa257b5a7072ce9517d1b3a4 nl=1 -->
 ```css
 /* Aurelia event websites: shared base + eleven designs (scoped by .d-<design>).
    Theme variables come from the event: --ev-bg --ev-surface --ev-text --ev-muted --ev-accent
@@ -17603,6 +17936,12 @@ html { -webkit-text-size-adjust: 100%; scroll-padding-top: 80px; }
 .ev-skip:focus { top: 12px; }
 .ev-banner { position: sticky; top: 0; z-index: 40; padding: 8px 16px; text-align: center; font: 500 .8125rem/1.4 system-ui, sans-serif; background: #1B191A; color: #F5F3F2; }
 .ev-banner--notice { background: var(--ev-btn); color: var(--ev-btn-text); }
+.ev-banner--draft { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; padding: 10px 16px; font-size: .875rem;
+  background: repeating-linear-gradient(-45deg, #1B191A 0 14px, #2A2629 14px 28px); color: #FFF; border-bottom: 3px solid #E8B44A; }
+.ev-banner--draft b { letter-spacing: .02em; }
+.ev-banner__btn { display: inline-block; padding: 5px 12px; border-radius: 999px; background: #E8B44A; color: #1B191A; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.ev-banner__btn:hover { background: #F2C766; }
+.ev-watermark { position: fixed; inset: 0; z-index: 39; pointer-events: none; background-repeat: repeat; }
 .ev-ribbon { position: fixed; z-index: 40; top: 14px; right: -42px; rotate: 45deg; width: 170px; padding: 6px 0; text-align: center; font: 600 .6875rem/1 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; background: #1B191A; color: #F5F3F2; box-shadow: 0 6px 18px rgb(0 0 0 / .2); pointer-events: none; }
 
 .ev-sec { position: relative; padding: clamp(48px, 8vw, 96px) var(--ev-pad); }
@@ -18163,6 +18502,8 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 }
 @media print {
   .ev-nav, .ev-banner, .ev-ribbon, .au-field, .pu-ticker, .ev-rsvp { display: none !important; }
+  .ev-banner--draft { display: flex !important; position: static; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ev-watermark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .ev { background: #fff; }
 }
 ```
@@ -18245,9 +18586,9 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 
 ### `static/img/favicon.svg`
 
-<!-- FILE: static/img/favicon.svg sha256=2f8f6e84b6aedf7319777f71a7be5d6af8e46643e1bb164d87da26df54b81a69 nl=1 -->
+<!-- FILE: static/img/favicon.svg sha256=f3068dcca3815f4393dca09cb1152f9ff0d6813e535d52602bd625068a767779 nl=0 -->
 ```xml
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9F87E6"/><stop offset=".5" stop-color="#E58DB3"/><stop offset="1" stop-color="#F0A77E"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="#F8F6FC"/><circle cx="12.5" cy="16" r="7.2" fill="none" stroke="url(#g)" stroke-width="2.2"/><circle cx="19.5" cy="16" r="7.2" fill="none" stroke="url(#g)" stroke-width="2.2"/><circle cx="16" cy="16" r="1.7" fill="#8B73D8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F6DFA0"/><stop offset=".5" stop-color="#D9AE4E"/><stop offset="1" stop-color="#F0D088"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="#1F1A12"/><circle cx="12.5" cy="16" r="7.2" fill="none" stroke="url(#g)" stroke-width="2.2"/><circle cx="19.5" cy="16" r="7.2" fill="none" stroke="url(#g)" stroke-width="2.2"/><path d="M16 13.2c.28 1.68 1.12 2.52 2.8 2.8-1.68.28-2.52 1.12-2.8 2.8-.28-1.68-1.12-2.52-2.8-2.8 1.68-.28 2.52-1.12 2.8-2.8z" fill="#FFF1C9"/></svg>
 ```
 
 ### `static/js/app.js`
@@ -19325,7 +19666,7 @@ class BackupTest(unittest.TestCase):
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=86535c351ae0c05839f5f92baa5915f9d2b9b600a79b3ada07b314feb95cdcf0 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=9609b1c84f0085d59324054522fb69d75aab23d6aac6acc34f606cd264f02ec6 nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -19355,6 +19696,15 @@ class AccountsTest(unittest.TestCase):
     def test_pricing_reads_packages_from_db(self):
         db.run("UPDATE packages SET price_cents = 1234500 WHERE code = 'premium'")
         self.assertIn("R12,345", self.c.get("/pricing").text)
+
+    def test_robots_and_sitemap(self):
+        r = self.c.get("/robots.txt")
+        self.assertEqual(r.status, 200)
+        self.assertIn("Disallow: /events/", r.text)
+        r = self.c.get("/sitemap.xml")
+        self.assertEqual(r.status, 200)
+        self.assertIn("/pricing</loc>", r.text)
+        self.assertIn("/templates/atelier</loc>", r.text)
 
     def test_register_login_logout(self):
         r = self.c.post("/register", {"name": "Lerato Dube", "email": "lerato@example.com", "password": "Sunrise-2027a",
@@ -19428,17 +19778,22 @@ class WizardTest(unittest.TestCase):
         self.assertEqual((ev["hosts"], ev["name"], ev["slug"]), ("Lerato & Sipho", "Lerato & Sipho's wedding", "lerato-and-sipho"))
         self.assertNotIn("Which package", self.c.get("/create").text)
 
-    def test_create_without_account_needs_only_name_and_email(self):
+    def test_create_without_account_needs_name_email_and_password(self):
         anon = Client(self.app)
         r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle"})
         self.assertEqual(r.status, 200)
         self.assertIn("Your name", r.text)
         r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
+        self.assertEqual(r.status, 200)
+        self.assertIn("Choose a password", r.text)
+        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
+                                  "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1",
+                                  "password": "Nursery-2027b", "password_confirm": "Nursery-2027b"})
         self.assertEqual(r.status, 303, r.text[:300])
         self.assertIn("/setup/1", r.location)
         user = db.one("SELECT * FROM users WHERE email = ?", ("amahle@example.com",))
-        self.assertEqual(user["password_hash"], "")
+        self.assertNotEqual(user["password_hash"], "")
         ev = db.one("SELECT * FROM events WHERE owner_id = ?", (user["id"],))
         self.assertEqual((ev["selected_package"], ev["name"]), ("essential", "Amahle's baby shower"))
         self.assertEqual(anon.get(r.location).status, 200)      # signed in straight away
@@ -19591,6 +19946,28 @@ class PaymentsTest(unittest.TestCase):
         self.assertIn("Payment confirmed", self.c.get(f"/dashboard/events/{self.ev['uid']}/payment/{order_uid}").text)
         self.assertEqual(self.c.get(f"/dashboard/orders/{order_uid}/receipt").status, 200)
 
+    def test_vat_only_when_registered(self):
+        from app import config
+        order_uid = self.checkout()
+        self.c.post(f"/pay/sandbox/{order_uid}", {"decision": "approve"})
+        db.run("UPDATE orders SET mode = 'live' WHERE uid = ?", (order_uid,))
+        url = f"/dashboard/orders/{order_uid}/receipt"
+        old = (config.VAT_NUMBER, config.VAT_REGISTERED)
+        try:
+            config.VAT_NUMBER, config.VAT_REGISTERED = "", False
+            t = self.c.get(url).text
+            self.assertNotIn("Tax invoice", t)
+            self.assertNotIn("VAT", t)
+            self.assertNotIn("VAT", self.c.get("/pricing").text)
+            self.assertEqual(self.c.get(url + "?format=pdf").status, 200)
+            config.VAT_NUMBER, config.VAT_REGISTERED = "4123456789", True
+            t = self.c.get(url).text
+            self.assertIn("Tax invoice", t)
+            self.assertIn("4123456789", t)
+            self.assertIn("VAT incl.", self.c.get("/pricing").text)
+        finally:
+            config.VAT_NUMBER, config.VAT_REGISTERED = old
+
     def test_decline_keeps_draft(self):
         order_uid = self.checkout()
         self.c.post(f"/pay/sandbox/{order_uid}", {"decision": "decline"})
@@ -19675,20 +20052,57 @@ class HostingDefaultsTest(unittest.TestCase):
                if k not in ("BASE_URL", "TRUST_PROXY", "SECRET_KEY") and not k.startswith("RAILWAY_")}
         env.update(extra, AURELIA_DATA_DIR=tempfile.mkdtemp())
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY))"
+        code = "from app import config; print(config.BASE_URL, config.TRUST_PROXY, len(config.SECRET_KEY), config.CANONICAL_HOST or '-')"
         out = subprocess.run([sys.executable, "-c", code], cwd=root, env=env, capture_output=True, text=True, check=True)
         return out.stdout.split()
 
     def test_railway_needs_no_address_proxy_or_secret_settings(self):
         rw = {"RAILWAY_ENVIRONMENT_NAME": "production", "RAILWAY_PUBLIC_DOMAIN": "aurelia.up.railway.app"}
-        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64"])
-        self.assertEqual(self.settings(**rw, BASE_URL="https://aureliastudio.co.za")[0], "https://aureliastudio.co.za")
+        self.assertEqual(self.settings(**rw), ["https://aurelia.up.railway.app", "True", "64", "-"])
+        own = self.settings(**rw, BASE_URL="https://aureliastudios.co.za")
+        self.assertEqual((own[0], own[3]), ("https://aureliastudios.co.za", "aureliastudios.co.za"))
         self.assertEqual(self.settings()[:2], ["http://127.0.0.1:8040", "False"])     # elsewhere: nothing assumed
+
+
+class OwnDomainTest(unittest.TestCase):
+    """Once BASE_URL names the site's own domain, www. and Railway's address send page views there."""
+
+    def setUp(self):
+        self.app = fresh_app("domain")
+        self.old = (config.BASE_URL, config.CANONICAL_HOST)
+        config.BASE_URL, config.CANONICAL_HOST = "https://aureliastudios.co.za", "aureliastudios.co.za"
+
+    def tearDown(self):
+        config.BASE_URL, config.CANONICAL_HOST = self.old
+
+    def test_www_and_railway_address_move_to_the_domain(self):
+        c = Client(self.app)
+        r = c.get("/pricing?x=1", headers={"Host": "www.aureliastudios.co.za"})
+        self.assertEqual((r.status, r.location), (301, "https://aureliastudios.co.za/pricing?x=1"))
+        r = c.get("/templates", headers={"Host": "aurelia-studio-production.up.railway.app"})
+        self.assertEqual((r.status, r.location), (301, "https://aureliastudios.co.za/templates"))
+
+    def test_the_domain_itself_and_other_requests_are_served(self):
+        c = Client(self.app)
+        self.assertEqual(c.get("/pricing", headers={"Host": "aureliastudios.co.za"}).status, 200)
+        self.assertEqual(c.get("/healthz", headers={"Host": "healthcheck.railway.app"}).status, 200)
+        self.assertEqual(c.get("/healthz", headers={"Host": "aurelia-studio-production.up.railway.app"}).status, 200)
+        # payment notifications and form posts are never redirected
+        r = c.post("/webhooks/payments/payfast", {"x": "1"}, headers={"Host": "aurelia-studio-production.up.railway.app"})
+        self.assertNotEqual(r.status, 301)
+        r = c.post("/login", {"email": "a@example.com", "password": "x"}, headers={"Host": "www.aureliastudios.co.za"})
+        self.assertNotEqual(r.status, 301)
+
+    def test_no_redirects_until_the_domain_is_set(self):
+        config.CANONICAL_HOST = ""
+        c = Client(self.app)
+        self.assertEqual(c.get("/pricing", headers={"Host": "aurelia-studio-production.up.railway.app"}).status, 200)
+
 ```
 
 ### `tests/test_ease.py`
 
-<!-- FILE: tests/test_ease.py sha256=b487c59d7b3ee2a1993e5e3ef9effcb0842bd9a4cb581153eddd4ed053067c15 nl=1 -->
+<!-- FILE: tests/test_ease.py sha256=aef0bce6876d3dbfb15e934068d786b2e013075e116bf601b522cec11c526245 nl=1 -->
 ```python
 """Tests for the ease-of-use round (2026-11): sign-in links, draft previews, pasting guests and menus,
 sample programmes, package gaps, the WhatsApp queue, next steps and the set-up help request."""
@@ -19730,13 +20144,12 @@ class EaseTests(unittest.TestCase):
         self.assertIn("Check your email", r.text)
         self.assertIsNone(db.one("SELECT 1 FROM email_logs WHERE to_email = 'nobody@example.com'"))
 
-    def test_register_without_password(self):
+    def test_register_requires_password(self):
         anon = Client(self.app)
         r = anon.post("/register", {"name": "Naledi Khumalo", "email": "naledi@example.com", "terms": "1"})
-        self.assertEqual(r.status, 303, r.text[:300])
-        self.assertEqual(db.one("SELECT password_hash FROM users WHERE email = 'naledi@example.com'")["password_hash"], "")
-        r = Client(self.app).post("/login", {"email": "naledi@example.com", "password": "anything"})
-        self.assertIn("no password yet", r.text)
+        self.assertEqual(r.status, 200)
+        self.assertIn("Choose a password", r.text)
+        self.assertIsNone(db.one("SELECT 1 FROM users WHERE email = 'naledi@example.com'"))
 
     # --- draft preview --------------------------------------------------------------------------------
     def test_draft_preview_link(self):
@@ -19746,6 +20159,9 @@ class EaseTests(unittest.TestCase):
         r = anon.get(url)
         self.assertEqual(r.status, 200)
         self.assertIn("Shared draft", r.text)
+        self.assertIn("Preview only: not published", r.text)
+        self.assertIn("ev-watermark", r.text)
+        self.assertNotIn("Pay to publish", r.text)           # only the organiser gets the pay button
         self.assertIn("noindex", str(r.headers) + r.text)
         self.assertEqual(anon.get(url[:-3] + "abc").status, 404)
         self.assertEqual(anon.get(f"/events/{ev['slug']}").status in (200, 404), True)
@@ -20672,7 +21088,7 @@ if __name__ == "__main__":
 
 ### `tools/export_preview.py`
 
-<!-- FILE: tools/export_preview.py sha256=5fa00687f131e0ddc33eb848632ef8bafc94eb0a852ff79eb431a15ecf7f0644 nl=1 -->
+<!-- FILE: tools/export_preview.py sha256=7618c3ae3374d2c4ad60edc7670f290186bae80f3f83223c6b07bcc400493810 nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Build the shareable, server-free version of the Aurelia site (published as a Claude Artifact).
@@ -20823,7 +21239,7 @@ def route_for(href: str) -> str:
 
 
 def rewrite(html: str) -> str:
-    html = html.replace(config.BASE_URL + "/events/", "aureliastudio.co.za/events/").replace(config.BASE_URL, "")
+    html = html.replace(config.BASE_URL + "/events/", "aureliastudios.co.za/events/").replace(config.BASE_URL, "")
 
     def iframe(m):
         previews.add((m.group(1), m.group(2)))

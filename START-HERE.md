@@ -17,7 +17,7 @@ install, and stores data in SQLite on a disk mounted at `/data`.
 | Preview of the marketing site and templates | https://claude.ai/artifact/UNdUTWgjEoM9xw9M4dLCqT |
 | What a client sees after paying (walkthrough) | https://claude.ai/artifact/17TyBLy7hTbFn9UbuMPuEi |
 | Live site on Railway | https://aurelia-studio-production.up.railway.app |
-| Own domain | *not bought yet* (`aureliastudio.co.za` is the placeholder) |
+| Own domain | **aureliastudios.co.za** (to connect: `DEPLOY-RAILWAY.md`, part 3) |
 
 The two preview links are private until you share them from the page's Share menu.
 
@@ -43,9 +43,10 @@ The two preview links are private until you share them from the page's Share men
 - [ ] Test the full journey with the test checkout: create an event, pay, see it go live, RSVP as a guest
 
 **3. Domain** (Part 3)
-- [ ] Buy the `.co.za` domain at a South African registrar
-- [ ] Point it at Cloudflare (free DNS), then add it as a Custom Domain in Railway
-- [ ] Set `BASE_URL=https://<your domain>`
+- [x] Domain chosen: **aureliastudios.co.za**
+- [ ] Point it at Cloudflare (free DNS), then add `aureliastudios.co.za` and `www.aureliastudios.co.za` as
+      Custom Domains in Railway
+- [ ] Set `BASE_URL=https://aureliastudios.co.za` once both show a green tick
 
 **4. Email through Resend** (Part 4)
 - [ ] Verify the domain in Resend and create an API key

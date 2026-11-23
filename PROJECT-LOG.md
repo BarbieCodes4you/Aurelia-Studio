@@ -3,6 +3,29 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-25: golden-moment colours, new logo, aureliastudios.co.za
+
+**Changes**
+- Colours follow the name (Aurelia, the golden moment): warm white and ivory with charcoal text, and a
+  classic light gold for the calls to action (glossy, dark text, a soft gold glow). Gold accents stay
+  restrained: links and small labels in deeper gold, lines and rings in light metallic gold. Dark mode
+  is espresso with gold. The liquid-glass shapes (glass, capsule header, glossy buttons) stay.
+- On pricing, only the recommended package's button is gold, so it is the obvious choice.
+- Logo: the two rings are light gold, with a sparkle where they meet (the moment) and a small glint;
+  "STUDIO" is set in gold. The browser icon shows the mark in gold on a dark tile.
+- Emails, notifications and PDF reports use the same palette; the email header shows a gold sparkle.
+- Domain: aureliastudios.co.za everywhere (guides, admin launch checks, previews). Once BASE_URL is set
+  to it, page views on www. or on the Railway address redirect there (301); payment notifications,
+  forms and the health check are never redirected. CANONICAL_REDIRECT=0 turns this off.
+- The deploy guide's part 3 lists the exact Railway and Cloudflare records for this domain.
+
+**Checked**
+- 111 tests pass (new: redirects to the domain, and nothing redirected before BASE_URL is set).
+  Contrast meets WCAG AA in light and dark mode. Checked on desktop and phone, light and dark.
+
+**Waiting on**
+- The domain doesn't answer yet. Connect it with the deploy guide, part 3, then set BASE_URL.
+
 ## 2026-11-24: liquid-glass look
 
 **Changes**

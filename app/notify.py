@@ -80,7 +80,7 @@ def summary_table_html(stats: dict) -> str:
             ("Still to reply", stats["pending"]), ("Plus-ones", stats["plus_ones"]), ("Children", stats["children"]),
             ("Total headcount", stats["headcount"])]
     cells = "".join(
-        f"<tr><td style='padding:8px 0;border-bottom:1px solid #EEE;color:#625D5E'>{esc(k)}</td>"
+        f"<tr><td style='padding:8px 0;border-bottom:1px solid #EEE;color:#6A6152'>{esc(k)}</td>"
         f"<td style='padding:8px 0;border-bottom:1px solid #EEE;text-align:right;font-weight:600'>{v}</td></tr>"
         for k, v in rows)
     return f"<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{cells}</table>"
@@ -89,9 +89,9 @@ def summary_table_html(stats: dict) -> str:
 def steps_html(steps) -> str:
     """Numbered (title, why, url, link text) steps for the "Next steps" email."""
     rows = "".join(
-        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#6F5B37'>{n}</td>"
-        f"<td style='padding:0 0 18px;vertical-align:top'><b>{esc(t)}</b><br><span style='color:#625D5E'>{esc(w)}</span><br>"
-        f"<a href='{esc(url)}' style='color:#6F5B37;font-weight:600'>{esc(link)}</a></td></tr>"
+        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#87651C'>{n}</td>"
+        f"<td style='padding:0 0 18px;vertical-align:top'><b>{esc(t)}</b><br><span style='color:#6A6152'>{esc(w)}</span><br>"
+        f"<a href='{esc(url)}' style='color:#87651C;font-weight:600'>{esc(link)}</a></td></tr>"
         for n, (t, w, url, link) in enumerate(steps, 1))
     return f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{rows}</table>"
 
@@ -115,7 +115,7 @@ def rsvp_details_html(ev, g) -> str:
         parts.append(("Note", g["special_requests"]))
     if not parts:
         return ""
-    cells = "".join(f"<tr><td style='padding:6px 12px 6px 0;color:#625D5E'>{esc(k)}</td><td style='padding:6px 0'>{esc(v)}</td></tr>"
+    cells = "".join(f"<tr><td style='padding:6px 12px 6px 0;color:#6A6152'>{esc(k)}</td><td style='padding:6px 0'>{esc(v)}</td></tr>"
                     for k, v in parts)
     return f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{cells}</table>"
 

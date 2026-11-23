@@ -147,7 +147,7 @@ def route_for(href: str) -> str:
 
 
 def rewrite(html: str) -> str:
-    html = html.replace(config.BASE_URL + "/events/", "aureliastudio.co.za/events/").replace(config.BASE_URL, "")
+    html = html.replace(config.BASE_URL + "/events/", "aureliastudios.co.za/events/").replace(config.BASE_URL, "")
 
     def iframe(m):
         previews.add((m.group(1), m.group(2)))

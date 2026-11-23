@@ -47,27 +47,41 @@ ALLOW_SANDBOX_PAYMENTS=1
 7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
    (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
 
-## Part 3: your domain
+## Part 3: your domain, aureliastudios.co.za
 
-1. **Buy the domain** at a South African registrar (for a `.co.za`, e.g. Domains.co.za, Afrihost or
-   Xneelo). Compare yearly prices; you only need the domain, not their hosting or email.
-2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain
-   (`aureliastudio.co.za`, without www) at it; Cloudflare can. Sign up at **cloudflare.com** → **Add a
-   site** → your domain → Free plan. Cloudflare gives you two **nameservers**.
-3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours.
-4. In Railway: service → Settings → Networking → **Custom Domain** → add `aureliastudio.co.za`, then add
-   `www.aureliastudio.co.za` too. For each, Railway shows the DNS record to create.
-5. In Cloudflare → DNS → **Add record** exactly as Railway shows (usually a CNAME; for the bare domain use
-   name `@`). Set the cloud icon to **DNS only** (grey) so Railway can issue the HTTPS certificate.
-6. When Railway shows both domains as active, add the variable **`BASE_URL=https://aureliastudio.co.za`**, so
-   links in emails and payment returns use your domain.
+1. **Own the domain.** `aureliastudios.co.za` is registered at a South African registrar (for example
+   Domains.co.za, Afrihost or Xneelo). You only need the domain, not their hosting or email.
+2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain (without
+   www) at it, and Cloudflare can. Sign up at **cloudflare.com** → **Add a site** → `aureliastudios.co.za`
+   → Free plan. Cloudflare gives you two **nameservers**.
+3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours;
+   Cloudflare emails you when it's done.
+4. In Railway: click the service → **Settings → Networking → Custom Domain** → add `aureliastudios.co.za`,
+   then add `www.aureliastudios.co.za` too. For each one Railway shows a **target** (it ends in
+   `.up.railway.app`), and sometimes a TXT record to prove you own the domain.
+5. In Cloudflare → **DNS → Records → Add record**, create exactly what Railway shows:
+
+   | Type  | Name  | Target / content                                    | Proxy status         |
+   | ----- | ----- | --------------------------------------------------- | -------------------- |
+   | CNAME | `@`   | the target Railway shows for `aureliastudios.co.za`  | **DNS only** (grey)  |
+   | CNAME | `www` | the target Railway shows for `www.aureliastudios.co.za` | **DNS only** (grey) |
+   | TXT   | as Railway shows | as Railway shows (only if Railway lists one) | n/a            |
+
+   "DNS only" matters: it lets Railway issue the HTTPS certificate.
+6. Wait until Railway shows both domains with a green tick. That usually takes minutes, sometimes an hour.
+7. Railway → **Variables** → add **`BASE_URL=https://aureliastudios.co.za`**. After the redeploy:
+   - links in emails, receipts and payment returns use `https://aureliastudios.co.za`;
+   - anyone who opens `www.aureliastudios.co.za` or the `.up.railway.app` address is sent to
+     `https://aureliastudios.co.za` automatically. Only page views move; payment notifications, forms
+     and the health check are never redirected.
+8. Ask Claude to check the domain: it opens the site, the www redirect and a sample page.
 
 ## Part 4: email (Resend)
 
 Railway's Hobby plan blocks ordinary email sending (SMTP), so the platform sends through Resend's
 secure web connection instead.
 
-1. Sign up at **resend.com** → **Domains → Add domain** → your domain.
+1. Sign up at **resend.com** → **Domains → Add domain** → `aureliastudios.co.za`.
 2. Add the DNS records Resend lists in Cloudflare (DNS only). Wait for Resend to show "Verified".
 3. **API Keys → Create** (sending access) and copy it.
 4. Railway variables:
@@ -75,7 +89,7 @@ secure web connection instead.
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=<the key from Resend>
-EMAIL_FROM=Aurelia Studio <invites@aureliastudio.co.za>
+EMAIL_FROM=Aurelia Studio <invites@aureliastudios.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 

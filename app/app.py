@@ -17,6 +17,21 @@ def _load_views() -> None:
                         public_event, wizard, manage)
 
 
+def _canonical_redirect(req: Request) -> str:
+    """Where to send a visitor who opened the site on www. or on Railway's generated address, once
+    BASE_URL names the site's own domain; "" to serve the request as it is. Only page views (GET and
+    HEAD) move: form posts, payment notifications (/webhooks/) and the health check are never
+    redirected, so nothing in flight is lost."""
+    host = config.CANONICAL_HOST
+    if not host or req.method not in ("GET", "HEAD") or req.path == "/healthz" or req.path.startswith("/webhooks/"):
+        return ""
+    got = (req.headers.get("x-forwarded-host", "") if config.TRUST_PROXY else "") or req.headers.get("host", "")
+    got = got.split(",")[0].strip().lower().split(":")[0]
+    if got and got != host and (got == "www." + host or got.endswith(".up.railway.app")):
+        return config.BASE_URL + req.full_path
+    return ""
+
+
 class App:
     def __init__(self):
         _load_views()
@@ -59,6 +74,9 @@ class App:
         return resp
 
     def _dispatch(self, req: Request) -> Response:
+        moved = _canonical_redirect(req)
+        if moved:
+            raise Redirect(moved, 301)
         if req.path.startswith("/static/"):
             cache = "no-cache" if config.DEBUG else "public, max-age=86400"
             return serve_file(config.STATIC_DIR, req.path[len("/static/"):], cache)

@@ -533,7 +533,7 @@
     refreshPreview(true);
   }
   function previewFrame(height) {
-    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(cur())) + "</span>" +
+    return '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudios.co.za/events/' + esc(slugOf(cur())) + "</span>" +
       '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
       '<div class="preview-frame__stage" style="height:' + (height || 680) + 'px"><iframe title="Live preview of your event website" data-live></iframe></div></div>';
   }
@@ -1023,7 +1023,7 @@
       '<p class="small muted">' + (connected ? "Secure payment with PayFast: card, instant EFT and more. " : "") + "Prices include 15% VAT. By paying, you accept the " +
       '<a class="text-link" href="#terms">terms of service</a> and <a class="text-link" href="#refunds">refund policy</a>.</p>' + share +
       '<details class="box" style="padding:14px 16px"><summary style="cursor:pointer;font-weight:500">See everything you\'ve entered</summary><div style="display:grid;gap:16px;margin-top:16px">' +
-      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudio.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
+      '<div class="notice">' + icon("link") + "<span>Your website address will be <b class=\"mono\">aureliastudios.co.za/events/" + esc(slugOf(ev)) + "</b> once published.</span></div>" +
       previewFrame(560) + review + "</div></details>" +
       '<div class="wizard-actions"><a class="btn btn--ghost" href="#setup-7">' + icon("arrow-left") + ' Back</a><span></span></div>' +
       '<p class="small muted" style="margin-top:14px">Questions first, or rather have us finish the set-up? <a class="text-link" href="#help-me-set-up">Ask us to help</a>.</p>';
@@ -1173,7 +1173,7 @@
       root().innerHTML = '<section class="section" style="padding-top:calc(var(--header-h) + 24px)"><div class="container"><div class="page-head"><div><h1>' + esc(ev.hosts || ev.name) +
         '</h1><p>A draft of this event website, shared with you before it goes live. RSVPs open once it\'s published.</p></div>' +
         '<div class="btn-row"><a class="btn btn--primary btn--sm" href="#create">Create your own event</a></div></div>' +
-        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudio.co.za/events/' + esc(slugOf(ev)) + "</span>" +
+        '<div class="preview-frame" data-jpreview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">aureliastudios.co.za/events/' + esc(slugOf(ev)) + "</span>" +
         '<div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div></div>' +
         '<div class="preview-frame__stage" style="height:' + Math.max(560, window.innerHeight - 220) + 'px"><iframe title="Shared draft of an event website" data-shared></iframe></div></div></div></section>';
       document.querySelector("iframe[data-shared]").srcdoc = R.render(ev, "preview");
