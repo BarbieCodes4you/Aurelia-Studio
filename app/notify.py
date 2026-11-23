@@ -89,9 +89,9 @@ def summary_table_html(stats: dict) -> str:
 def steps_html(steps) -> str:
     """Numbered (title, why, url, link text) steps for the "Next steps" email."""
     rows = "".join(
-        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#6A4FC4'>{n}</td>"
+        f"<tr><td style='padding:0 14px 18px 0;vertical-align:top;font-weight:600;color:#8A6A2E'>{n}</td>"
         f"<td style='padding:0 0 18px;vertical-align:top'><b>{esc(t)}</b><br><span style='color:#625D5E'>{esc(w)}</span><br>"
-        f"<a href='{esc(url)}' style='color:#5B3FC4;font-weight:600'>{esc(link)}</a></td></tr>"
+        f"<a href='{esc(url)}' style='color:#7A5B22;font-weight:600'>{esc(link)}</a></td></tr>"
         for n, (t, w, url, link) in enumerate(steps, 1))
     return f"<table role='presentation' cellpadding='0' cellspacing='0' style='margin:0 0 18px'>{rows}</table>"
 

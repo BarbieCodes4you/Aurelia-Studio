@@ -218,8 +218,8 @@ def healthz(req):
 
 @router.get("/")
 def home(req):
-    pastel_first = ["bloom", "confetti", "aurora", "cradle", "atelier", "linea"]
-    templates = sorted(catalog.templates(), key=lambda t: pastel_first.index(t["slug"]) if t["slug"] in pastel_first else 99)[:6]
+    featured = ["champagne", "atelier", "heritage", "bloom", "cradle", "confetti"]   # gold-friendly first
+    templates = sorted(catalog.templates(), key=lambda t: featured.index(t["slug"]) if t["slug"] in featured else 99)[:6]
     tpl_cards = "".join(template_card(t) for t in templates)
     feats = "".join(f'<div class="feature card" data-reveal><span class="icon-tile">{i(ic)}</span><h3>{esc(t)}</h3><p>{esc(d)}</p></div>'
                     for ic, t, d in FEATURES)
@@ -248,7 +248,7 @@ def home(req):
 <section class="section section--surface"><div class="container">
 {section_head("Finished event websites", "Real layouts, filled with sample content. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
 <div class="showcase">
-<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/aurora/preview?group=weddings" width="1280" title="Aurora wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Aurora · a glass-and-light wedding</figcaption></figure>
+<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/champagne/preview?group=weddings" width="1280" title="Champagne wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Champagne · a black-tie wedding</figcaption></figure>
 <figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/bloom/preview?group=baby" width="390" title="Bloom baby shower sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Bloom · a baby shower</figcaption></figure>
 <figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/confetti/preview?group=parties" width="390" title="Confetti party sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Confetti · a first birthday</figcaption></figure>
 </div></div></section>

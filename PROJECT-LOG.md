@@ -3,6 +3,20 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-23: golden-thread colours
+
+**Changes**
+- The site's colours move from lilac and pastel to a "golden thread": warm ivory and ink, with a muted
+  antique gold used sparingly (logo, links, checked controls, the serif keyword, the thin line under
+  headings). Buttons have a pale champagne sheen with dark text. Dark mode is warm charcoal with gold.
+- The same palette is applied to the logo, favicon, emails, notifications and PDF reports.
+- The home page now features Champagne, Atelier and Heritage first; the large sample is Champagne.
+- Layout, pages, behaviour and phone layouts are unchanged. Event-website templates keep their own
+  palettes.
+
+**Checked**
+- 108 tests pass. Text contrast meets WCAG AA in light and dark mode.
+
 ## 2026-11-19 (evening): sign-up, previews, VAT, honest claims
 
 **Changes**
