@@ -423,6 +423,11 @@ class OwnDomainTest(unittest.TestCase):
         r = c.post("/login", {"email": "a@example.com", "password": "x"}, headers={"Host": "www.aureliastudios.co.za"})
         self.assertNotEqual(r.status, 301)
 
+    def test_www_as_the_main_address_works_too(self):
+        config.BASE_URL, config.CANONICAL_HOST = "https://www.aureliastudios.co.za", "www.aureliastudios.co.za"
+        r = Client(self.app).get("/faq", headers={"Host": "aureliastudios.co.za"})
+        self.assertEqual((r.status, r.location), (301, "https://www.aureliastudios.co.za/faq"))
+
     def test_no_redirects_until_the_domain_is_set(self):
         config.CANONICAL_HOST = ""
         c = Client(self.app)

@@ -1,4 +1,4 @@
-# Aurelia Studio: launch on Railway with your own domain
+# Aurelia Studios: launch on Railway with your own domain
 
 The full platform: accounts and "My events", guest RSVPs, seating, WhatsApp invitations, PayFast
 checkout that publishes the website by itself, emails and the admin area. Follow the parts in order.
@@ -47,15 +47,21 @@ ALLOW_SANDBOX_PAYMENTS=1
 7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
    (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
 
-## Part 3: your domain, aureliastudios.co.za
+## Part 3: your domain, aureliastudios.co.za (registered at GoDaddy)
 
-1. **Own the domain.** `aureliastudios.co.za` is registered at a South African registrar (for example
-   Domains.co.za, Afrihost or Xneelo). You only need the domain, not their hosting or email.
-2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain (without
-   www) at it, and Cloudflare can. Sign up at **cloudflare.com** → **Add a site** → `aureliastudios.co.za`
-   → Free plan. Cloudflare gives you two **nameservers**.
-3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours;
-   Cloudflare emails you when it's done.
+GoDaddy's DNS can't point the bare domain (`aureliastudios.co.za`, without www) at Railway, so the
+domain's DNS moves to Cloudflare, which is free and can. The domain stays registered at GoDaddy: you
+keep renewing it there, and nothing else at GoDaddy changes.
+
+1. **Cloudflare.** Sign up at **cloudflare.com** → **Add a domain** → `aureliastudios.co.za` → choose the
+   **Free** plan → continue past the record scan. Cloudflare then shows **two nameservers** (they end in
+   `ns.cloudflare.com`). Keep that tab open.
+2. Still in Cloudflare → **DNS → Records**: delete the records it copied for `aureliastudios.co.za` (`@`)
+   and `www`. They point at GoDaddy's "parked" page.
+3. **GoDaddy.** Sign in → **My Products** → next to `aureliastudios.co.za`, **DNS** (or *Manage DNS*) →
+   **Nameservers** → **Change nameservers** → **I'll use my own nameservers** → enter Cloudflare's two →
+   **Save**. If GoDaddy shows **DNSSEC** as on, turn it off first.
+   Cloudflare emails you when the domain is active: often within an hour, sometimes up to a day.
 4. In Railway: click the service → **Settings → Networking → Custom Domain** → add `aureliastudios.co.za`,
    then add `www.aureliastudios.co.za` too. For each one Railway shows a **target** (it ends in
    `.up.railway.app`), and sometimes a TXT record to prove you own the domain.
@@ -89,7 +95,7 @@ secure web connection instead.
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=<the key from Resend>
-EMAIL_FROM=Aurelia Studio <invites@aureliastudios.co.za>
+EMAIL_FROM=Aurelia Studios <invites@aureliastudios.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 

@@ -27,7 +27,8 @@ def _canonical_redirect(req: Request) -> str:
         return ""
     got = (req.headers.get("x-forwarded-host", "") if config.TRUST_PROXY else "") or req.headers.get("host", "")
     got = got.split(",")[0].strip().lower().split(":")[0]
-    if got and got != host and (got == "www." + host or got.endswith(".up.railway.app")):
+    alias = host[4:] if host.startswith("www.") else "www." + host
+    if got and got != host and (got == alias or got.endswith(".up.railway.app")):
         return config.BASE_URL + req.full_path
     return ""
 

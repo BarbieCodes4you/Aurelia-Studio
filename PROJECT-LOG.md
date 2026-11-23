@@ -3,6 +3,25 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-25 (later): Aurelia Studios, GoDaddy domain
+
+**Changes**
+- The name is now **Aurelia Studios**, to match the domain. It comes from `BRAND_NAME`, so page titles,
+  the wordmark ("Aurelia STUDIOS"), emails, receipts and reports all follow.
+- The domain is registered at GoDaddy and showing GoDaddy's parked page. GoDaddy's DNS can't point the
+  bare domain at Railway, so the deploy guide (part 3) now moves its DNS to Cloudflare (free) with
+  GoDaddy-specific steps; the registration stays at GoDaddy.
+- The redirect works both ways: whichever of `aureliastudios.co.za` and `www.aureliastudios.co.za` BASE_URL
+  names, the other one (and the Railway address) leads there.
+
+**Checked**
+- 112 tests pass. The wordmark fits at 320px, 390px and desktop widths without sideways scrolling.
+
+**Open question: PayShap**
+- The platform takes payments through PayFast (cards and Instant EFT). No PayFast documentation found
+  mentions PayShap. If PayShap is wanted, Ozow, Peach Payments and Stitch offer PayShap payment requests;
+  adding one means a new gateway in `services/payments.py` once there is a merchant account with it.
+
 ## 2026-11-25: golden-moment colours, new logo, aureliastudios.co.za
 
 **Changes**

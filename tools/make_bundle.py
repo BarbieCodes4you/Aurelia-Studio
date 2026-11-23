@@ -83,7 +83,7 @@ print(f"Wrote {count} files to {dest}/")
 GUIDE = r"""
 ## 1. What this is
 
-**Aurelia Studio** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
+**Aurelia Studios** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
 every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
@@ -280,7 +280,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=invitesaurelia@gmail.com
 SMTP_PASSWORD=<the 16-character app password>
-EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
+EMAIL_FROM=Aurelia Studios <invitesaurelia@gmail.com>
 ```
 
   Gmail allows about 500 messages a day, which suits launch volumes.
@@ -291,7 +291,7 @@ EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_...
-EMAIL_FROM=Aurelia Studio <invites@your-domain.co.za>
+EMAIL_FROM=Aurelia Studios <invites@your-domain.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -353,7 +353,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 | `SECURE_COOKIES` | on if https | Secure flag on cookies |
 | `SESSION_DAYS` | 14 | Login lifetime |
 | `MAX_BODY_BYTES`, `MAX_UPLOAD_BYTES` | 25 MB, 6 MB | Request and image size limits |
-| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studio | Name and tagline everywhere |
+| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studios | Name and tagline everywhere |
 | `SUPPORT_EMAIL` | invitesaurelia@gmail.com | Contact address on the site and in emails |
 | `COMPANY_ADDRESS`, `VAT_NUMBER`, `INFORMATION_OFFICER_EMAIL` | placeholders | Footer, receipts, POPIA |
 | `VAT_RATE` | 0.15 | VAT split on receipts (prices include VAT) |
@@ -435,7 +435,7 @@ is manual today, by design).
 
 def main():
     files = project_files()
-    parts = [f"# Aurelia Studio: complete project and hosting guide\n\n"
+    parts = [f"# Aurelia Studios: complete project and hosting guide\n\n"
              f"Generated {date.today().isoformat()} from the working project. **{len(files)} files**, each included in full "
              f"under section 12, with a checksum. Nothing else is needed to rebuild and host the website.\n\n"
              "## Contents\n\n1. What this is\n2. Rebuild the project from this file\n3. Hosting\n4. Email\n5. Payments (PayFast)\n"

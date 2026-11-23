@@ -1,6 +1,6 @@
-# Aurelia Studio: start here
+# Aurelia Studios: start here
 
-Everything for Aurelia Studio now lives in this repository, and future work happens here.
+Everything for Aurelia Studios now lives in this repository, and future work happens here.
 
 ## What this is
 
@@ -17,7 +17,7 @@ install, and stores data in SQLite on a disk mounted at `/data`.
 | Preview of the marketing site and templates | https://claude.ai/artifact/UNdUTWgjEoM9xw9M4dLCqT |
 | What a client sees after paying (walkthrough) | https://claude.ai/artifact/17TyBLy7hTbFn9UbuMPuEi |
 | Live site on Railway | https://aurelia-studio-production.up.railway.app |
-| Own domain | **aureliastudios.co.za** (to connect: `DEPLOY-RAILWAY.md`, part 3) |
+| Own domain | **aureliastudios.co.za**, registered at GoDaddy (to connect: `DEPLOY-RAILWAY.md`, part 3) |
 
 The two preview links are private until you share them from the page's Share menu.
 
@@ -43,8 +43,8 @@ The two preview links are private until you share them from the page's Share men
 - [ ] Test the full journey with the test checkout: create an event, pay, see it go live, RSVP as a guest
 
 **3. Domain** (Part 3)
-- [x] Domain chosen: **aureliastudios.co.za**
-- [ ] Point it at Cloudflare (free DNS), then add `aureliastudios.co.za` and `www.aureliastudios.co.za` as
+- [x] Domain bought: **aureliastudios.co.za** (GoDaddy)
+- [ ] Move its DNS to Cloudflare (free; nameservers changed at GoDaddy), then add `aureliastudios.co.za` and `www.aureliastudios.co.za` as
       Custom Domains in Railway
 - [ ] Set `BASE_URL=https://aureliastudios.co.za` once both show a green tick
 

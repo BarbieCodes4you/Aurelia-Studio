@@ -227,7 +227,7 @@ class PDF:
         objs.append(f"<< /Type /Pages /Kids [{kids}] /Count {total} >>".encode())
         objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
         objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
-        objs.append(b"<< /Producer (Aurelia Studio reports) /Title " + _pdf_str(_encode(self.title)) + b" >>")
+        objs.append(b"<< /Producer (Aurelia Studios reports) /Title " + _pdf_str(_encode(self.title)) + b" >>")
         for k, ops in enumerate(self.pages):
             self.pages[k] = ops  # keep list
             footer = [

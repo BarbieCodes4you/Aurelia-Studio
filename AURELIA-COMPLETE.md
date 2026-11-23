@@ -1,4 +1,4 @@
-# Aurelia Studio: complete project and hosting guide
+# Aurelia Studios: complete project and hosting guide
 
 Generated 2026-11-23 from the working project. **80 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
@@ -19,7 +19,7 @@ Generated 2026-11-23 from the working project. **80 files**, each included in fu
 
 ## 1. What this is
 
-**Aurelia Studio** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
+**Aurelia Studios** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
 every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
@@ -241,7 +241,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=invitesaurelia@gmail.com
 SMTP_PASSWORD=<the 16-character app password>
-EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
+EMAIL_FROM=Aurelia Studios <invitesaurelia@gmail.com>
 ```
 
   Gmail allows about 500 messages a day, which suits launch volumes.
@@ -252,7 +252,7 @@ EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_...
-EMAIL_FROM=Aurelia Studio <invites@your-domain.co.za>
+EMAIL_FROM=Aurelia Studios <invites@your-domain.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -314,7 +314,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 | `SECURE_COOKIES` | on if https | Secure flag on cookies |
 | `SESSION_DAYS` | 14 | Login lifetime |
 | `MAX_BODY_BYTES`, `MAX_UPLOAD_BYTES` | 25 MB, 6 MB | Request and image size limits |
-| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studio | Name and tagline everywhere |
+| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studios | Name and tagline everywhere |
 | `SUPPORT_EMAIL` | invitesaurelia@gmail.com | Contact address on the site and in emails |
 | `COMPANY_ADDRESS`, `VAT_NUMBER`, `INFORMATION_OFFICER_EMAIL` | placeholders | Footer, receipts, POPIA |
 | `VAT_RATE` | 0.15 | VAT split on receipts (prices include VAT) |
@@ -629,7 +629,7 @@ __pycache__/
 
 ### `.env.example`
 
-<!-- FILE: .env.example sha256=f49e3c7c4291785df6613a42c4fd694bc89a508a63df614d60c23da3e55c9e42 nl=1 -->
+<!-- FILE: .env.example sha256=6cdc74022c1e1ad1f50a6bfd254d463f8832a735f973f0a27abeb240588b6ab7 nl=1 -->
 ```
 # Copy to .env and fill in. Real environment variables override this file.
 APP_ENV=development                 # production turns off debug output
@@ -640,7 +640,7 @@ SECRET_KEY=                         # optional: if empty, a random key is create
 # AURELIA_DATA_DIR=./data           # database, uploads, email outbox
 # DATABASE_PATH=./data/aurelia.sqlite3
 
-BRAND_NAME=Aurelia Studio
+BRAND_NAME=Aurelia Studios
 SUPPORT_EMAIL=invitesaurelia@gmail.com
 COMPANY_ADDRESS=Johannesburg, South Africa
 INFORMATION_OFFICER_EMAIL=          # POPIA information officer
@@ -652,7 +652,7 @@ VAT_NUMBER=                         # shown on tax invoices
 
 # Email: outbox (dev, writes files to data/outbox), resend, or smtp. On Railway use resend (SMTP is blocked on Hobby).
 EMAIL_PROVIDER=outbox
-EMAIL_FROM=Aurelia Studio <no-reply@aurelia.example>   # live: Aurelia Studio <invites@aureliastudios.co.za>
+EMAIL_FROM=Aurelia Studios <no-reply@aurelia.example>   # live: Aurelia Studios <invites@aureliastudios.co.za>
 EMAIL_REPLY_TO=
 RESEND_API_KEY=
 SMTP_HOST=
@@ -699,9 +699,9 @@ dist/
 
 ### `DEPLOY-RAILWAY.md`
 
-<!-- FILE: DEPLOY-RAILWAY.md sha256=7e62c57f04c4956b6dbea74f6b0bd5a5577240711068fea9c30c523b733870bc nl=1 -->
+<!-- FILE: DEPLOY-RAILWAY.md sha256=fb4d2a5b97165a7f2e364939eaa524696351768f4a21f48a3b49a2b2f53fb3d8 nl=1 -->
 ````markdown
-# Aurelia Studio: launch on Railway with your own domain
+# Aurelia Studios: launch on Railway with your own domain
 
 The full platform: accounts and "My events", guest RSVPs, seating, WhatsApp invitations, PayFast
 checkout that publishes the website by itself, emails and the admin area. Follow the parts in order.
@@ -750,15 +750,21 @@ ALLOW_SANDBOX_PAYMENTS=1
 7. **Test the whole journey** as a client: create an event, pay with the built-in test checkout
    (no real money; it's allowed because of `ALLOW_SANDBOX_PAYMENTS=1`), see it go live, RSVP as a guest.
 
-## Part 3: your domain, aureliastudios.co.za
+## Part 3: your domain, aureliastudios.co.za (registered at GoDaddy)
 
-1. **Own the domain.** `aureliastudios.co.za` is registered at a South African registrar (for example
-   Domains.co.za, Afrihost or Xneelo). You only need the domain, not their hosting or email.
-2. **Cloudflare (free) for DNS.** Railway needs a DNS provider that can point the bare domain (without
-   www) at it, and Cloudflare can. Sign up at **cloudflare.com** → **Add a site** → `aureliastudios.co.za`
-   → Free plan. Cloudflare gives you two **nameservers**.
-3. At your registrar, replace the domain's nameservers with Cloudflare's two. This can take a few hours;
-   Cloudflare emails you when it's done.
+GoDaddy's DNS can't point the bare domain (`aureliastudios.co.za`, without www) at Railway, so the
+domain's DNS moves to Cloudflare, which is free and can. The domain stays registered at GoDaddy: you
+keep renewing it there, and nothing else at GoDaddy changes.
+
+1. **Cloudflare.** Sign up at **cloudflare.com** → **Add a domain** → `aureliastudios.co.za` → choose the
+   **Free** plan → continue past the record scan. Cloudflare then shows **two nameservers** (they end in
+   `ns.cloudflare.com`). Keep that tab open.
+2. Still in Cloudflare → **DNS → Records**: delete the records it copied for `aureliastudios.co.za` (`@`)
+   and `www`. They point at GoDaddy's "parked" page.
+3. **GoDaddy.** Sign in → **My Products** → next to `aureliastudios.co.za`, **DNS** (or *Manage DNS*) →
+   **Nameservers** → **Change nameservers** → **I'll use my own nameservers** → enter Cloudflare's two →
+   **Save**. If GoDaddy shows **DNSSEC** as on, turn it off first.
+   Cloudflare emails you when the domain is active: often within an hour, sometimes up to a day.
 4. In Railway: click the service → **Settings → Networking → Custom Domain** → add `aureliastudios.co.za`,
    then add `www.aureliastudios.co.za` too. For each one Railway shows a **target** (it ends in
    `.up.railway.app`), and sometimes a TXT record to prove you own the domain.
@@ -792,7 +798,7 @@ secure web connection instead.
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=<the key from Resend>
-EMAIL_FROM=Aurelia Studio <invites@aureliastudios.co.za>
+EMAIL_FROM=Aurelia Studios <invites@aureliastudios.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -866,9 +872,9 @@ CMD ["python3", "deploy/entrypoint.py"]
 
 ### `GO-LIVE-GUIDE.md`
 
-<!-- FILE: GO-LIVE-GUIDE.md sha256=2f21c261d88802dff894ab90b0732d326fec0a2f9a81ff27c10eb04e43fc51e1 nl=1 -->
+<!-- FILE: GO-LIVE-GUIDE.md sha256=776735b5bdbe1c3e3deebc115fbe4c7f4c293030bbd2efcd8451a380d68717de nl=1 -->
 ```markdown
-# Aurelia Studio: go-live guide (Netlify + PayFast)
+# Aurelia Studios: go-live guide (Netlify + PayFast)
 
 This is for the version of the site that runs on Netlify today: the marketing pages, templates and the
 full "Create your event" journey. Bookings, contact messages and set-up requests arrive through Netlify
@@ -938,9 +944,9 @@ The booking page then shows **Pay R12,999 securely**, and clients pay straight a
 
    | Package | Item name | Amount |
    |---|---|---|
-   | Essential | Aurelia Studio Essential | 8999.00 |
-   | Premium | Aurelia Studio Premium | 12999.00 |
-   | Signature | Aurelia Studio Signature | 17999.00 |
+   | Essential | Aurelia Studios Essential | 8999.00 |
+   | Premium | Aurelia Studios Premium | 12999.00 |
+   | Signature | Aurelia Studios Signature | 17999.00 |
 
 3. If it asks for return or cancel pages, use your site address, e.g. `https://aurelia-invites.netlify.app/`.
 4. Click **Create button** and copy the code it shows. If PayFast also gives you a link for the button,
@@ -995,12 +1001,31 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=12417fb8a04f2f571ef4417af1f902c3b66fbd60f29d51f3b16eb79c891c6662 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=c83631e23a247bb94663eeb9dc18d8e8941017ef24ec33d006629c41f1b1bb4c nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-25 (later): Aurelia Studios, GoDaddy domain
+
+**Changes**
+- The name is now **Aurelia Studios**, to match the domain. It comes from `BRAND_NAME`, so page titles,
+  the wordmark ("Aurelia STUDIOS"), emails, receipts and reports all follow.
+- The domain is registered at GoDaddy and showing GoDaddy's parked page. GoDaddy's DNS can't point the
+  bare domain at Railway, so the deploy guide (part 3) now moves its DNS to Cloudflare (free) with
+  GoDaddy-specific steps; the registration stays at GoDaddy.
+- The redirect works both ways: whichever of `aureliastudios.co.za` and `www.aureliastudios.co.za` BASE_URL
+  names, the other one (and the Railway address) leads there.
+
+**Checked**
+- 112 tests pass. The wordmark fits at 320px, 390px and desktop widths without sideways scrolling.
+
+**Open question: PayShap**
+- The platform takes payments through PayFast (cards and Instant EFT). No PayFast documentation found
+  mentions PayShap. If PayShap is wanted, Ozow, Peach Payments and Stitch offer PayShap payment requests;
+  adding one means a new gateway in `services/payments.py` once there is a merchant account with it.
 
 ## 2026-11-25: golden-moment colours, new logo, aureliastudios.co.za
 
@@ -1316,9 +1341,9 @@ The 21 pain points from the journey review, fixed in both the hosted app and the
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=31ff404a31c2a390689cbd051380ba9a64612d41b628d27889d456686a77c8c5 nl=1 -->
+<!-- FILE: README.md sha256=e5fe2a59412d913c9e6cbed6f1e7e48d0417a4514ce4b1dcf535e3aaa8eef857 nl=1 -->
 ````markdown
-# Aurelia Studio — digital event experience platform
+# Aurelia Studios — digital event experience platform
 
 **One event. One platform. One link. Everything organised.**
 
@@ -1327,7 +1352,7 @@ A complete web application for creating, publishing and managing event websites 
 guest list, seating chart, menus, programme, emails, WhatsApp sharing, reports, payments and an admin
 dashboard.
 
-The brand is "Aurelia Studio". Change it with `BRAND_NAME` in `.env`.
+The brand is "Aurelia Studios". Change it with `BRAND_NAME` in `.env`.
 
 ## Run it
 
@@ -1515,11 +1540,11 @@ The Claude preview server can't read the Desktop, so it runs a copy in the sessi
 
 ### `START-HERE.md`
 
-<!-- FILE: START-HERE.md sha256=6cfb34d53bddb29832c2eb98814c68272bef19e53a397be7e8c0fc19ded8166d nl=1 -->
+<!-- FILE: START-HERE.md sha256=4adc6459e9757672039754d206d4273d12489da8651d9c9420b2124869fbc79e nl=1 -->
 ```markdown
-# Aurelia Studio: start here
+# Aurelia Studios: start here
 
-Everything for Aurelia Studio now lives in this repository, and future work happens here.
+Everything for Aurelia Studios now lives in this repository, and future work happens here.
 
 ## What this is
 
@@ -1536,7 +1561,7 @@ install, and stores data in SQLite on a disk mounted at `/data`.
 | Preview of the marketing site and templates | https://claude.ai/artifact/UNdUTWgjEoM9xw9M4dLCqT |
 | What a client sees after paying (walkthrough) | https://claude.ai/artifact/17TyBLy7hTbFn9UbuMPuEi |
 | Live site on Railway | https://aurelia-studio-production.up.railway.app |
-| Own domain | **aureliastudios.co.za** (to connect: `DEPLOY-RAILWAY.md`, part 3) |
+| Own domain | **aureliastudios.co.za**, registered at GoDaddy (to connect: `DEPLOY-RAILWAY.md`, part 3) |
 
 The two preview links are private until you share them from the page's Share menu.
 
@@ -1562,8 +1587,8 @@ The two preview links are private until you share them from the page's Share men
 - [ ] Test the full journey with the test checkout: create an event, pay, see it go live, RSVP as a guest
 
 **3. Domain** (Part 3)
-- [x] Domain chosen: **aureliastudios.co.za**
-- [ ] Point it at Cloudflare (free DNS), then add `aureliastudios.co.za` and `www.aureliastudios.co.za` as
+- [x] Domain bought: **aureliastudios.co.za** (GoDaddy)
+- [ ] Move its DNS to Cloudflare (free; nameservers changed at GoDaddy), then add `aureliastudios.co.za` and `www.aureliastudios.co.za` as
       Custom Domains in Railway
 - [ ] Set `BASE_URL=https://aureliastudios.co.za` once both show a green tick
 
@@ -1801,7 +1826,7 @@ def application(environ, start_response):
 
 ### `app/app.py`
 
-<!-- FILE: app/app.py sha256=83de9eabf290e3885b9ebaa1e948f47e8676cb387d6c0292c06f9d3aba9f58d5 nl=1 -->
+<!-- FILE: app/app.py sha256=fed0bc7af647472c156dacf842230a698924e62fbe66fe3b675262aef6ac7f46 nl=1 -->
 ```python
 """Request dispatch: sessions, CSRF, flash messages, error pages, security headers."""
 from __future__ import annotations
@@ -1832,7 +1857,8 @@ def _canonical_redirect(req: Request) -> str:
         return ""
     got = (req.headers.get("x-forwarded-host", "") if config.TRUST_PROXY else "") or req.headers.get("host", "")
     got = got.split(",")[0].strip().lower().split(":")[0]
-    if got and got != host and (got == "www." + host or got.endswith(".up.railway.app")):
+    alias = host[4:] if host.startswith("www.") else "www." + host
+    if got and got != host and (got == alias or got.endswith(".up.railway.app")):
         return config.BASE_URL + req.full_path
     return ""
 
@@ -2389,7 +2415,7 @@ def limit(event, key: str, default: int = 0) -> int:
 
 ### `app/config.py`
 
-<!-- FILE: app/config.py sha256=29f0d24d0fd6b1c45010daeef71c2b36a7b6e88109533779aa6e0fe487ef6d81 nl=1 -->
+<!-- FILE: app/config.py sha256=0f97b878a469b2bb0f0ef72eb157efd9730460cc0aa138a9667f1500d77784d7 nl=1 -->
 ```python
 """Runtime configuration.
 
@@ -2471,7 +2497,7 @@ def _secret_key() -> str:
 
 
 # --- Brand ------------------------------------------------------------------------------
-BRAND_NAME = env("BRAND_NAME", "Aurelia Studio")
+BRAND_NAME = env("BRAND_NAME", "Aurelia Studios")
 BRAND_TAGLINE = env("BRAND_TAGLINE", "Affordable luxury. Everything for your event in one place.")
 BRAND_LINE = "One event. One platform. One link. Everything organised."
 SUPPORT_EMAIL = env("SUPPORT_EMAIL", "invitesaurelia@gmail.com")
@@ -5991,7 +6017,7 @@ def vat_breakdown(amount_cents: int) -> tuple[int, int]:
 
 ### `app/services/pdf.py`
 
-<!-- FILE: app/services/pdf.py sha256=497ed935fbe775b4fdfd84cf8c1bf03fd4d77ebe2e1b39fc2dc4bf67d387ef9d nl=1 -->
+<!-- FILE: app/services/pdf.py sha256=66cc1a5a0b4ec8391ceb07e8e8d0be2bd56f4248b7ce1206426880210382ac6d nl=1 -->
 ```python
 """A small hand-written PDF 1.4 writer for reports.
 
@@ -6222,7 +6248,7 @@ class PDF:
         objs.append(f"<< /Type /Pages /Kids [{kids}] /Count {total} >>".encode())
         objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>")
         objs.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>")
-        objs.append(b"<< /Producer (Aurelia Studio reports) /Title " + _pdf_str(_encode(self.title)) + b" >>")
+        objs.append(b"<< /Producer (Aurelia Studios reports) /Title " + _pdf_str(_encode(self.title)) + b" >>")
         for k, ops in enumerate(self.pages):
             self.pages[k] = ops  # keep list
             footer = [
@@ -8046,7 +8072,7 @@ def export_data(req):
 
 ### `app/views/admin.py`
 
-<!-- FILE: app/views/admin.py sha256=0c60654924e189279e8ed6493ad1e46ec3b12cdb7498230a11a34240d3ccf6d4 nl=1 -->
+<!-- FILE: app/views/admin.py sha256=ae900b80865cd4911d6002c36464151b23c75bb2ae8460bc5fbcaa7b82eb26c2 nl=1 -->
 ```python
 """Platform administrator dashboard.
 
@@ -8239,7 +8265,7 @@ def backup(req):
                 for f in files:
                     full = os.path.join(root, f)
                     z.write(full, os.path.join("uploads", os.path.relpath(full, str(config.UPLOAD_DIR))), compress_type=zipfile.ZIP_STORED)
-            z.writestr("README.txt", "Aurelia Studio backup " + stamp + ".\nTo restore: stop the app, put aurelia.sqlite3 and the uploads folder "
+            z.writestr("README.txt", "Aurelia Studios backup " + stamp + ".\nTo restore: stop the app, put aurelia.sqlite3 and the uploads folder "
                                      "back into the data folder (/data on Railway), then start it again.\n")
     auth.audit(admin["id"], "admin.backup", stamp)
     return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
@@ -19666,7 +19692,7 @@ class BackupTest(unittest.TestCase):
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=9609b1c84f0085d59324054522fb69d75aab23d6aac6acc34f606cd264f02ec6 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=9cc1e84ca903a56b48d5c4e2dbb4866991e094dc65c86a40c4fe185a5b738753 nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -20092,6 +20118,11 @@ class OwnDomainTest(unittest.TestCase):
         self.assertNotEqual(r.status, 301)
         r = c.post("/login", {"email": "a@example.com", "password": "x"}, headers={"Host": "www.aureliastudios.co.za"})
         self.assertNotEqual(r.status, 301)
+
+    def test_www_as_the_main_address_works_too(self):
+        config.BASE_URL, config.CANONICAL_HOST = "https://www.aureliastudios.co.za", "www.aureliastudios.co.za"
+        r = Client(self.app).get("/faq", headers={"Host": "aureliastudios.co.za"})
+        self.assertEqual((r.status, r.location), (301, "https://www.aureliastudios.co.za/faq"))
 
     def test_no_redirects_until_the_domain_is_set(self):
         config.CANONICAL_HOST = ""
@@ -21350,7 +21381,7 @@ print(f"{OUT}: {len(views)} pages + journey, {len(previews)} template samples, l
 
 ### `tools/make_bundle.py`
 
-<!-- FILE: tools/make_bundle.py sha256=e0cb605a0a6a8394d964d996f7f0efae035618f3fa5a0b38f1717e13fe67ccb1 nl=1 -->
+<!-- FILE: tools/make_bundle.py sha256=37f39b1c2363c1dba51efdbd24acf59b616d7a21f04647905a8bf418abf473c2 nl=1 -->
 ````python
 #!/usr/bin/env python3
 """Write AURELIA-COMPLETE.md: the whole project in one Markdown file.
@@ -21437,7 +21468,7 @@ print(f"Wrote {count} files to {dest}/")
 GUIDE = r"""
 ## 1. What this is
 
-**Aurelia Studio** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
+**Aurelia Studios** is a complete digital event platform for South Africa (prices in ZAR). It is not a mock-up:
 every button and form works and saves data.
 
 - **Marketing website:** home, four occasion pages, template gallery with desktop/mobile preview,
@@ -21634,7 +21665,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=invitesaurelia@gmail.com
 SMTP_PASSWORD=<the 16-character app password>
-EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
+EMAIL_FROM=Aurelia Studios <invitesaurelia@gmail.com>
 ```
 
   Gmail allows about 500 messages a day, which suits launch volumes.
@@ -21645,7 +21676,7 @@ EMAIL_FROM=Aurelia Studio <invitesaurelia@gmail.com>
 ```ini
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_...
-EMAIL_FROM=Aurelia Studio <invites@your-domain.co.za>
+EMAIL_FROM=Aurelia Studios <invites@your-domain.co.za>
 EMAIL_REPLY_TO=invitesaurelia@gmail.com
 ```
 
@@ -21707,7 +21738,7 @@ Only a private staging or demo copy should set `ALLOW_SANDBOX_PAYMENTS=1`.
 | `SECURE_COOKIES` | on if https | Secure flag on cookies |
 | `SESSION_DAYS` | 14 | Login lifetime |
 | `MAX_BODY_BYTES`, `MAX_UPLOAD_BYTES` | 25 MB, 6 MB | Request and image size limits |
-| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studio | Name and tagline everywhere |
+| `BRAND_NAME`, `BRAND_TAGLINE` | Aurelia Studios | Name and tagline everywhere |
 | `SUPPORT_EMAIL` | invitesaurelia@gmail.com | Contact address on the site and in emails |
 | `COMPANY_ADDRESS`, `VAT_NUMBER`, `INFORMATION_OFFICER_EMAIL` | placeholders | Footer, receipts, POPIA |
 | `VAT_RATE` | 0.15 | VAT split on receipts (prices include VAT) |
@@ -21789,7 +21820,7 @@ is manual today, by design).
 
 def main():
     files = project_files()
-    parts = [f"# Aurelia Studio: complete project and hosting guide\n\n"
+    parts = [f"# Aurelia Studios: complete project and hosting guide\n\n"
              f"Generated {date.today().isoformat()} from the working project. **{len(files)} files**, each included in full "
              f"under section 12, with a checksum. Nothing else is needed to rebuild and host the website.\n\n"
              "## Contents\n\n1. What this is\n2. Rebuild the project from this file\n3. Hosting\n4. Email\n5. Payments (PayFast)\n"

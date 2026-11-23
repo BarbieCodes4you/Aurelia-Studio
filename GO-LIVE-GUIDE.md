@@ -1,4 +1,4 @@
-# Aurelia Studio: go-live guide (Netlify + PayFast)
+# Aurelia Studios: go-live guide (Netlify + PayFast)
 
 This is for the version of the site that runs on Netlify today: the marketing pages, templates and the
 full "Create your event" journey. Bookings, contact messages and set-up requests arrive through Netlify
@@ -68,9 +68,9 @@ The booking page then shows **Pay R12,999 securely**, and clients pay straight a
 
    | Package | Item name | Amount |
    |---|---|---|
-   | Essential | Aurelia Studio Essential | 8999.00 |
-   | Premium | Aurelia Studio Premium | 12999.00 |
-   | Signature | Aurelia Studio Signature | 17999.00 |
+   | Essential | Aurelia Studios Essential | 8999.00 |
+   | Premium | Aurelia Studios Premium | 12999.00 |
+   | Signature | Aurelia Studios Signature | 17999.00 |
 
 3. If it asks for return or cancel pages, use your site address, e.g. `https://aurelia-invites.netlify.app/`.
 4. Click **Create button** and copy the code it shows. If PayFast also gives you a link for the button,

@@ -1,4 +1,4 @@
-# Aurelia Studio — digital event experience platform
+# Aurelia Studios — digital event experience platform
 
 **One event. One platform. One link. Everything organised.**
 
@@ -7,7 +7,7 @@ A complete web application for creating, publishing and managing event websites 
 guest list, seating chart, menus, programme, emails, WhatsApp sharing, reports, payments and an admin
 dashboard.
 
-The brand is "Aurelia Studio". Change it with `BRAND_NAME` in `.env`.
+The brand is "Aurelia Studios". Change it with `BRAND_NAME` in `.env`.
 
 ## Run it
 

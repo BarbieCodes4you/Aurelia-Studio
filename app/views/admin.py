@@ -189,7 +189,7 @@ def backup(req):
                 for f in files:
                     full = os.path.join(root, f)
                     z.write(full, os.path.join("uploads", os.path.relpath(full, str(config.UPLOAD_DIR))), compress_type=zipfile.ZIP_STORED)
-            z.writestr("README.txt", "Aurelia Studio backup " + stamp + ".\nTo restore: stop the app, put aurelia.sqlite3 and the uploads folder "
+            z.writestr("README.txt", "Aurelia Studios backup " + stamp + ".\nTo restore: stop the app, put aurelia.sqlite3 and the uploads folder "
                                      "back into the data folder (/data on Railway), then start it again.\n")
     auth.audit(admin["id"], "admin.backup", stamp)
     return download(buf.getvalue(), f"aurelia-studio-backup-{stamp}.zip", "application/zip")
