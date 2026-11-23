@@ -468,7 +468,49 @@ FAN = """<svg class="orn orn-fan" viewBox="0 0 400 210" aria-hidden="true"><g fi
 DECO_RULE = """<svg class="orn orn-deco" viewBox="0 0 240 20" aria-hidden="true"><g fill="none" stroke-width="1"><path d="M0 10h96M144 10h96"/><path d="m120 1 9 9-9 9-9-9Z"/><path d="m104 10 4-4 4 4-4 4ZM128 10l4-4 4 4-4 4Z"/></g></svg>"""
 
 
-def beads(cls: str = "") -> str:
+def _row(y, cls, w, step, size=4):
+    return "".join(f'<rect class="{cls}" x="{x}" y="{y}" width="{size}" height="{size}"/>' for x in range(2, w, step))
+
+
+# Border patterns for the Heritage cultural styles: (tile width, SVG shapes). Shapes use classes m1..m6,
+# filled from the culture's motif colours (themes.CULTURES), so one tile serves every colour change.
+MOTIFS = {
+    "ndebele": (72, '<rect class="m6" width="72" height="26"/><rect class="m5" width="72" height="3"/><rect class="m5" y="23" width="72" height="3"/>'
+                    '<rect class="m5" x="2" y="5" width="22" height="16"/><rect class="m2" x="4" y="7" width="18" height="12"/><rect class="m5" x="11" y="7" width="4" height="12"/>'
+                    '<rect class="m5" x="26" y="5" width="22" height="16"/><rect class="m1" x="28" y="7" width="18" height="12"/><path class="m6" d="M29 19 37 9l8 10Z"/>'
+                    '<rect class="m5" x="50" y="5" width="20" height="16"/><rect class="m3" x="52" y="7" width="16" height="12"/><rect class="m4" x="55" y="10" width="10" height="6"/>'),
+    "zulu": (48, '<rect class="m6" width="48" height="26"/><path class="m1" d="M0 21 12 5l12 16Z"/><path class="m3" d="M24 21 36 5l12 16Z"/>'
+                 '<path class="m5" d="M12 5h24L24 21Z"/><path class="m2" d="M36 5h24L48 21Z"/><path class="m2" d="M-12 5h24L0 21Z"/>'
+                 + "".join(f'<circle class="m5" cx="{x}" cy="2.2" r="1.1"/><circle class="m5" cx="{x}" cy="23.8" r="1.1"/>' for x in range(2, 48, 4))),
+    "xhosa": (40, '<rect class="m2" width="40" height="26"/><rect class="m5" y="2" width="40" height="1.5"/><rect class="m5" y="5" width="40" height="4"/>'
+                  '<rect class="m5" y="17" width="40" height="4"/><rect class="m5" y="22.5" width="40" height="1.5"/>'
+                  '<rect class="m3" x="2" y="11" width="4" height="4"/><rect class="m6" x="10" y="11" width="4" height="4"/><rect class="m1" x="18" y="11" width="4" height="4"/>'
+                  '<rect class="m6" x="26" y="11" width="4" height="4"/><rect class="m4" x="34" y="11" width="4" height="4"/>'),
+    "pedi": (36, '<rect class="m1" width="6" height="26"/><rect class="m6" x="6" width="6" height="26"/><rect class="m3" x="12" width="6" height="26"/>'
+                 '<rect class="m2" x="18" width="6" height="26"/><rect class="m5" x="24" width="6" height="26"/><rect class="m4" x="30" width="6" height="26"/>'
+                 '<rect class="m6" y="10" width="36" height="6"/>' + "".join(f'<path class="m5" d="M{x} 16 {x + 3} 10l3 6Z"/>' for x in range(0, 36, 6))),
+    "venda": (36, '<rect class="m5" width="36" height="26"/><rect class="m1" y="2" width="36" height="2"/><rect class="m2" y="5" width="36" height="2"/>'
+                  '<rect class="m4" y="19" width="36" height="2"/><rect class="m3" y="22" width="36" height="2"/>'
+                  '<path class="m6" d="M0 17 6 9l6 8Z"/><path class="m2" d="M6 9h12l-6 8Z"/><path class="m1" d="M12 17 18 9l6 8Z"/>'
+                  '<path class="m6" d="M18 9h12l-6 8Z"/><path class="m4" d="M24 17 30 9l6 8Z"/><path class="m2" d="M30 9h12l-6 8Z"/><path class="m2" d="M-6 9H6l-6 8Z"/>'),
+    "tsonga": (24, '<rect class="m1" width="4" height="18"/><rect class="m2" x="4" width="4" height="18"/><rect class="m3" x="8" width="4" height="18"/>'
+                   '<rect class="m6" x="12" width="4" height="18"/><rect class="m4" x="16" width="4" height="18"/><rect class="m5" x="20" width="4" height="18"/>'
+                   '<path class="m5" d="M0 18 3 26 6 18Z"/><path class="m3" d="M6 18 9 26 12 18Z"/><path class="m1" d="M12 18 15 26 18 18Z"/><path class="m4" d="M18 18 21 26 24 18Z"/>'),
+    "swati": (40, '<rect class="m1" width="40" height="26"/><rect class="m5" width="40" height="3"/><rect class="m5" y="23" width="40" height="3"/>'
+                  '<ellipse class="m6" cx="10" cy="13" rx="4.5" ry="7.5"/><rect class="m5" x="9.4" y="6" width="1.2" height="14"/>'
+                  '<circle class="m5" cx="8" cy="10" r=".9"/><circle class="m5" cx="12" cy="16" r=".9"/><path class="m2" d="M20 9l3 4-3 4-3-4Z"/>'
+                  '<ellipse class="m5" cx="30" cy="13" rx="4.5" ry="7.5"/><rect class="m6" x="29.4" y="6" width="1.2" height="14"/>'
+                  '<circle class="m6" cx="28" cy="16" r=".9"/><circle class="m6" cx="32" cy="10" r=".9"/>'),
+}
+
+
+def beads(cls: str = "", culture: str = "") -> str:
+    if culture in MOTIFS:
+        width, tile = MOTIFS[culture]
+        pid = f"bd-{culture}-{cls or 'x'}"
+        return (f'<div class="orn-beads orn-beads--{culture} {cls}" aria-hidden="true"><svg width="100%" height="26"><defs>'
+                f'<pattern id="{pid}" width="{width}" height="26" patternUnits="userSpaceOnUse">{tile}</pattern></defs>'
+                f'<rect width="100%" height="26" fill="url(#{pid})"/></svg></div>')
     tri = "".join(
         f'<path class="{"bd-a" if k % 3 == 0 else "bd-b" if k % 3 == 1 else "bd-c"}" d="M{k*24} 22l12-18 12 18Z"/>'
         f'<path class="bd-d" d="M{k*24+12} 4l6 9-6 9-6-9Z"/>' for k in range(4))
@@ -550,6 +592,8 @@ def bloom(ctx) -> str:
 
 
 def heritage(ctx) -> str:
+    from . import themes
+    cult = themes.culture("heritage", ctx["theme"]["palette"])
     dp = date_parts(ctx)
     secs = collect(ctx)
     sides = (ctx["gs"].get("sides") or [])
@@ -559,11 +603,11 @@ def heritage(ctx) -> str:
         fam = (f'<section class="ev-sec hr-fam" aria-labelledby="fam-h"><div class="ev-sec__in">{head("fam", "Two families, one celebration", "Umndeni")}'
                f'<p class="ev-text">{esc(ctx["wording"].get("families") or "With the blessing of our elders and the joy of both families, we welcome you.")}</p>'
                f'<ul class="hr-fam__list">{fam_items}</ul></div></section>')
-    hero = (f'{beads("hr-top")}<header class="hr-hero" id="welcome"><div class="hr-hero__text">'
+    hero = (f'{beads("hr-top", cult)}<header class="hr-hero" id="welcome"><div class="hr-hero__text">'
             f'<p class="ev-kicker">{esc(ctx["wording"]["welcome"])}</p>{greeting(ctx)}<h1 class="hr-names">{names_html(ctx, "&amp;")}</h1>'
             f'<p class="hr-date">{esc(dp["day"])} · {esc(dp["month"])} · {esc(dp["year"])}</p>'
             f'<p class="ev-text">{esc(ctx["venue"].get("name") or "")}</p><div class="ev-actions">{rsvp_cta(ctx, "Respond")}</div></div>'
-            f'<div class="hr-hero__mark"><div class="hr-diamond">{hero_image(ctx, "ev-photo hr-photo", "<span>" + esc(ctx["monogram"]) + "</span>")}</div></div></header>{beads("hr-mid")}')
+            f'<div class="hr-hero__mark"><div class="hr-diamond">{hero_image(ctx, "ev-photo hr-photo", "<span>" + esc(ctx["monogram"]) + "</span>")}</div></div></header>{beads("hr-mid", cult)}')
     body = ""
     for n, (k, html) in enumerate(secs):
         if k == "venue" and len(ctx["functions"]) > 1:
@@ -574,7 +618,7 @@ def heritage(ctx) -> str:
         if k in ("invitation",) and fam:
             body += fam
             fam = ""
-    return hero + nav(ctx, secs, "ev-nav hr-nav") + fam + body + beads("hr-bottom")
+    return hero + nav(ctx, secs, "ev-nav hr-nav") + fam + body + beads("hr-bottom", cult)
 
 
 def champagne(ctx) -> str:

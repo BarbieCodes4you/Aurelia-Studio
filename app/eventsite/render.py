@@ -300,6 +300,10 @@ def document(ctx, body: str) -> str:
     bg_img = ctx["background"] or (ctx["hero"] if t["background"] == "image" else "")
     style = themes.css_vars(t) + contrast_vars(t["colors"]) + (f"--ev-bg-image:url('{esc(bg_img)}');" if bg_img else "")
     classes = f"ev d-{ctx['design']} bg-{t['background']} grp-{ctx['group']}" + (" has-hero" if ctx["hero"] else "")
+    cult = themes.culture(ctx["design"], t.get("palette", ""))
+    if cult:
+        classes += f" cult-{cult}"
+        style += themes.culture_vars(cult)
     return f"""<!doctype html><html lang="en-ZA"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">{robots}

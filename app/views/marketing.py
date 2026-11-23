@@ -379,14 +379,24 @@ def template_detail(req, slug):
         f'<a href="{url("/templates/" + slug, group=k)}"{" aria-current=page" if k == group else ""}>{esc(catalog.GROUPS[k]["name"])}</a>'
         for k in groups)
     others = "".join(template_card(x) for x in catalog.templates() if x["slug"] != slug and set(db.loads(x["groups"], [])) & set(groups))
+    cults = d.get("cultures") or []
+    style = req.arg("style") if req.arg("style") in cults else ""
+    culture_row = ""
+    if cults:
+        links = [f'<a href="{url("/templates/" + slug, group=group)}"{"" if style else " aria-current=page"}>Classic</a>']
+        links += [f'<a href="{url("/templates/" + slug, group=group, style=k)}"{" aria-current=page" if k == style else ""}>{esc(themes.CULTURES[k][0])}</a>'
+                  for k in cults]
+        culture_row = (f'<div class="culture-pick"><span class="small">Cultural style</span><div class="seg seg--wrap" role="group" '
+                       f'aria-label="Cultural style">{"".join(links)}</div>'
+                       + (f'<span class="tiny muted">{esc(themes.CULTURES[style][1])}</span>' if style else "") + '</div>')
     body = page_hero(f'{esc(t["name"])} <span class="serif grad">template</span>', esc(t["description"]),
                      [("Templates", "/templates"), (t["name"], "")],
-                     f'<div class="btn-row" style="margin-top:24px"><a class="btn btn--primary btn--lg" href="/create?template={esc(slug)}&group={group}">Use this template {i("arrow", "i--arrow")}</a></div>') + f"""
-<section class="section"><div class="container"><div class="cols cols--2" style="grid-template-columns:minmax(0,1fr)">
+                     f'<div class="btn-row" style="margin-top:24px"><a class="btn btn--primary btn--lg" href="/create?template={esc(slug)}&group={group}{"&amp;palette=" + esc(style) if style else ""}">Use this template {i("arrow", "i--arrow")}</a></div>') + f"""
+<section class="section"><div class="container">{culture_row}<div class="cols cols--2" style="grid-template-columns:minmax(0,1fr)">
 <div class="preview-frame" data-preview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">{esc(config.BASE_URL)}/events/sample</span>
 <div class="row" style="gap:8px"><div class="seg" role="group" aria-label="Sample content">{group_links}</div>
 <div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">{i("monitor")}<span class="sr-only">Desktop</span></button><button type="button" data-device="mobile" aria-pressed="false">{i("phone")}<span class="sr-only">Mobile</span></button></div></div></div>
-<div class="preview-frame__stage" style="height:min(78vh,820px)"><iframe src="/templates/{esc(slug)}/preview?group={group}" title="{esc(t['name'])} preview with sample content"></iframe></div></div>
+<div class="preview-frame__stage" style="height:min(78vh,820px)"><iframe src="/templates/{esc(slug)}/preview?group={group}{"&amp;palette=" + esc(style) if style else ""}" title="{esc(t['name'])} preview with sample content"></iframe></div></div>
 </div>
 <div class="grid grid--3" style="margin-top:var(--gap)">
 <div class="box"><h3 style="font-size:1rem;margin-bottom:12px">Design direction</h3><p class="muted small">{esc(t["direction"])}. Sample content shown; your names, photos and wording replace it.</p></div>

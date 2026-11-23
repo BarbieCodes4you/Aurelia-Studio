@@ -47,7 +47,7 @@ TEMPLATES = [
     ("bloom", "Bloom", "bloom", "Romantic floral", ["weddings", "baby"],
      "Blush and sage with drawn botanicals, arched frames and a flowing script for your names.", ["floral", "script", "arches"]),
     ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
-     "Rich ochre, indigo and terracotta with geometric beadwork borders. Built for several ceremonies and both families.", ["traditional", "pattern", "multi-ceremony"]),
+     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
     ("champagne", "Champagne", "champagne", "Champagne and gold", ["weddings", "parties", "other"],
      "Midnight backdrop, gold foil lettering and Art Deco fans. Glass panels catch the light.", ["deco", "dark", "gold"]),
     ("linea", "Linea", "linea", "Contemporary minimalist", ["weddings", "other", "parties"],
@@ -131,6 +131,10 @@ PACKAGES = [
 ]
 
 
+# Earlier default descriptions. A row still holding one (not edited in the admin) takes the new text.
+_REFRESH_TEXT = {"heritage": "Rich ochre, indigo and terracotta with geometric beadwork borders. Built for several ceremonies and both families."}
+
+
 def ensure_catalog() -> None:
     if not db.val("SELECT COUNT(*) FROM categories"):
         for i, (slug, name, group, desc, feats) in enumerate(CATEGORIES):
@@ -142,6 +146,11 @@ def ensure_catalog() -> None:
             db.insert("templates", {"slug": slug, "name": name, "design": design, "direction": direction,
                                     "groups": db.dumps(groups), "description": desc, "tags": db.dumps(tags),
                                     "sort": i, "updated_at": db.now()})
+    for slug, old_text in _REFRESH_TEXT.items():
+        row = next((t for t in TEMPLATES if t[0] == slug), None)
+        if row:
+            db.run("UPDATE templates SET description = ?, tags = ?, updated_at = ? WHERE slug = ? AND description = ?",
+                   (row[5], db.dumps(row[6]), db.now(), slug, old_text))
     if not db.val("SELECT COUNT(*) FROM packages"):
         for p in PACKAGES:
             db.insert("packages", {"code": p["code"], "name": p["name"], "tagline": p["tagline"],

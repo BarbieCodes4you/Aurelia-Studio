@@ -296,7 +296,11 @@ def template_preview(req, slug):
         raise HTTPError(404)
     groups = db.loads(t["groups"], [])
     group = req.arg("group") if req.arg("group") in ("weddings", "baby", "parties", "other") else (groups[0] if groups else "weddings")
-    r = Response(R.render(demo_event(slug, group), "demo", None, req))
+    ev = demo_event(slug, group)
+    from ..eventsite import themes
+    if req.arg("palette") in [p[0] for p in themes.palettes(t["design"])]:
+        ev["design"] = dict(ev.get("design") or {}, palette=req.arg("palette"))   # e.g. a cultural style on the template page
+    r = Response(R.render(ev, "demo", None, req))
     r.header("Cache-Control", "no-cache")
     return r
 

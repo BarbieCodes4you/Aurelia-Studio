@@ -59,11 +59,13 @@ if(L){var lab=f.querySelector('label[for='+h.id+']');if(lab)lab.firstChild.textC
 if(more)more.addEventListener('click',function(){all=true;sync(false);});sync(false);})();</script>"""
 
 
-def _new_event(user_id: int, cat, tpl, hosts: str, pkg: str):
+def _new_event(user_id: int, cat, tpl, hosts: str, pkg: str, palette: str = ""):
     hosts = (hosts or "").strip()[:120]
     name = suggestions.auto_event_name(cat["slug"], hosts) or cat["name"]
     ev = events.create(user_id, cat["slug"], tpl["slug"], name, hosts)
     events.touch(ev["id"], selected_package=pkg)
+    if palette and palette in [p[0] for p in themes.palettes(tpl["design"])]:
+        events.touch(ev["id"], design=json.dumps({"palette": palette}))   # e.g. a cultural style picked on the template page
     return ev
 
 
@@ -106,7 +108,7 @@ def create(req):
                 f.error("contact_email", "Too many new accounts from this connection. Try again in an hour.")
             if f.ok:
                 existing = db.one("SELECT * FROM users WHERE email = ?", (cemail,))
-                back = url("/create", category=cat_slug, template=tpl_slug, package=get("package"), hosts=hosts, go="1")
+                back = url("/create", category=cat_slug, template=tpl_slug, package=get("package"), hosts=hosts, palette=get("palette"), go="1")
                 if existing:
                     from .accounts import send_login_link
                     if existing["status"] == "active" and not auth.rate_limited(f"login-link:{cemail}", 5, 3600):
@@ -122,7 +124,7 @@ def create(req):
                     send_verification(user)
                     auth.audit(uid_, "user.register", cemail, via="create")
         if f.ok and user and not check_email:
-            ev = _new_event(user["id"], cat, tpl, hosts, pkg)
+            ev = _new_event(user["id"], cat, tpl, hosts, pkg, get("palette"))
             auth.audit(user["id"], "event.create", ev["uid"], template=tpl["slug"])
             req.flash("success", "Your event is saved as a private draft. Let's add the details.")
             resp = redirect(step_url(ev, 1))
@@ -132,7 +134,7 @@ def create(req):
             return resp
     elif req.user and get("go") == "1" and cat and tpl:
         # back from an emailed sign-in link: create the event the visitor had chosen
-        ev = _new_event(req.user["id"], cat, tpl, get("hosts"), pkg)
+        ev = _new_event(req.user["id"], cat, tpl, get("hosts"), pkg, get("palette"))
         auth.audit(req.user["id"], "event.create", ev["uid"], template=tpl["slug"])
         req.flash("success", "You're signed in and your event is saved as a private draft. Let's add the details.")
         return redirect(step_url(ev, 1))
@@ -173,7 +175,7 @@ def create(req):
 <h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Three quick questions, then we build your website as you go. Nothing is published or charged until you're ready.</p>
 <p class="small" style="margin-top:14px">Rather have us do it? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>.</p></div></section>
 <section class="section"><div class="container"><form class="form" method="post" novalidate data-create>{csrf(req)}
-{errors_summary(f.errors)}
+{f'<input type="hidden" name="palette" value="{esc(get("palette"))}">' if get("palette") else ""}{errors_summary(f.errors)}
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>{"".join(cats_html)}</div>
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step.</p>
 <div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
@@ -426,10 +428,21 @@ def step_design(req, ev):
         sw = "".join(f'<i style="background:{c}"></i>' for c in (p["bg"], p["text"], p["accent"], p["accent2"]))
         tpl_opts.append(f'<label class="choice"><input type="radio" name="template" value="{esc(t["slug"])}"{" checked" if t["slug"] == ev["template"] else ""}>'
                         f'<span><span class="row row--between"><b>{esc(t["name"])}</b><span class="palette-swatches">{sw}</span></span><small>{esc(t["direction"])}</small></span></label>')
-    pal_opts = "".join(
-        f'<label class="choice"><input type="radio" name="palette" value="{esc(k)}"{" checked" if k == res["palette"] else ""}>'
-        f'<span><span class="palette-swatches">{"".join(f"<i style=background:{c[x]}></i>" for x in ("bg", "text", "accent", "accent2"))}</span>{esc(label)}</span></label>'
-        for k, label, c in dsg["palettes"])
+    def pal_choice(k, label, colours, sub=""):
+        return (f'<label class="choice"><input type="radio" name="palette" value="{esc(k)}"{" checked" if k == res["palette"] else ""}>'
+                f'<span><span class="palette-swatches">{"".join(f"<i style=background:{c}></i>" for c in colours)}</span>{esc(label)}'
+                f'{f"<small>{esc(sub)}</small>" if sub else ""}</span></label>')
+    cults = dsg.get("cultures") or []
+    pal_opts = "".join(pal_choice(k, label, [c[x] for x in ("bg", "text", "accent", "accent2")])
+                       for k, label, c in dsg["palettes"] if k not in cults)
+    surprise = f'<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">{i("sparkle")} Try another look</button>'
+    pal_block = f'<fieldset><legend>Colour palette</legend><div class="choice-grid">{pal_opts}</div>{surprise}</fieldset>'
+    if cults:
+        cult_opts = "".join(pal_choice(k, themes.CULTURES[k][0], themes.CULTURES[k][3][:4], themes.CULTURES[k][1]) for k in cults)
+        pal_block = (f'<fieldset><legend>Cultural style</legend><p class="hint" style="margin-bottom:10px">Patterns and colours from '
+                     f'Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga and Swati design. Choose yours, or a classic palette below.</p>'
+                     f'<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">{cult_opts}</div></fieldset>'
+                     f'<fieldset><legend>Classic colours</legend><div class="choice-grid">{pal_opts}</div>{surprise}</fieldset>')
     fonts = [(k, themes.FONT_PAIRS[k][0] + f" ({themes.FONT_PAIRS[k][1]} + {themes.FONT_PAIRS[k][2]})") for k in dsg["fonts"]]
     fonts += [(k, v[0] + f" ({v[1]} + {v[2]})") for k, v in themes.FONT_PAIRS.items() if k not in dsg["fonts"]]
     bgs = [(k, themes.BACKGROUND_LABELS[k]) for k in dsg["backgrounds"]]
@@ -458,8 +471,7 @@ def step_design(req, ev):
     inner = f"""{errors_summary(f.errors)}
 <fieldset><legend>Template</legend><div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">{"".join(tpl_opts)}</div>
 <p class="hint" style="margin-top:8px">Switching template resets colours and fonts to that template's defaults. Your content stays.</p></fieldset>
-<fieldset><legend>Colour palette</legend><div class="choice-grid">{pal_opts}</div>
-<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">{i("sparkle")} Try another look</button></fieldset>
+{pal_block}
 <div class="box" style="padding:16px">{check("custom_colors", "Use my own colours" + ("" if adv else " <span class='pill pill--gold pill--plain'>Premium</span>"), custom, attrs={"data-reveals": "#custom-colors", "disabled": not adv})}
 <div id="custom-colors" class="form-row form-row--4" style="margin-top:12px"{"" if custom else " hidden"}>{color_fields}</div></div>
 <div class="form-row form-row--2">{select("font_pair", "Typography", fonts, res["font_pair"])}{select("background", "Background", bgs, res["background"])}</div>

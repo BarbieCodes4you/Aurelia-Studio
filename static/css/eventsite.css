@@ -303,6 +303,21 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 .orn-beads svg { display: block; }
 .bd-a { fill: var(--ev-accent); } .bd-b { fill: var(--ev-accent2); } .bd-c { fill: var(--ev-text); } .bd-d { fill: var(--ev-bg); }
 .bg-pattern.d-heritage { background-image: linear-gradient(45deg, color-mix(in srgb, var(--ev-accent) 6%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--ev-accent) 6%, transparent) 75%), linear-gradient(45deg, color-mix(in srgb, var(--ev-accent) 6%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--ev-accent) 6%, transparent) 75%); background-size: 36px 36px; background-position: 0 0, 18px 18px; }
+/* Heritage cultural styles: patterns take the culture's motif colours (--m1..--m6) */
+.orn-beads .m1 { fill: var(--m1); } .orn-beads .m2 { fill: var(--m2); } .orn-beads .m3 { fill: var(--m3); }
+.orn-beads .m4 { fill: var(--m4); } .orn-beads .m5 { fill: var(--m5); } .orn-beads .m6 { fill: var(--m6); }
+.d-heritage[class*="cult-"] .hr-sec--alt { border-image: repeating-linear-gradient(90deg, var(--m1) 0 14px, var(--m5) 14px 17px, var(--m2) 17px 31px, var(--m5) 31px 34px, var(--m3) 34px 48px, var(--m5) 48px 51px, var(--m4) 51px 65px, var(--m5) 65px 68px) 6; }
+.d-heritage[class*="cult-"] .hr-sec .ev-h::before { background: var(--m1); box-shadow: 6px -6px 0 -2px var(--m3); }
+.d-heritage[class*="cult-"] .hr-diamond { border-color: var(--m1); outline-color: var(--m3); }
+/* the hero diamond (when no photo is added) carries the culture's pattern; the monogram sits on a plaque */
+.cult-ndebele .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m5) 0 3px, var(--m2) 3px 15px, var(--m5) 15px 18px, var(--m1) 18px 30px, var(--m5) 30px 33px, var(--m3) 33px 45px, var(--m5) 45px 48px, var(--m6) 48px 60px); }
+.cult-zulu .hr-photo.ev-photo--art { background: conic-gradient(from 45deg, var(--m1) 0 25%, var(--m6) 0 50%, var(--m3) 0 75%, var(--m5) 0) 0 0 / 30px 30px; }
+.cult-xhosa .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m2) 0 12px, var(--m5) 12px 16px, var(--m2) 16px 20px, var(--m5) 20px 22px, var(--m2) 22px 26px, var(--m3) 26px 29px); }
+.cult-pedi .hr-photo.ev-photo--art { background: repeating-linear-gradient(90deg, var(--m1) 0 9px, var(--m6) 9px 13px, var(--m3) 13px 22px, var(--m2) 22px 31px, var(--m5) 31px 40px, var(--m4) 40px 49px); }
+.cult-venda .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m5) 0 16px, var(--m1) 16px 19px, var(--m2) 19px 22px, var(--m4) 22px 25px, var(--m3) 25px 28px, var(--m6) 28px 30px); }
+.cult-tsonga .hr-photo.ev-photo--art { background: repeating-linear-gradient(90deg, var(--m1) 0 6px, var(--m2) 6px 12px, var(--m3) 12px 18px, var(--m6) 18px 24px, var(--m4) 24px 30px, var(--m5) 30px 36px); }
+.cult-swati .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m1) 0 14px, var(--m5) 14px 18px, var(--m6) 18px 21px, var(--m5) 21px 25px); }
+.d-heritage[class*="cult-"] .hr-photo.ev-photo--art > span { padding: .25em .55em; background: var(--ev-surface); color: var(--ev-text); border: 3px solid var(--m5); box-shadow: 0 0 0 4px var(--ev-surface); }
 .hr-hero { display: grid; gap: 32px; align-items: center; max-width: 1180px; margin: 0 auto; padding: clamp(48px, 8vw, 96px) var(--ev-pad); }
 @media (min-width: 900px) { .hr-hero { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); } }
 .hr-names { font-size: clamp(2.6rem, 1.6rem + 5vw, 5.4rem); font-weight: 700; letter-spacing: .04em; line-height: 1.02; text-transform: uppercase; display: grid; color: var(--ev-accent2); }

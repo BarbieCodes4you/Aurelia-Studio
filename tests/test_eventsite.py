@@ -64,6 +64,50 @@ class TemplateTests(unittest.TestCase):
         self.assertIn("The ceremonies", html)
 
 
+class CulturalStyleTests(unittest.TestCase):
+    """Heritage can be styled Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = fresh_app("eventsite-cultures")
+
+    def test_each_culture_renders_its_own_pattern_and_colours(self):
+        from app.eventsite import themes
+        self.assertEqual(set(themes.CULTURES), {"ndebele", "zulu", "xhosa", "pedi", "venda", "tsonga", "swati"})
+        for key, (name, _, palette, motif) in themes.CULTURES.items():
+            ev = demo_event("heritage", "weddings")
+            ev["design"] = {"palette": key}
+            html = render(ev, "demo")
+            self.assertIn(f"cult-{key}", html)
+            self.assertIn(f'id="bd-{key}-hr-top"', html)
+            self.assertIn(f"--m1:{motif[0]}", html)
+            self.assertIn(f"--ev-accent:{palette['accent']}", html)
+        classic = render(demo_event("heritage", "weddings"), "demo")
+        self.assertNotIn("cult-", classic)
+
+    def test_template_page_previews_a_culture_and_carries_it_to_create(self):
+        c = Client(self.app)
+        r = c.get("/templates/heritage?group=weddings&style=zulu")
+        self.assertEqual(r.status, 200)
+        self.assertIn("preview?group=weddings&amp;palette=zulu", r.text)
+        self.assertIn("/create?template=heritage&group=weddings&amp;palette=zulu", r.text)
+        self.assertIn("Cultural style", r.text)
+        self.assertIn("cult-zulu", c.get("/templates/heritage/preview?group=weddings&palette=zulu").text)
+        self.assertNotIn("cult-", c.get("/templates/atelier/preview?group=weddings&palette=zulu").text)
+
+    def test_design_step_offers_cultures_and_create_keeps_the_choice(self):
+        make_user("culture@example.com")
+        c = Client(self.app)
+        login(c, "culture@example.com")
+        r = c.post("/create", {"category": "traditional-wedding", "template": "heritage", "hosts": "Zanele & Musa", "palette": "xhosa"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        ev = db.one("SELECT e.* FROM events e JOIN users u ON u.id = e.owner_id WHERE u.email = ?", ("culture@example.com",))
+        self.assertEqual(db.loads(ev["design"], {}).get("palette"), "xhosa")
+        step2 = c.get(f"/dashboard/events/{ev['uid']}/setup/2").text
+        self.assertIn("Cultural style", step2)
+        self.assertIn('value="xhosa" checked', step2)
+
+
 class PublicSiteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

@@ -146,6 +146,46 @@ DESIGNS = {
         ]},
 }
 
+# --- Cultural styles for Heritage ----------------------------------------------------------------
+# Each is a palette for the page (text contrast checked to WCAG AA) plus six motif colours for the
+# beadwork borders, which also take the culture's own pattern (designs.MOTIFS). They are chosen like
+# any other palette, so saving, the live preview and custom colours work unchanged.
+CULTURES = {
+    "ndebele": ("Ndebele", "Bold painted geometry in primary colours, outlined in black",
+                {"bg": "#FBFAF6", "surface": "#FFFFFF", "text": "#141414", "muted": "#555555", "accent": "#D62828", "accent2": "#1D3E8A"},
+                ("#D62828", "#F2B705", "#1D5FB8", "#2E8B57", "#111111", "#FFFFFF")),
+    "zulu": ("Zulu", "Beadwork triangles in red, blue, black and yellow",
+             {"bg": "#F8F5EE", "surface": "#FFFFFF", "text": "#1A1A1A", "muted": "#5E5A55", "accent": "#C1272D", "accent2": "#1B3F8B"},
+             ("#C1272D", "#F2C200", "#1B3F8B", "#2F8F46", "#151515", "#FFFFFF")),
+    "xhosa": ("Xhosa", "Umbhaco cream and ochre with black braid bands",
+              {"bg": "#F7F1E6", "surface": "#FFFDF8", "text": "#161616", "muted": "#5D564D", "accent": "#B8541E", "accent2": "#111111"},
+              ("#C8642A", "#E9D8B6", "#1FA6A0", "#B23A2E", "#111111", "#FFFFFF")),
+    "pedi": ("Pedi", "Bright stripes in pink, yellow, blue and purple",
+             {"bg": "#FBF6F4", "surface": "#FFFFFF", "text": "#24132B", "muted": "#67586B", "accent": "#D6337A", "accent2": "#2A3F96"},
+             ("#E0338A", "#F5B700", "#2D4FB0", "#2E9E5B", "#6B2FA0", "#FFFFFF")),
+    "venda": ("Venda", "Minwenda stripes and zigzags on deep navy",
+              {"bg": "#FAF7F0", "surface": "#FFFFFF", "text": "#121212", "muted": "#5A5650", "accent": "#C8102E", "accent2": "#12284C"},
+              ("#D7262E", "#F4C20D", "#2457C5", "#229A4C", "#12284C", "#FFFFFF")),
+    "tsonga": ("Tsonga", "Xibelani colour with a beaded fringe",
+               {"bg": "#FFF8F0", "surface": "#FFFFFF", "text": "#2A1810", "muted": "#6E5A4E", "accent": "#E8590C", "accent2": "#1C5D99"},
+               ("#F26B1D", "#F7C531", "#1C5D99", "#2FA36B", "#D7263D", "#F06EAA")),
+    "swati": ("Swati", "Emahiya red with black and white shields",
+              {"bg": "#FBF7F2", "surface": "#FFFFFF", "text": "#1B1414", "muted": "#625656", "accent": "#B5232A", "accent2": "#1E1E1E"},
+              ("#C0262D", "#F2C200", "#2B3F8C", "#2E7D46", "#141414", "#FFFFFF")),
+}
+DESIGNS["heritage"]["palettes"] = DESIGNS["heritage"]["palettes"] + [(k, v[0], v[2]) for k, v in CULTURES.items()]
+DESIGNS["heritage"]["cultures"] = list(CULTURES)
+
+
+def culture(design_key: str, palette_key: str) -> str:
+    """The cultural style in use ("zulu", ...), or "" for a classic palette or another template."""
+    return palette_key if design_key == "heritage" and palette_key in CULTURES else ""
+
+
+def culture_vars(key: str) -> str:
+    return "".join(f"--m{n}:{c};" for n, c in enumerate(CULTURES[key][3], 1)) if key in CULTURES else ""
+
+
 BACKGROUND_LABELS = {
     "plain": "Plain colour", "paper": "Soft paper texture", "pattern": "Signature pattern",
     "image": "Your photo behind the welcome", "aurora": "Aurora light field",

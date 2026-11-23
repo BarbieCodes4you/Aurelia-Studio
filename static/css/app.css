@@ -779,6 +779,8 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--color-surface-2); }
 .seg button, .seg a { min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font-size: .8125rem; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
 .seg [aria-pressed="true"], .seg [aria-current="page"] { background: var(--color-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 3px 8px -2px rgb(0 0 0 / .1); }
+.culture-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 14px; }
+.seg--wrap { flex-wrap: wrap; border-radius: 18px; }
 .palette-swatches { display: flex; gap: 4px; }
 .palette-swatches i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgb(0 0 0 / .1); }
 .review-section { display: grid; gap: 10px; padding: 18px 0; border-bottom: 1px solid var(--color-line); }
