@@ -9,7 +9,7 @@ from ..icons import i
 from ..web import esc
 
 FONTS = ("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600"
-         "&family=Instrument+Serif:ital@0;1&display=swap")
+         "&family=Instrument+Serif:ital@0;1&family=Great+Vibes&display=swap")
 
 THEME_SCRIPT = """<script>(function(){try{var t=localStorage.getItem('aurelia-theme-v1');
 if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}

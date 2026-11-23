@@ -436,18 +436,40 @@ a.chip, button.chip { min-height: 44px; }
 .phone__screen { position: relative; height: 100%; overflow: hidden; border-radius: 26px; background: #FFFDF9; color: #1F1A12; box-shadow: 0 0 0 3px #14110C; }
 .phone__screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(125deg, rgb(255 255 255 / .35) 0%, rgb(255 255 255 / 0) 34%); pointer-events: none; }
 .phone__notch { position: absolute; top: 8px; left: 50%; translate: -50% 0; width: 34%; height: 18px; border-radius: 999px; background: #14110C; z-index: 2; }
-.mini-site { height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 38px 14px 14px; gap: 8px; background: radial-gradient(90% 40% at 20% 0%, #FBEDE6, transparent 70%), radial-gradient(90% 40% at 90% 5%, #FBF1DA, transparent 70%), #FFFDF9; }
-.mini-site__mono { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #D4AA52; display: grid; place-items: center; font: italic 400 1.1rem/1 var(--font-serif); color: #87651C; background: rgb(255 255 255 / .6); }
-.mini-site__kicker { font-size: .5rem; letter-spacing: .24em; text-transform: uppercase; color: #87651C; }
-.mini-site__names { font: italic 400 1.45rem/1.05 var(--font-serif); letter-spacing: -.01em; }
-.mini-site__date { font: 500 .55rem/1.4 var(--font-mono); letter-spacing: .12em; color: #6A6152; }
-.mini-site__count { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; margin-top: 6px; }
-.mini-site__count div { padding: 6px 0; border-radius: 8px; background: #fff; border: 1px solid #EFE6D4; font: 600 .7rem/1 var(--font-mono); }
-.mini-site__count small { display: block; margin-top: 3px; font: 400 .42rem/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: #8C8270; }
-.mini-site__btn { margin-top: 8px; width: 100%; padding: 9px 0; border-radius: 999px; background: linear-gradient(180deg, #F8E7B9, #EDCF86 48%, #DDB563); color: #2A1F0A; font-size: .62rem; font-weight: 600; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .75); }
-.mini-site__img { width: 100%; flex: 1; min-height: 40px; border-radius: 12px; background:
-  radial-gradient(60% 80% at 25% 100%, #F5F1E2 0, transparent 60%), radial-gradient(55% 70% at 85% 90%, #FBEDE6 0, transparent 60%), linear-gradient(180deg, #FBF1DA, #FAF3E3); position: relative; overflow: hidden; }
-.mini-site__img::before { content: ""; position: absolute; inset: 22% 30% 0; border-radius: 999px 999px 0 0; border: 1px solid rgb(255 255 255 / .7); }
+/* The phone shows a lobola invitation: cream, terracotta and beadwork. Sizes follow the phone's
+   width (cqw); the px values before them are for browsers without container queries. */
+.phone__screen { container-type: inline-size; }
+.invite { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; overflow: hidden;
+  padding: 30px 14px 12px 28px; padding: 13cqw 6cqw 5cqw 12.5cqw; gap: 4px; gap: 1.8cqw; color: #3B2A1E; font-family: var(--font-sans);
+  background: radial-gradient(120% 55% at 85% 0%, #FFF8EA 0, transparent 62%), radial-gradient(90% 40% at 0% 100%, #EFD9B4 0, transparent 70%), #F8EEDD; }
+.invite p { margin: 0; }
+.invite__beads { position: absolute; left: 0; top: 0; bottom: 0; width: 15px; width: 6.5cqw; border-right: 2px solid #D9A441; border-right-width: .8cqw;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24'%3E%3Crect width='12' height='24' fill='%23F3E3C3'/%3E%3Cpath d='M0 0 12 6 0 12Z' fill='%23A0522D'/%3E%3Cpath d='M0 12 12 18 0 24Z' fill='%231E1A16'/%3E%3Ccircle cx='9.5' cy='12' r='1.3' fill='%23D9A441'/%3E%3Ccircle cx='9.5' cy='0' r='1.3' fill='%23D9A441'/%3E%3Ccircle cx='9.5' cy='24' r='1.3' fill='%23D9A441'/%3E%3C/svg%3E") 0 0 / 100% auto repeat-y; }
+.invite__leaf { position: absolute; top: 5%; right: -3%; width: 22%; height: auto; opacity: .9; }
+.invite__emblem { width: 56px; width: 24cqw; height: auto; flex: none; }
+.invite__title { font: 400 38px/1 var(--font-serif); font-size: 16.5cqw; letter-spacing: .06em; text-transform: uppercase; color: #8E3B22; }
+.invite__sub { margin-top: -2px !important; font-size: 9px; font-size: 4cqw; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: #5B3A22; }
+.invite__intro { max-width: 80%; font-size: 8.5px; font-size: 3.6cqw; line-height: 1.35; color: #5B4636; }
+.invite__names { margin: 2px 0 !important; font: 400 32px/1.05 "Great Vibes", var(--font-serif); font-size: 13.5cqw; color: #2E1F14; white-space: nowrap; }
+.invite__names span { font-size: .8em; color: #8E3B22; }
+.invite__orn { width: 60%; height: auto; flex: none; }
+.invite__line { max-width: 82%; font-size: 8px; font-size: 3.3cqw; line-height: 1.35; color: #5B4636; }
+.invite__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; margin-top: 2px; margin-top: 1cqw; }
+.invite__facts div { display: grid; justify-items: center; gap: 1px; gap: .5cqw; padding: 0 2px; padding: 0 1cqw; }
+.invite__facts div + div { border-left: 1px solid rgb(142 59 34 / .3); }
+.invite__facts svg { width: 18px; width: 7.5cqw; height: 18px; height: 7.5cqw; fill: none; stroke: #8E3B22; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.invite__facts b { font-size: 7px; font-size: 2.9cqw; letter-spacing: .14em; text-transform: uppercase; color: #8E3B22; }
+.invite__facts span { font-size: 7.5px; font-size: 3.1cqw; font-weight: 600; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; color: #2E1F14; }
+.invite__note { max-width: 80%; font: italic 400 9.5px/1.3 var(--font-serif); font-size: 4cqw; color: #6B4A33; }
+.invite__count { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; gap: 1.4cqw; width: 86%; }
+.invite__count div { padding: 4px 0; padding: 1.8cqw 0; border: 1px solid rgb(142 59 34 / .35); border-radius: 6px; border-radius: 2.4cqw; background: rgb(255 250 240 / .75);
+  font: 600 10px/1 var(--font-mono); font-size: 4.2cqw; color: #2E1F14; }
+.invite__count small { display: block; margin-top: 2px; margin-top: .8cqw; font: 500 6px/1 var(--font-sans); font-size: 2.3cqw; letter-spacing: .12em; text-transform: uppercase; color: #8E3B22; }
+.invite__rsvp { margin-top: 2px; margin-top: 1cqw; margin-bottom: 46px; margin-bottom: 20cqw; padding: 5px 12px; padding: 2.2cqw 5cqw; border-radius: 999px;
+  background: linear-gradient(180deg, #A8532F, #8E3B22); color: #FFF4E2; font-size: 7.5px; font-size: 3.2cqw; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .3), 0 4px 10px -4px rgb(110 40 20 / .5); }
+.invite__basket { position: absolute; left: 10%; bottom: 1.5%; width: 24%; height: auto; }
+.invite__pot { position: absolute; right: 3%; bottom: 1.5%; width: 20%; height: auto; }
 .float-tile { position: absolute; padding: 12px 14px; border-radius: 16px; font-size: .8125rem; min-width: 150px; transition: transform 700ms var(--ease-out); }
 .float-tile b { display: block; font-size: 1.05rem; letter-spacing: -.02em; }
 .float-tile .muted { font-size: .75rem; }

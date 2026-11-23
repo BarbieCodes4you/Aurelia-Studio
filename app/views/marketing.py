@@ -138,12 +138,32 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 <svg class="orbit__lines" viewBox="0 0 100 100" preserveAspectRatio="none">
 <path d="M50 50 C 35 40, 22 30, 14 22"/><path d="M50 50 C 66 44, 78 40, 88 36"/><path d="M50 50 C 38 62, 26 72, 16 80"/><path d="M50 50 C 64 66, 76 78, 86 90"/>
 <circle cx="14" cy="22" r=".9"/><circle cx="88" cy="36" r=".9"/><circle cx="16" cy="80" r=".9"/><circle cx="86" cy="90" r=".9"/></svg>
-<div class="phone"><div class="phone__screen"><div class="phone__notch"></div><div class="mini-site">
-<div class="mini-site__mono">L&amp;S</div><div class="mini-site__kicker">Together with their families</div>
-<div class="mini-site__names">Lerato &amp; Sipho</div><div class="mini-site__date">SAT · 13 MARCH 2027 · 14:00</div>
-<div class="mini-site__img"></div>
-<div class="mini-site__count"><div>118<small>days</small></div><div>06<small>hrs</small></div><div>42<small>min</small></div><div>09<small>sec</small></div></div>
-<div class="mini-site__btn">RSVP by 1 February</div></div></div></div>
+<div class="phone"><div class="phone__screen"><div class="phone__notch"></div>
+<div class="invite"><span class="invite__beads"></span>
+<svg class="invite__leaf" viewBox="0 0 60 80"><g fill="#7C8C5A"><path d="M58 2C40 10 30 26 28 46c10-14 22-24 30-44Z"/><path d="M60 22C46 30 40 44 40 60c8-10 16-22 20-38Z" opacity=".75"/></g><path d="M58 2 26 70" stroke="#5E6B42" stroke-width="1" fill="none"/></svg>
+<svg class="invite__emblem" viewBox="0 0 64 56"><g stroke="#4A2E1C" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M8 52 56 4"/><path d="M56 52 8 4"/></g>
+<ellipse cx="56.5" cy="3.5" rx="5" ry="1.9" transform="rotate(-45 56.5 3.5)" fill="#8A5A2B"/><ellipse cx="7.5" cy="3.5" rx="5" ry="1.9" transform="rotate(45 7.5 3.5)" fill="#8A5A2B"/>
+<ellipse cx="32" cy="29" rx="12" ry="21" fill="#F6E8CF" stroke="#4A2E1C" stroke-width="1.8"/>
+<path d="M27 16c3-2 7-1 8 2-1 3-6 4-8 2-1-1-1-3 0-4Zm7 14c3 0 5 3 4 6-3 2-7 1-8-2 0-2 2-4 4-4Zm-10 7c2-1 4 1 4 3-1 2-4 2-5 1-1-1 0-3 1-4Z" fill="#4A2E1C"/>
+<path d="M32 6v46" stroke="#4A2E1C" stroke-width="1.6"/></svg>
+<p class="invite__title">Lobola</p><p class="invite__sub">Celebration</p>
+<p class="invite__intro">You are warmly invited to celebrate with our families</p>
+<p class="invite__names">Lerato <span>&amp;</span> Sipho</p>
+<svg class="invite__orn" viewBox="0 0 120 10"><path d="M2 5h40M78 5h40" fill="none" stroke="#B07A3A" stroke-width=".8"/><path d="M50 5 53 2l3 3-3 3ZM64 5l3-3 3 3-3 3Z" fill="#B07A3A"/>
+<path d="M60 8.5c-3-2.2-5-3.8-5-5.6 0-1.3 1-2.2 2.2-2.2.9 0 1.8.5 2.8 1.6 1-1.1 1.9-1.6 2.8-1.6 1.2 0 2.2.9 2.2 2.2 0 1.8-2 3.4-5 5.6Z" fill="#8E3B22"/></svg>
+<p class="invite__line">as we celebrate our lobola and the joining of our families</p>
+<div class="invite__facts">
+<div><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><b>Date</b><span>13 March 2027</span></div>
+<div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><b>Time</b><span>10:00</span></div>
+<div><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10Z"/><circle cx="12" cy="11" r="2.2"/></svg><b>Venue</b><span>Soweto</span></div></div>
+<p class="invite__note">Your presence will make this day even more special</p>
+<div class="invite__count"><div>118<small>days</small></div><div>06<small>hrs</small></div><div>42<small>min</small></div><div>09<small>sec</small></div></div>
+<span class="invite__rsvp">RSVP by 1 February</span>
+<svg class="invite__basket" viewBox="0 0 70 50"><path d="M4 14h62c0 18-12 32-31 32S4 32 4 14Z" fill="#C9A26B"/><ellipse cx="35" cy="14" rx="31" ry="6" fill="#DDBB85"/>
+<path d="M8 24l6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6" fill="none" stroke="#3B2A1E" stroke-width="1.6"/><path d="M13 34l5 4 5-4 5 4 5-4 5 4 5-4 5 4 5-4" fill="none" stroke="#8E3B22" stroke-width="1.4"/></svg>
+<svg class="invite__pot" viewBox="0 0 60 60"><path d="M14 18h32c-1 3-2 4-4 5 8 4 12 11 12 19 0 11-10 17-24 17S6 53 6 42c0-8 4-15 12-19-2-1-3-2-4-5Z" fill="#8E4A2A"/>
+<path d="M9 36h42" stroke="#F3DDB8" stroke-width="1.4"/><path d="M10 40l4-4 4 4 4-4 4 4 4-4 4 4 4-4 4 4 4-4 4 4" fill="none" stroke="#2A1A10" stroke-width="1.2"/><path d="M16 18h28" stroke="#6E3520" stroke-width="2"/></svg>
+</div></div></div>
 <div class="float-tile float-tile--rsvp glass"><div class="ring-stat"><svg viewBox="0 0 40 40"><circle class="track" cx="20" cy="20" r="16"/><circle class="val" cx="20" cy="20" r="16" stroke-dasharray="79 101"/></svg>
 <div><b>118 of 150</b><span class="muted">guests replied</span></div></div></div>
 <div class="float-tile float-tile--seat glass"><span class="muted">Your table</span><b>Table 7 · Protea</b><span class="muted">with 9 others</span></div>
