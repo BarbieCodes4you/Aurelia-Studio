@@ -20,7 +20,11 @@ SLOTS = {
     "other": "Graduation, family gathering or corporate event (home page tile, other samples)",
 }
 
-CREDITS: dict = {}   # slot -> "Photographer, source link, licence"
+# Each template can also have its own main photo, static/img/stock/tpl-<template>.jpg (e.g. tpl-heritage.jpg),
+# shown in that template's samples instead of the occasion photo.
+TEMPLATES = ("atelier", "folio", "bloom", "heritage", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+
+CREDITS: dict = {}   # slot -> "Photographer, source link, licence" (or the AI tool used)
 
 
 def url(slot: str) -> str:

@@ -1,6 +1,6 @@
 # Aurelia Studios: complete project and hosting guide
 
-Generated 2026-11-23 from the working project. **80 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-23 from the working project. **81 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -539,6 +539,7 @@ is manual today, by design).
 - `DEPLOY-RAILWAY.md`
 - `Dockerfile`
 - `GO-LIVE-GUIDE.md`
+- `PHOTO-PROMPTS.md`
 - `PROJECT-LOG.md`
 - `README.md`
 - `START-HERE.md`
@@ -1002,14 +1003,76 @@ settings, never in the code or a chat.
 For the Netlify site, send me the WhatsApp number or social links and I'll rebuild with them.
 ```
 
+### `PHOTO-PROMPTS.md`
+
+<!-- FILE: PHOTO-PROMPTS.md sha256=52626f1783560267935aa1bf855bb6d0782df0418f2c329e709f0d5f3f7ad13c nl=1 -->
+```markdown
+# Photos of people for the template samples
+
+Each template sample can show its own photo of people, so visitors can picture their own event. Use an
+AI image tool **whose terms allow commercial use** (for example ChatGPT, Adobe Firefly or Canva's Magic
+Media; check the tool's current terms). AI-generated people aren't real people, so there's no one whose
+permission you need.
+
+**For every image:** photorealistic, natural skin texture and lighting, natural-looking hands and faces,
+no text, logos or watermarks. If a face or hand looks odd, generate it again.
+
+**Shape:** "portrait 4:5" for Folio and Bloom, "square 1:1" for Heritage and Cradle, "landscape 3:2" for
+the rest. Keep the people in the middle of the picture: some templates crop to an arch, a diamond or a
+circle.
+
+**Name each file after its template** (for example `heritage.jpg`) and send them to Claude: attach them
+in the chat, or put the originals in a Google Drive folder for full quality. Claude resizes and adds them.
+
+| File | Template (style) | Prompt |
+| --- | --- | --- |
+| `atelier.jpg` | Atelier, minimalist luxury | Photorealistic wedding photo of a Black South African couple on their wedding day, bride in a minimalist ivory satin gown, groom in a black tuxedo, standing close and laughing, soft window light, warm ivory stone wall behind them, elegant and calm, 85mm lens, shallow depth of field, landscape 3:2, no text. |
+| `folio.jpg` | Folio, modern editorial | Photorealistic editorial-style photo of a stylish South African couple in modern wedding outfits on a Johannesburg rooftop at golden hour, city skyline softly blurred, confident fashion-magazine pose, portrait 4:5, no text. |
+| `bloom.jpg` | Bloom, romantic floral | Photorealistic photo of a smiling Black South African bride and groom under an arch of blush roses and greenery in a Cape Winelands garden, soft afternoon light, romantic and joyful, portrait 4:5, no text. |
+| `heritage.jpg` | Heritage, traditional (7 cultural styles) | Photorealistic photo of a South African couple in traditional wedding attire at a lobola celebration, bride in beaded jewellery and a traditional headpiece, groom in a traditional shirt, family softly blurred in the background, rural homestead, warm sunlight, square 1:1, couple centred, no text. |
+| `champagne.jpg` | Champagne, black tie | Photorealistic photo of an elegant South African couple in black-tie evening wear raising champagne glasses at a candlelit gala, warm gold bokeh lights, luxurious ballroom, landscape 3:2, no text. |
+| `linea.jpg` | Linea, contemporary minimalist | Photorealistic photo of an Indian South African bride and groom in contemporary minimalist wedding attire in a light-filled modern space with clean lines and neutral tones, landscape 3:2, no text. |
+| `confetti.jpg` | Confetti, pastel celebrations | Photorealistic photo of a joyful first birthday party: a South African mother lifting her laughing toddler among pastel balloons and confetti, soft daylight, playful, landscape 3:2, no text. |
+| `pulse.jpg` | Pulse, bold modern parties | Photorealistic photo of a young South African woman celebrating her 21st birthday with friends at a night party, gold "21" balloons, disco-ball reflections and glitter, energetic and stylish, landscape 3:2, no text. |
+| `aurora.jpg` | Aurora, glass and light | Photorealistic photo of a South African couple sharing a slow dance at a modern wedding reception, dreamy iridescent pastel lighting and soft haze, romantic, landscape 3:2, no text. |
+| `laureate.jpg` | Laureate, graduations | Photorealistic photo of a proud young South African graduate in gown and cap hugging her parents on a university campus on a sunny day, landscape 3:2, no text. |
+| `cradle.jpg` | Cradle, baby celebrations | Photorealistic photo of an expecting South African couple at a baby shower, mother-to-be in a soft sage dress holding her bump, partner smiling beside her, cream and sage decor, gentle light, square 1:1, no text. |
+
+**Optional, for the home page tiles and the sample galleries:** up to six photos per occasion, in
+folders named `weddings`, `traditional`, `baby`, `parties` and `other` (the first photo in each folder
+also becomes that occasion's tile photo on the home page).
+```
+
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=73bc0500e6def886c3fb6fbd0a5b2dcb4c36ddede7fab8553f5133a7b597b478 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=e85dfc36c8718ce8edc7a11669da65ab42387f7df740cf3e5b161177b1776808 nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
+
+## 2026-11-26: lobola invite, cultural styles, photos of people
+
+**Changes**
+- Home page: the phone (Lerato & Sipho) shows a lobola celebration invitation in a cream,
+  terracotta and beadwork style, after the owner's references: shield and spears, script names, date,
+  time and venue, countdown, RSVP, woven basket and clay pot. The glow, orbit and floating tiles stay.
+- Heritage template: seven cultural styles customers can choose (Ndebele, Zulu, Xhosa, Pedi, Venda,
+  Tsonga, Swati), each with its own palette (contrast-checked), border pattern and patterned hero. They
+  show as "Cultural style" in the design step, can be previewed on the template page, and a style
+  picked there carries into the new event.
+- Template samples can each have their own photo of people (`static/img/stock/tpl-<template>.jpg`);
+  `tools/add_photos.py` files photos named after a template. `PHOTO-PROMPTS.md` has a prompt per
+  template for an AI image tool that allows commercial use.
+
+**Checked**
+- 118 tests pass. Screenshots of all seven cultural styles, the design step, the template page and the
+  home page on desktop, phone and dark mode.
+
+**Waiting on**
+- The photos (generated by the owner from PHOTO-PROMPTS.md).
+- Railway variables: BASE_URL=https://aureliastudios.co.za and APP_ENV=production.
 
 ## 2026-11-25 (night): settings copied from the example file
 
@@ -2222,7 +2285,7 @@ def audit(actor_id, action: str, target: str = "", **meta) -> None:
 
 ### `app/catalog.py`
 
-<!-- FILE: app/catalog.py sha256=d9c0d97d49328b0261407f8471d76bea023b1059997b04e3cf2488dc560cdd35 nl=1 -->
+<!-- FILE: app/catalog.py sha256=63912b359898e835294f379ce64241ff0ed0c2563421c9feb5bf2c26eafdcd29 nl=1 -->
 ```python
 """Event categories, website templates and packages: defaults, seeding and lookups.
 
@@ -2273,7 +2336,7 @@ TEMPLATES = [
     ("bloom", "Bloom", "bloom", "Romantic floral", ["weddings", "baby"],
      "Blush and sage with drawn botanicals, arched frames and a flowing script for your names.", ["floral", "script", "arches"]),
     ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
-     "Rich ochre, indigo and terracotta with geometric beadwork borders. Built for several ceremonies and both families.", ["traditional", "pattern", "multi-ceremony"]),
+     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
     ("champagne", "Champagne", "champagne", "Champagne and gold", ["weddings", "parties", "other"],
      "Midnight backdrop, gold foil lettering and Art Deco fans. Glass panels catch the light.", ["deco", "dark", "gold"]),
     ("linea", "Linea", "linea", "Contemporary minimalist", ["weddings", "other", "parties"],
@@ -2357,6 +2420,10 @@ PACKAGES = [
 ]
 
 
+# Earlier default descriptions. A row still holding one (not edited in the admin) takes the new text.
+_REFRESH_TEXT = {"heritage": "Rich ochre, indigo and terracotta with geometric beadwork borders. Built for several ceremonies and both families."}
+
+
 def ensure_catalog() -> None:
     if not db.val("SELECT COUNT(*) FROM categories"):
         for i, (slug, name, group, desc, feats) in enumerate(CATEGORIES):
@@ -2368,6 +2435,11 @@ def ensure_catalog() -> None:
             db.insert("templates", {"slug": slug, "name": name, "design": design, "direction": direction,
                                     "groups": db.dumps(groups), "description": desc, "tags": db.dumps(tags),
                                     "sort": i, "updated_at": db.now()})
+    for slug, old_text in _REFRESH_TEXT.items():
+        row = next((t for t in TEMPLATES if t[0] == slug), None)
+        if row:
+            db.run("UPDATE templates SET description = ?, tags = ?, updated_at = ? WHERE slug = ? AND description = ?",
+                   (row[5], db.dumps(row[6]), db.now(), slug, old_text))
     if not db.val("SELECT COUNT(*) FROM packages"):
         for p in PACKAGES:
             db.insert("packages", {"code": p["code"], "name": p["name"], "tagline": p["tagline"],
@@ -3182,7 +3254,7 @@ def suggested_rsvp_deadline(event_date: str) -> str:
 
 ### `app/eventsite/demo.py`
 
-<!-- FILE: app/eventsite/demo.py sha256=6817b677ae2dba850f5b7a6b43131c478205318db17e05d0538a55f4fc947124 nl=1 -->
+<!-- FILE: app/eventsite/demo.py sha256=bd16a3edf83166068ba95fbed3d3ba7c739ceebd8a7d3458e4aa99b71d076573 nl=1 -->
 ```python
 """Sample events for the template gallery. All names and venues are fictional."""
 from __future__ import annotations
@@ -3317,7 +3389,11 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
 
 
 def _stock_hero(slug: str, group: str) -> str:
+    """The sample's main photo: the template's own (static/img/stock/tpl-<slug>.jpg) when added, else
+    the occasion's photo."""
     from .. import stock
+    if stock.url(f"tpl-{slug}"):
+        return stock.url(f"tpl-{slug}")
     if slug == "heritage" and stock.url("traditional"):
         return stock.url("traditional")
     return stock.url(group)
@@ -3336,7 +3412,7 @@ def _stock_gallery(slug: str, group: str) -> list:
 
 ### `app/eventsite/designs.py`
 
-<!-- FILE: app/eventsite/designs.py sha256=155fe0f2545f6a63f92953563cc5d44ab07daf30d2c6bb4cdfea31637e0e964e nl=1 -->
+<!-- FILE: app/eventsite/designs.py sha256=d7b0361fe1eea68be455b81b49d827e5b1c0704249b2d84368f7fe6899304c45 nl=1 -->
 ```python
 """The eleven event-website designs.
 
@@ -3808,7 +3884,49 @@ FAN = """<svg class="orn orn-fan" viewBox="0 0 400 210" aria-hidden="true"><g fi
 DECO_RULE = """<svg class="orn orn-deco" viewBox="0 0 240 20" aria-hidden="true"><g fill="none" stroke-width="1"><path d="M0 10h96M144 10h96"/><path d="m120 1 9 9-9 9-9-9Z"/><path d="m104 10 4-4 4 4-4 4ZM128 10l4-4 4 4-4 4Z"/></g></svg>"""
 
 
-def beads(cls: str = "") -> str:
+def _row(y, cls, w, step, size=4):
+    return "".join(f'<rect class="{cls}" x="{x}" y="{y}" width="{size}" height="{size}"/>' for x in range(2, w, step))
+
+
+# Border patterns for the Heritage cultural styles: (tile width, SVG shapes). Shapes use classes m1..m6,
+# filled from the culture's motif colours (themes.CULTURES), so one tile serves every colour change.
+MOTIFS = {
+    "ndebele": (72, '<rect class="m6" width="72" height="26"/><rect class="m5" width="72" height="3"/><rect class="m5" y="23" width="72" height="3"/>'
+                    '<rect class="m5" x="2" y="5" width="22" height="16"/><rect class="m2" x="4" y="7" width="18" height="12"/><rect class="m5" x="11" y="7" width="4" height="12"/>'
+                    '<rect class="m5" x="26" y="5" width="22" height="16"/><rect class="m1" x="28" y="7" width="18" height="12"/><path class="m6" d="M29 19 37 9l8 10Z"/>'
+                    '<rect class="m5" x="50" y="5" width="20" height="16"/><rect class="m3" x="52" y="7" width="16" height="12"/><rect class="m4" x="55" y="10" width="10" height="6"/>'),
+    "zulu": (48, '<rect class="m6" width="48" height="26"/><path class="m1" d="M0 21 12 5l12 16Z"/><path class="m3" d="M24 21 36 5l12 16Z"/>'
+                 '<path class="m5" d="M12 5h24L24 21Z"/><path class="m2" d="M36 5h24L48 21Z"/><path class="m2" d="M-12 5h24L0 21Z"/>'
+                 + "".join(f'<circle class="m5" cx="{x}" cy="2.2" r="1.1"/><circle class="m5" cx="{x}" cy="23.8" r="1.1"/>' for x in range(2, 48, 4))),
+    "xhosa": (40, '<rect class="m2" width="40" height="26"/><rect class="m5" y="2" width="40" height="1.5"/><rect class="m5" y="5" width="40" height="4"/>'
+                  '<rect class="m5" y="17" width="40" height="4"/><rect class="m5" y="22.5" width="40" height="1.5"/>'
+                  '<rect class="m3" x="2" y="11" width="4" height="4"/><rect class="m6" x="10" y="11" width="4" height="4"/><rect class="m1" x="18" y="11" width="4" height="4"/>'
+                  '<rect class="m6" x="26" y="11" width="4" height="4"/><rect class="m4" x="34" y="11" width="4" height="4"/>'),
+    "pedi": (36, '<rect class="m1" width="6" height="26"/><rect class="m6" x="6" width="6" height="26"/><rect class="m3" x="12" width="6" height="26"/>'
+                 '<rect class="m2" x="18" width="6" height="26"/><rect class="m5" x="24" width="6" height="26"/><rect class="m4" x="30" width="6" height="26"/>'
+                 '<rect class="m6" y="10" width="36" height="6"/>' + "".join(f'<path class="m5" d="M{x} 16 {x + 3} 10l3 6Z"/>' for x in range(0, 36, 6))),
+    "venda": (36, '<rect class="m5" width="36" height="26"/><rect class="m1" y="2" width="36" height="2"/><rect class="m2" y="5" width="36" height="2"/>'
+                  '<rect class="m4" y="19" width="36" height="2"/><rect class="m3" y="22" width="36" height="2"/>'
+                  '<path class="m6" d="M0 17 6 9l6 8Z"/><path class="m2" d="M6 9h12l-6 8Z"/><path class="m1" d="M12 17 18 9l6 8Z"/>'
+                  '<path class="m6" d="M18 9h12l-6 8Z"/><path class="m4" d="M24 17 30 9l6 8Z"/><path class="m2" d="M30 9h12l-6 8Z"/><path class="m2" d="M-6 9H6l-6 8Z"/>'),
+    "tsonga": (24, '<rect class="m1" width="4" height="18"/><rect class="m2" x="4" width="4" height="18"/><rect class="m3" x="8" width="4" height="18"/>'
+                   '<rect class="m6" x="12" width="4" height="18"/><rect class="m4" x="16" width="4" height="18"/><rect class="m5" x="20" width="4" height="18"/>'
+                   '<path class="m5" d="M0 18 3 26 6 18Z"/><path class="m3" d="M6 18 9 26 12 18Z"/><path class="m1" d="M12 18 15 26 18 18Z"/><path class="m4" d="M18 18 21 26 24 18Z"/>'),
+    "swati": (40, '<rect class="m1" width="40" height="26"/><rect class="m5" width="40" height="3"/><rect class="m5" y="23" width="40" height="3"/>'
+                  '<ellipse class="m6" cx="10" cy="13" rx="4.5" ry="7.5"/><rect class="m5" x="9.4" y="6" width="1.2" height="14"/>'
+                  '<circle class="m5" cx="8" cy="10" r=".9"/><circle class="m5" cx="12" cy="16" r=".9"/><path class="m2" d="M20 9l3 4-3 4-3-4Z"/>'
+                  '<ellipse class="m5" cx="30" cy="13" rx="4.5" ry="7.5"/><rect class="m6" x="29.4" y="6" width="1.2" height="14"/>'
+                  '<circle class="m6" cx="28" cy="16" r=".9"/><circle class="m6" cx="32" cy="10" r=".9"/>'),
+}
+
+
+def beads(cls: str = "", culture: str = "") -> str:
+    if culture in MOTIFS:
+        width, tile = MOTIFS[culture]
+        pid = f"bd-{culture}-{cls or 'x'}"
+        return (f'<div class="orn-beads orn-beads--{culture} {cls}" aria-hidden="true"><svg width="100%" height="26"><defs>'
+                f'<pattern id="{pid}" width="{width}" height="26" patternUnits="userSpaceOnUse">{tile}</pattern></defs>'
+                f'<rect width="100%" height="26" fill="url(#{pid})"/></svg></div>')
     tri = "".join(
         f'<path class="{"bd-a" if k % 3 == 0 else "bd-b" if k % 3 == 1 else "bd-c"}" d="M{k*24} 22l12-18 12 18Z"/>'
         f'<path class="bd-d" d="M{k*24+12} 4l6 9-6 9-6-9Z"/>' for k in range(4))
@@ -3890,6 +4008,8 @@ def bloom(ctx) -> str:
 
 
 def heritage(ctx) -> str:
+    from . import themes
+    cult = themes.culture("heritage", ctx["theme"]["palette"])
     dp = date_parts(ctx)
     secs = collect(ctx)
     sides = (ctx["gs"].get("sides") or [])
@@ -3899,11 +4019,11 @@ def heritage(ctx) -> str:
         fam = (f'<section class="ev-sec hr-fam" aria-labelledby="fam-h"><div class="ev-sec__in">{head("fam", "Two families, one celebration", "Umndeni")}'
                f'<p class="ev-text">{esc(ctx["wording"].get("families") or "With the blessing of our elders and the joy of both families, we welcome you.")}</p>'
                f'<ul class="hr-fam__list">{fam_items}</ul></div></section>')
-    hero = (f'{beads("hr-top")}<header class="hr-hero" id="welcome"><div class="hr-hero__text">'
+    hero = (f'{beads("hr-top", cult)}<header class="hr-hero" id="welcome"><div class="hr-hero__text">'
             f'<p class="ev-kicker">{esc(ctx["wording"]["welcome"])}</p>{greeting(ctx)}<h1 class="hr-names">{names_html(ctx, "&amp;")}</h1>'
             f'<p class="hr-date">{esc(dp["day"])} · {esc(dp["month"])} · {esc(dp["year"])}</p>'
             f'<p class="ev-text">{esc(ctx["venue"].get("name") or "")}</p><div class="ev-actions">{rsvp_cta(ctx, "Respond")}</div></div>'
-            f'<div class="hr-hero__mark"><div class="hr-diamond">{hero_image(ctx, "ev-photo hr-photo", "<span>" + esc(ctx["monogram"]) + "</span>")}</div></div></header>{beads("hr-mid")}')
+            f'<div class="hr-hero__mark"><div class="hr-diamond">{hero_image(ctx, "ev-photo hr-photo", "<span>" + esc(ctx["monogram"]) + "</span>")}</div></div></header>{beads("hr-mid", cult)}')
     body = ""
     for n, (k, html) in enumerate(secs):
         if k == "venue" and len(ctx["functions"]) > 1:
@@ -3914,7 +4034,7 @@ def heritage(ctx) -> str:
         if k in ("invitation",) and fam:
             body += fam
             fam = ""
-    return hero + nav(ctx, secs, "ev-nav hr-nav") + fam + body + beads("hr-bottom")
+    return hero + nav(ctx, secs, "ev-nav hr-nav") + fam + body + beads("hr-bottom", cult)
 
 
 def champagne(ctx) -> str:
@@ -4040,7 +4160,7 @@ LAYOUTS = {
 
 ### `app/eventsite/render.py`
 
-<!-- FILE: app/eventsite/render.py sha256=5d024672fbf74e4fb5d0d7370fe73dca1fdafe5ffb7946ab6825f93300ad76a4 nl=1 -->
+<!-- FILE: app/eventsite/render.py sha256=592fb7063a02701428f7d46ec133fdc0c09b710089fa0a39325af308888f607f nl=1 -->
 ```python
 """Turn an event (from the database or a demo dict) into a complete event website.
 
@@ -4344,6 +4464,10 @@ def document(ctx, body: str) -> str:
     bg_img = ctx["background"] or (ctx["hero"] if t["background"] == "image" else "")
     style = themes.css_vars(t) + contrast_vars(t["colors"]) + (f"--ev-bg-image:url('{esc(bg_img)}');" if bg_img else "")
     classes = f"ev d-{ctx['design']} bg-{t['background']} grp-{ctx['group']}" + (" has-hero" if ctx["hero"] else "")
+    cult = themes.culture(ctx["design"], t.get("palette", ""))
+    if cult:
+        classes += f" cult-{cult}"
+        style += themes.culture_vars(cult)
     return f"""<!doctype html><html lang="en-ZA"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">{robots}
@@ -4363,7 +4487,7 @@ def document(ctx, body: str) -> str:
 
 ### `app/eventsite/themes.py`
 
-<!-- FILE: app/eventsite/themes.py sha256=81cca69e08d0f9530c9f4bf08d1ce17124084411ea32a875df081ec7809d64f6 nl=1 -->
+<!-- FILE: app/eventsite/themes.py sha256=64cbad7316ab4e1302c03d8593cf6807bd7288ec4126a6f7de7cedb45e5dfeb7 nl=1 -->
 ```python
 """Palettes, font pairings and background options for each event-website design.
 
@@ -4512,6 +4636,46 @@ DESIGNS = {
             ("rose", "Rosewood", {"bg": "#FAF3F1", "surface": "#FFFFFF", "text": "#4A2F33", "muted": "#8A6E71", "accent": "#C99396", "accent2": "#C9D3B8"}),
         ]},
 }
+
+# --- Cultural styles for Heritage ----------------------------------------------------------------
+# Each is a palette for the page (text contrast checked to WCAG AA) plus six motif colours for the
+# beadwork borders, which also take the culture's own pattern (designs.MOTIFS). They are chosen like
+# any other palette, so saving, the live preview and custom colours work unchanged.
+CULTURES = {
+    "ndebele": ("Ndebele", "Bold painted geometry in primary colours, outlined in black",
+                {"bg": "#FBFAF6", "surface": "#FFFFFF", "text": "#141414", "muted": "#555555", "accent": "#D62828", "accent2": "#1D3E8A"},
+                ("#D62828", "#F2B705", "#1D5FB8", "#2E8B57", "#111111", "#FFFFFF")),
+    "zulu": ("Zulu", "Beadwork triangles in red, blue, black and yellow",
+             {"bg": "#F8F5EE", "surface": "#FFFFFF", "text": "#1A1A1A", "muted": "#5E5A55", "accent": "#C1272D", "accent2": "#1B3F8B"},
+             ("#C1272D", "#F2C200", "#1B3F8B", "#2F8F46", "#151515", "#FFFFFF")),
+    "xhosa": ("Xhosa", "Umbhaco cream and ochre with black braid bands",
+              {"bg": "#F7F1E6", "surface": "#FFFDF8", "text": "#161616", "muted": "#5D564D", "accent": "#B8541E", "accent2": "#111111"},
+              ("#C8642A", "#E9D8B6", "#1FA6A0", "#B23A2E", "#111111", "#FFFFFF")),
+    "pedi": ("Pedi", "Bright stripes in pink, yellow, blue and purple",
+             {"bg": "#FBF6F4", "surface": "#FFFFFF", "text": "#24132B", "muted": "#67586B", "accent": "#D6337A", "accent2": "#2A3F96"},
+             ("#E0338A", "#F5B700", "#2D4FB0", "#2E9E5B", "#6B2FA0", "#FFFFFF")),
+    "venda": ("Venda", "Minwenda stripes and zigzags on deep navy",
+              {"bg": "#FAF7F0", "surface": "#FFFFFF", "text": "#121212", "muted": "#5A5650", "accent": "#C8102E", "accent2": "#12284C"},
+              ("#D7262E", "#F4C20D", "#2457C5", "#229A4C", "#12284C", "#FFFFFF")),
+    "tsonga": ("Tsonga", "Xibelani colour with a beaded fringe",
+               {"bg": "#FFF8F0", "surface": "#FFFFFF", "text": "#2A1810", "muted": "#6E5A4E", "accent": "#E8590C", "accent2": "#1C5D99"},
+               ("#F26B1D", "#F7C531", "#1C5D99", "#2FA36B", "#D7263D", "#F06EAA")),
+    "swati": ("Swati", "Emahiya red with black and white shields",
+              {"bg": "#FBF7F2", "surface": "#FFFFFF", "text": "#1B1414", "muted": "#625656", "accent": "#B5232A", "accent2": "#1E1E1E"},
+              ("#C0262D", "#F2C200", "#2B3F8C", "#2E7D46", "#141414", "#FFFFFF")),
+}
+DESIGNS["heritage"]["palettes"] = DESIGNS["heritage"]["palettes"] + [(k, v[0], v[2]) for k, v in CULTURES.items()]
+DESIGNS["heritage"]["cultures"] = list(CULTURES)
+
+
+def culture(design_key: str, palette_key: str) -> str:
+    """The cultural style in use ("zulu", ...), or "" for a classic palette or another template."""
+    return palette_key if design_key == "heritage" and palette_key in CULTURES else ""
+
+
+def culture_vars(key: str) -> str:
+    return "".join(f"--m{n}:{c};" for n, c in enumerate(CULTURES[key][3], 1)) if key in CULTURES else ""
+
 
 BACKGROUND_LABELS = {
     "plain": "Plain colour", "paper": "Soft paper texture", "pattern": "Signature pattern",
@@ -7263,7 +7427,7 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
 
 ### `app/stock.py`
 
-<!-- FILE: app/stock.py sha256=923ac2cad6d62a0f6d9212e42f4206566e07e711f58cbfc6c0e0d0f63b8eac86 nl=1 -->
+<!-- FILE: app/stock.py sha256=3254ad585804bc010fb9d0c473298003b4bd656c9b7b10701ecef1c9163ce68b nl=1 -->
 ```python
 """Stock photos for the marketing pages and the template samples.
 
@@ -7287,7 +7451,11 @@ SLOTS = {
     "other": "Graduation, family gathering or corporate event (home page tile, other samples)",
 }
 
-CREDITS: dict = {}   # slot -> "Photographer, source link, licence"
+# Each template can also have its own main photo, static/img/stock/tpl-<template>.jpg (e.g. tpl-heritage.jpg),
+# shown in that template's samples instead of the occasion photo.
+TEMPLATES = ("atelier", "folio", "bloom", "heritage", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+
+CREDITS: dict = {}   # slot -> "Photographer, source link, licence" (or the AI tool used)
 
 
 def url(slot: str) -> str:
@@ -10385,7 +10553,7 @@ def slugify(text: str, max_len: int = 60) -> str:
 
 ### `app/views/layout.py`
 
-<!-- FILE: app/views/layout.py sha256=0ba63b8148374aaebc58bf6310106a01a151afcadf0dc284dca91d1b99404484 nl=1 -->
+<!-- FILE: app/views/layout.py sha256=2365638f8c9475253d125de15fb5eff32a882a417bb9888748b498ae6db3601b nl=1 -->
 ```python
 """Page shells: the marketing site (header, drawer, footer), the app shell (dashboard and admin),
 toasts, and the error page."""
@@ -10398,7 +10566,7 @@ from ..icons import i
 from ..web import esc
 
 FONTS = ("https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600"
-         "&family=Instrument+Serif:ital@0;1&display=swap")
+         "&family=Instrument+Serif:ital@0;1&family=Great+Vibes&display=swap")
 
 THEME_SCRIPT = """<script>(function(){try{var t=localStorage.getItem('aurelia-theme-v1');
 if(t==='dark'||t==='light'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}
@@ -12022,7 +12190,7 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=5893c2fef531e513a1ebcbbca310cb3c98cf64b0841c8718e895c678c05343ca nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=c0976c726be797216f5a9b9c7e34bad5f1a977127e8e75fc94dac365f083f3b7 nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
@@ -12164,12 +12332,32 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 <svg class="orbit__lines" viewBox="0 0 100 100" preserveAspectRatio="none">
 <path d="M50 50 C 35 40, 22 30, 14 22"/><path d="M50 50 C 66 44, 78 40, 88 36"/><path d="M50 50 C 38 62, 26 72, 16 80"/><path d="M50 50 C 64 66, 76 78, 86 90"/>
 <circle cx="14" cy="22" r=".9"/><circle cx="88" cy="36" r=".9"/><circle cx="16" cy="80" r=".9"/><circle cx="86" cy="90" r=".9"/></svg>
-<div class="phone"><div class="phone__screen"><div class="phone__notch"></div><div class="mini-site">
-<div class="mini-site__mono">L&amp;S</div><div class="mini-site__kicker">Together with their families</div>
-<div class="mini-site__names">Lerato &amp; Sipho</div><div class="mini-site__date">SAT · 13 MARCH 2027 · 14:00</div>
-<div class="mini-site__img"></div>
-<div class="mini-site__count"><div>118<small>days</small></div><div>06<small>hrs</small></div><div>42<small>min</small></div><div>09<small>sec</small></div></div>
-<div class="mini-site__btn">RSVP by 1 February</div></div></div></div>
+<div class="phone"><div class="phone__screen"><div class="phone__notch"></div>
+<div class="invite"><span class="invite__beads"></span>
+<svg class="invite__leaf" viewBox="0 0 60 80"><g fill="#7C8C5A"><path d="M58 2C40 10 30 26 28 46c10-14 22-24 30-44Z"/><path d="M60 22C46 30 40 44 40 60c8-10 16-22 20-38Z" opacity=".75"/></g><path d="M58 2 26 70" stroke="#5E6B42" stroke-width="1" fill="none"/></svg>
+<svg class="invite__emblem" viewBox="0 0 64 56"><g stroke="#4A2E1C" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M8 52 56 4"/><path d="M56 52 8 4"/></g>
+<ellipse cx="56.5" cy="3.5" rx="5" ry="1.9" transform="rotate(-45 56.5 3.5)" fill="#8A5A2B"/><ellipse cx="7.5" cy="3.5" rx="5" ry="1.9" transform="rotate(45 7.5 3.5)" fill="#8A5A2B"/>
+<ellipse cx="32" cy="29" rx="12" ry="21" fill="#F6E8CF" stroke="#4A2E1C" stroke-width="1.8"/>
+<path d="M27 16c3-2 7-1 8 2-1 3-6 4-8 2-1-1-1-3 0-4Zm7 14c3 0 5 3 4 6-3 2-7 1-8-2 0-2 2-4 4-4Zm-10 7c2-1 4 1 4 3-1 2-4 2-5 1-1-1 0-3 1-4Z" fill="#4A2E1C"/>
+<path d="M32 6v46" stroke="#4A2E1C" stroke-width="1.6"/></svg>
+<p class="invite__title">Lobola</p><p class="invite__sub">Celebration</p>
+<p class="invite__intro">You are warmly invited to celebrate with our families</p>
+<p class="invite__names">Lerato <span>&amp;</span> Sipho</p>
+<svg class="invite__orn" viewBox="0 0 120 10"><path d="M2 5h40M78 5h40" fill="none" stroke="#B07A3A" stroke-width=".8"/><path d="M50 5 53 2l3 3-3 3ZM64 5l3-3 3 3-3 3Z" fill="#B07A3A"/>
+<path d="M60 8.5c-3-2.2-5-3.8-5-5.6 0-1.3 1-2.2 2.2-2.2.9 0 1.8.5 2.8 1.6 1-1.1 1.9-1.6 2.8-1.6 1.2 0 2.2.9 2.2 2.2 0 1.8-2 3.4-5 5.6Z" fill="#8E3B22"/></svg>
+<p class="invite__line">as we celebrate our lobola and the joining of our families</p>
+<div class="invite__facts">
+<div><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><b>Date</b><span>13 March 2027</span></div>
+<div><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><b>Time</b><span>10:00</span></div>
+<div><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10Z"/><circle cx="12" cy="11" r="2.2"/></svg><b>Venue</b><span>Soweto</span></div></div>
+<p class="invite__note">Your presence will make this day even more special</p>
+<div class="invite__count"><div>118<small>days</small></div><div>06<small>hrs</small></div><div>42<small>min</small></div><div>09<small>sec</small></div></div>
+<span class="invite__rsvp">RSVP by 1 February</span>
+<svg class="invite__basket" viewBox="0 0 70 50"><path d="M4 14h62c0 18-12 32-31 32S4 32 4 14Z" fill="#C9A26B"/><ellipse cx="35" cy="14" rx="31" ry="6" fill="#DDBB85"/>
+<path d="M8 24l6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6" fill="none" stroke="#3B2A1E" stroke-width="1.6"/><path d="M13 34l5 4 5-4 5 4 5-4 5 4 5-4 5 4 5-4" fill="none" stroke="#8E3B22" stroke-width="1.4"/></svg>
+<svg class="invite__pot" viewBox="0 0 60 60"><path d="M14 18h32c-1 3-2 4-4 5 8 4 12 11 12 19 0 11-10 17-24 17S6 53 6 42c0-8 4-15 12-19-2-1-3-2-4-5Z" fill="#8E4A2A"/>
+<path d="M9 36h42" stroke="#F3DDB8" stroke-width="1.4"/><path d="M10 40l4-4 4 4 4-4 4 4 4-4 4 4 4-4 4 4 4-4 4 4" fill="none" stroke="#2A1A10" stroke-width="1.2"/><path d="M16 18h28" stroke="#6E3520" stroke-width="2"/></svg>
+</div></div></div>
 <div class="float-tile float-tile--rsvp glass"><div class="ring-stat"><svg viewBox="0 0 40 40"><circle class="track" cx="20" cy="20" r="16"/><circle class="val" cx="20" cy="20" r="16" stroke-dasharray="79 101"/></svg>
 <div><b>118 of 150</b><span class="muted">guests replied</span></div></div></div>
 <div class="float-tile float-tile--seat glass"><span class="muted">Your table</span><b>Table 7 · Protea</b><span class="muted">with 9 others</span></div>
@@ -12405,14 +12593,24 @@ def template_detail(req, slug):
         f'<a href="{url("/templates/" + slug, group=k)}"{" aria-current=page" if k == group else ""}>{esc(catalog.GROUPS[k]["name"])}</a>'
         for k in groups)
     others = "".join(template_card(x) for x in catalog.templates() if x["slug"] != slug and set(db.loads(x["groups"], [])) & set(groups))
+    cults = d.get("cultures") or []
+    style = req.arg("style") if req.arg("style") in cults else ""
+    culture_row = ""
+    if cults:
+        links = [f'<a href="{url("/templates/" + slug, group=group)}"{"" if style else " aria-current=page"}>Classic</a>']
+        links += [f'<a href="{url("/templates/" + slug, group=group, style=k)}"{" aria-current=page" if k == style else ""}>{esc(themes.CULTURES[k][0])}</a>'
+                  for k in cults]
+        culture_row = (f'<div class="culture-pick"><span class="small">Cultural style</span><div class="seg seg--wrap" role="group" '
+                       f'aria-label="Cultural style">{"".join(links)}</div>'
+                       + (f'<span class="tiny muted">{esc(themes.CULTURES[style][1])}</span>' if style else "") + '</div>')
     body = page_hero(f'{esc(t["name"])} <span class="serif grad">template</span>', esc(t["description"]),
                      [("Templates", "/templates"), (t["name"], "")],
-                     f'<div class="btn-row" style="margin-top:24px"><a class="btn btn--primary btn--lg" href="/create?template={esc(slug)}&group={group}">Use this template {i("arrow", "i--arrow")}</a></div>') + f"""
-<section class="section"><div class="container"><div class="cols cols--2" style="grid-template-columns:minmax(0,1fr)">
+                     f'<div class="btn-row" style="margin-top:24px"><a class="btn btn--primary btn--lg" href="/create?template={esc(slug)}&group={group}{"&amp;palette=" + esc(style) if style else ""}">Use this template {i("arrow", "i--arrow")}</a></div>') + f"""
+<section class="section"><div class="container">{culture_row}<div class="cols cols--2" style="grid-template-columns:minmax(0,1fr)">
 <div class="preview-frame" data-preview data-device="desktop"><div class="preview-frame__bar"><span class="preview-frame__url">{esc(config.BASE_URL)}/events/sample</span>
 <div class="row" style="gap:8px"><div class="seg" role="group" aria-label="Sample content">{group_links}</div>
 <div class="seg" role="group" aria-label="Device"><button type="button" data-device="desktop" aria-pressed="true">{i("monitor")}<span class="sr-only">Desktop</span></button><button type="button" data-device="mobile" aria-pressed="false">{i("phone")}<span class="sr-only">Mobile</span></button></div></div></div>
-<div class="preview-frame__stage" style="height:min(78vh,820px)"><iframe src="/templates/{esc(slug)}/preview?group={group}" title="{esc(t['name'])} preview with sample content"></iframe></div></div>
+<div class="preview-frame__stage" style="height:min(78vh,820px)"><iframe src="/templates/{esc(slug)}/preview?group={group}{"&amp;palette=" + esc(style) if style else ""}" title="{esc(t['name'])} preview with sample content"></iframe></div></div>
 </div>
 <div class="grid grid--3" style="margin-top:var(--gap)">
 <div class="box"><h3 style="font-size:1rem;margin-bottom:12px">Design direction</h3><p class="muted small">{esc(t["direction"])}. Sample content shown; your names, photos and wording replace it.</p></div>
@@ -12927,7 +13125,7 @@ def receipt(req, order_uid):
 
 ### `app/views/public_event.py`
 
-<!-- FILE: app/views/public_event.py sha256=a14bc068e90d0be1c62804e0eaed49be040f4b6505ed99a6ae364144ad57c0cf nl=1 -->
+<!-- FILE: app/views/public_event.py sha256=5d9ab773a46ffeb0e574dcf4c91b7ef83e2d75ad18394b1db07943f0d934b900 nl=1 -->
 ```python
 """Guest-facing event websites: public page, personal invitations, RSVP, unsubscribe, calendar,
 plus the organiser preview and the template-gallery sample render."""
@@ -13227,7 +13425,11 @@ def template_preview(req, slug):
         raise HTTPError(404)
     groups = db.loads(t["groups"], [])
     group = req.arg("group") if req.arg("group") in ("weddings", "baby", "parties", "other") else (groups[0] if groups else "weddings")
-    r = Response(R.render(demo_event(slug, group), "demo", None, req))
+    ev = demo_event(slug, group)
+    from ..eventsite import themes
+    if req.arg("palette") in [p[0] for p in themes.palettes(t["design"])]:
+        ev["design"] = dict(ev.get("design") or {}, palette=req.arg("palette"))   # e.g. a cultural style on the template page
+    r = Response(R.render(ev, "demo", None, req))
     r.header("Cache-Control", "no-cache")
     return r
 
@@ -13363,7 +13565,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=bb2acd6105596459a35d3bc09c948116edc7f16a73b672acbf1f074655a13bd5 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=f046a403457771957a6481531c5a32113ec3079ecc970db4c20ba94f3827f208 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -13426,11 +13628,13 @@ if(L){var lab=f.querySelector('label[for='+h.id+']');if(lab)lab.firstChild.textC
 if(more)more.addEventListener('click',function(){all=true;sync(false);});sync(false);})();</script>"""
 
 
-def _new_event(user_id: int, cat, tpl, hosts: str, pkg: str):
+def _new_event(user_id: int, cat, tpl, hosts: str, pkg: str, palette: str = ""):
     hosts = (hosts or "").strip()[:120]
     name = suggestions.auto_event_name(cat["slug"], hosts) or cat["name"]
     ev = events.create(user_id, cat["slug"], tpl["slug"], name, hosts)
     events.touch(ev["id"], selected_package=pkg)
+    if palette and palette in [p[0] for p in themes.palettes(tpl["design"])]:
+        events.touch(ev["id"], design=json.dumps({"palette": palette}))   # e.g. a cultural style picked on the template page
     return ev
 
 
@@ -13473,7 +13677,7 @@ def create(req):
                 f.error("contact_email", "Too many new accounts from this connection. Try again in an hour.")
             if f.ok:
                 existing = db.one("SELECT * FROM users WHERE email = ?", (cemail,))
-                back = url("/create", category=cat_slug, template=tpl_slug, package=get("package"), hosts=hosts, go="1")
+                back = url("/create", category=cat_slug, template=tpl_slug, package=get("package"), hosts=hosts, palette=get("palette"), go="1")
                 if existing:
                     from .accounts import send_login_link
                     if existing["status"] == "active" and not auth.rate_limited(f"login-link:{cemail}", 5, 3600):
@@ -13489,7 +13693,7 @@ def create(req):
                     send_verification(user)
                     auth.audit(uid_, "user.register", cemail, via="create")
         if f.ok and user and not check_email:
-            ev = _new_event(user["id"], cat, tpl, hosts, pkg)
+            ev = _new_event(user["id"], cat, tpl, hosts, pkg, get("palette"))
             auth.audit(user["id"], "event.create", ev["uid"], template=tpl["slug"])
             req.flash("success", "Your event is saved as a private draft. Let's add the details.")
             resp = redirect(step_url(ev, 1))
@@ -13499,7 +13703,7 @@ def create(req):
             return resp
     elif req.user and get("go") == "1" and cat and tpl:
         # back from an emailed sign-in link: create the event the visitor had chosen
-        ev = _new_event(req.user["id"], cat, tpl, get("hosts"), pkg)
+        ev = _new_event(req.user["id"], cat, tpl, get("hosts"), pkg, get("palette"))
         auth.audit(req.user["id"], "event.create", ev["uid"], template=tpl["slug"])
         req.flash("success", "You're signed in and your event is saved as a private draft. Let's add the details.")
         return redirect(step_url(ev, 1))
@@ -13540,7 +13744,7 @@ def create(req):
 <h1>Let's create your <span class="serif grad">event</span></h1><p class="lead">Three quick questions, then we build your website as you go. Nothing is published or charged until you're ready.</p>
 <p class="small" style="margin-top:14px">Rather have us do it? <a class="text-link" href="/help-me-set-up">We can set it up for you</a>.</p></div></section>
 <section class="section"><div class="container"><form class="form" method="post" novalidate data-create>{csrf(req)}
-{errors_summary(f.errors)}
+{f'<input type="hidden" name="palette" value="{esc(get("palette"))}">' if get("palette") else ""}{errors_summary(f.errors)}
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:16px">1. What are you celebrating?</h2>{"".join(cats_html)}</div>
 <div class="box"><h2 style="font-size:1.25rem;margin-bottom:6px">2. Choose a starting template</h2><p class="muted small" style="margin-bottom:16px">These templates suit your occasion. You can switch any time in the design step.</p>
 <div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))" data-tpl-grid>{"".join(tpl_html)}</div>
@@ -13793,10 +13997,21 @@ def step_design(req, ev):
         sw = "".join(f'<i style="background:{c}"></i>' for c in (p["bg"], p["text"], p["accent"], p["accent2"]))
         tpl_opts.append(f'<label class="choice"><input type="radio" name="template" value="{esc(t["slug"])}"{" checked" if t["slug"] == ev["template"] else ""}>'
                         f'<span><span class="row row--between"><b>{esc(t["name"])}</b><span class="palette-swatches">{sw}</span></span><small>{esc(t["direction"])}</small></span></label>')
-    pal_opts = "".join(
-        f'<label class="choice"><input type="radio" name="palette" value="{esc(k)}"{" checked" if k == res["palette"] else ""}>'
-        f'<span><span class="palette-swatches">{"".join(f"<i style=background:{c[x]}></i>" for x in ("bg", "text", "accent", "accent2"))}</span>{esc(label)}</span></label>'
-        for k, label, c in dsg["palettes"])
+    def pal_choice(k, label, colours, sub=""):
+        return (f'<label class="choice"><input type="radio" name="palette" value="{esc(k)}"{" checked" if k == res["palette"] else ""}>'
+                f'<span><span class="palette-swatches">{"".join(f"<i style=background:{c}></i>" for c in colours)}</span>{esc(label)}'
+                f'{f"<small>{esc(sub)}</small>" if sub else ""}</span></label>')
+    cults = dsg.get("cultures") or []
+    pal_opts = "".join(pal_choice(k, label, [c[x] for x in ("bg", "text", "accent", "accent2")])
+                       for k, label, c in dsg["palettes"] if k not in cults)
+    surprise = f'<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">{i("sparkle")} Try another look</button>'
+    pal_block = f'<fieldset><legend>Colour palette</legend><div class="choice-grid">{pal_opts}</div>{surprise}</fieldset>'
+    if cults:
+        cult_opts = "".join(pal_choice(k, themes.CULTURES[k][0], themes.CULTURES[k][3][:4], themes.CULTURES[k][1]) for k in cults)
+        pal_block = (f'<fieldset><legend>Cultural style</legend><p class="hint" style="margin-bottom:10px">Patterns and colours from '
+                     f'Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga and Swati design. Choose yours, or a classic palette below.</p>'
+                     f'<div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr))">{cult_opts}</div></fieldset>'
+                     f'<fieldset><legend>Classic colours</legend><div class="choice-grid">{pal_opts}</div>{surprise}</fieldset>')
     fonts = [(k, themes.FONT_PAIRS[k][0] + f" ({themes.FONT_PAIRS[k][1]} + {themes.FONT_PAIRS[k][2]})") for k in dsg["fonts"]]
     fonts += [(k, v[0] + f" ({v[1]} + {v[2]})") for k, v in themes.FONT_PAIRS.items() if k not in dsg["fonts"]]
     bgs = [(k, themes.BACKGROUND_LABELS[k]) for k in dsg["backgrounds"]]
@@ -13825,8 +14040,7 @@ def step_design(req, ev):
     inner = f"""{errors_summary(f.errors)}
 <fieldset><legend>Template</legend><div class="choice-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">{"".join(tpl_opts)}</div>
 <p class="hint" style="margin-top:8px">Switching template resets colours and fonts to that template's defaults. Your content stays.</p></fieldset>
-<fieldset><legend>Colour palette</legend><div class="choice-grid">{pal_opts}</div>
-<button class="btn btn--ghost btn--sm" type="button" data-surprise style="margin-top:10px">{i("sparkle")} Try another look</button></fieldset>
+{pal_block}
 <div class="box" style="padding:16px">{check("custom_colors", "Use my own colours" + ("" if adv else " <span class='pill pill--gold pill--plain'>Premium</span>"), custom, attrs={"data-reveals": "#custom-colors", "disabled": not adv})}
 <div id="custom-colors" class="form-row form-row--4" style="margin-top:12px"{"" if custom else " hidden"}>{color_fields}</div></div>
 <div class="form-row form-row--2">{select("font_pair", "Typography", fonts, res["font_pair"])}{select("background", "Background", bgs, res["background"])}</div>
@@ -17024,7 +17238,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=541cafe09e5b95a306d27927950f721203cea67afa02d5c05faabe2b5108d979 nl=1 -->
+<!-- FILE: static/css/app.css sha256=c4b81abf9e6b7a90f1cb6592816d5d9659c01366b11b07dec7ff72c9af0c0147 nl=1 -->
 ```css
 /* Aurelia design system
    Built from docs/website-style-playbook.md (STS Holdings, Oct 2026). Colours since 25 Nov 2026:
@@ -17464,18 +17678,40 @@ a.chip, button.chip { min-height: 44px; }
 .phone__screen { position: relative; height: 100%; overflow: hidden; border-radius: 26px; background: #FFFDF9; color: #1F1A12; box-shadow: 0 0 0 3px #14110C; }
 .phone__screen::after { content: ""; position: absolute; inset: 0; background: linear-gradient(125deg, rgb(255 255 255 / .35) 0%, rgb(255 255 255 / 0) 34%); pointer-events: none; }
 .phone__notch { position: absolute; top: 8px; left: 50%; translate: -50% 0; width: 34%; height: 18px; border-radius: 999px; background: #14110C; z-index: 2; }
-.mini-site { height: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 38px 14px 14px; gap: 8px; background: radial-gradient(90% 40% at 20% 0%, #FBEDE6, transparent 70%), radial-gradient(90% 40% at 90% 5%, #FBF1DA, transparent 70%), #FFFDF9; }
-.mini-site__mono { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #D4AA52; display: grid; place-items: center; font: italic 400 1.1rem/1 var(--font-serif); color: #87651C; background: rgb(255 255 255 / .6); }
-.mini-site__kicker { font-size: .5rem; letter-spacing: .24em; text-transform: uppercase; color: #87651C; }
-.mini-site__names { font: italic 400 1.45rem/1.05 var(--font-serif); letter-spacing: -.01em; }
-.mini-site__date { font: 500 .55rem/1.4 var(--font-mono); letter-spacing: .12em; color: #6A6152; }
-.mini-site__count { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; margin-top: 6px; }
-.mini-site__count div { padding: 6px 0; border-radius: 8px; background: #fff; border: 1px solid #EFE6D4; font: 600 .7rem/1 var(--font-mono); }
-.mini-site__count small { display: block; margin-top: 3px; font: 400 .42rem/1 var(--font-sans); letter-spacing: .08em; text-transform: uppercase; color: #8C8270; }
-.mini-site__btn { margin-top: 8px; width: 100%; padding: 9px 0; border-radius: 999px; background: linear-gradient(180deg, #F8E7B9, #EDCF86 48%, #DDB563); color: #2A1F0A; font-size: .62rem; font-weight: 600; letter-spacing: .04em; box-shadow: inset 0 1px 0 rgb(255 255 255 / .75); }
-.mini-site__img { width: 100%; flex: 1; min-height: 40px; border-radius: 12px; background:
-  radial-gradient(60% 80% at 25% 100%, #F5F1E2 0, transparent 60%), radial-gradient(55% 70% at 85% 90%, #FBEDE6 0, transparent 60%), linear-gradient(180deg, #FBF1DA, #FAF3E3); position: relative; overflow: hidden; }
-.mini-site__img::before { content: ""; position: absolute; inset: 22% 30% 0; border-radius: 999px 999px 0 0; border: 1px solid rgb(255 255 255 / .7); }
+/* The phone shows a lobola invitation: cream, terracotta and beadwork. Sizes follow the phone's
+   width (cqw); the px values before them are for browsers without container queries. */
+.phone__screen { container-type: inline-size; }
+.invite { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; overflow: hidden;
+  padding: 30px 14px 12px 28px; padding: 13cqw 6cqw 5cqw 12.5cqw; gap: 4px; gap: 1.8cqw; color: #3B2A1E; font-family: var(--font-sans);
+  background: radial-gradient(120% 55% at 85% 0%, #FFF8EA 0, transparent 62%), radial-gradient(90% 40% at 0% 100%, #EFD9B4 0, transparent 70%), #F8EEDD; }
+.invite p { margin: 0; }
+.invite__beads { position: absolute; left: 0; top: 0; bottom: 0; width: 15px; width: 6.5cqw; border-right: 2px solid #D9A441; border-right-width: .8cqw;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24'%3E%3Crect width='12' height='24' fill='%23F3E3C3'/%3E%3Cpath d='M0 0 12 6 0 12Z' fill='%23A0522D'/%3E%3Cpath d='M0 12 12 18 0 24Z' fill='%231E1A16'/%3E%3Ccircle cx='9.5' cy='12' r='1.3' fill='%23D9A441'/%3E%3Ccircle cx='9.5' cy='0' r='1.3' fill='%23D9A441'/%3E%3Ccircle cx='9.5' cy='24' r='1.3' fill='%23D9A441'/%3E%3C/svg%3E") 0 0 / 100% auto repeat-y; }
+.invite__leaf { position: absolute; top: 5%; right: -3%; width: 22%; height: auto; opacity: .9; }
+.invite__emblem { width: 56px; width: 24cqw; height: auto; flex: none; }
+.invite__title { font: 400 38px/1 var(--font-serif); font-size: 16.5cqw; letter-spacing: .06em; text-transform: uppercase; color: #8E3B22; }
+.invite__sub { margin-top: -2px !important; font-size: 9px; font-size: 4cqw; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: #5B3A22; }
+.invite__intro { max-width: 80%; font-size: 8.5px; font-size: 3.6cqw; line-height: 1.35; color: #5B4636; }
+.invite__names { margin: 2px 0 !important; font: 400 32px/1.05 "Great Vibes", var(--font-serif); font-size: 13.5cqw; color: #2E1F14; white-space: nowrap; }
+.invite__names span { font-size: .8em; color: #8E3B22; }
+.invite__orn { width: 60%; height: auto; flex: none; }
+.invite__line { max-width: 82%; font-size: 8px; font-size: 3.3cqw; line-height: 1.35; color: #5B4636; }
+.invite__facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; margin-top: 2px; margin-top: 1cqw; }
+.invite__facts div { display: grid; justify-items: center; gap: 1px; gap: .5cqw; padding: 0 2px; padding: 0 1cqw; }
+.invite__facts div + div { border-left: 1px solid rgb(142 59 34 / .3); }
+.invite__facts svg { width: 18px; width: 7.5cqw; height: 18px; height: 7.5cqw; fill: none; stroke: #8E3B22; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.invite__facts b { font-size: 7px; font-size: 2.9cqw; letter-spacing: .14em; text-transform: uppercase; color: #8E3B22; }
+.invite__facts span { font-size: 7.5px; font-size: 3.1cqw; font-weight: 600; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; color: #2E1F14; }
+.invite__note { max-width: 80%; font: italic 400 9.5px/1.3 var(--font-serif); font-size: 4cqw; color: #6B4A33; }
+.invite__count { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; gap: 1.4cqw; width: 86%; }
+.invite__count div { padding: 4px 0; padding: 1.8cqw 0; border: 1px solid rgb(142 59 34 / .35); border-radius: 6px; border-radius: 2.4cqw; background: rgb(255 250 240 / .75);
+  font: 600 10px/1 var(--font-mono); font-size: 4.2cqw; color: #2E1F14; }
+.invite__count small { display: block; margin-top: 2px; margin-top: .8cqw; font: 500 6px/1 var(--font-sans); font-size: 2.3cqw; letter-spacing: .12em; text-transform: uppercase; color: #8E3B22; }
+.invite__rsvp { margin-top: 2px; margin-top: 1cqw; margin-bottom: 46px; margin-bottom: 20cqw; padding: 5px 12px; padding: 2.2cqw 5cqw; border-radius: 999px;
+  background: linear-gradient(180deg, #A8532F, #8E3B22); color: #FFF4E2; font-size: 7.5px; font-size: 3.2cqw; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .3), 0 4px 10px -4px rgb(110 40 20 / .5); }
+.invite__basket { position: absolute; left: 10%; bottom: 1.5%; width: 24%; height: auto; }
+.invite__pot { position: absolute; right: 3%; bottom: 1.5%; width: 20%; height: auto; }
 .float-tile { position: absolute; padding: 12px 14px; border-radius: 16px; font-size: .8125rem; min-width: 150px; transition: transform 700ms var(--ease-out); }
 .float-tile b { display: block; font-size: 1.05rem; letter-spacing: -.02em; }
 .float-tile .muted { font-size: .75rem; }
@@ -17807,6 +18043,8 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 .seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--color-surface-2); }
 .seg button, .seg a { min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: none; font-size: .8125rem; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
 .seg [aria-pressed="true"], .seg [aria-current="page"] { background: var(--color-surface); box-shadow: 0 1px 2px rgb(0 0 0 / .1), 0 3px 8px -2px rgb(0 0 0 / .1); }
+.culture-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 14px; }
+.seg--wrap { flex-wrap: wrap; border-radius: 18px; }
 .palette-swatches { display: flex; gap: 4px; }
 .palette-swatches i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgb(0 0 0 / .1); }
 .review-section { display: grid; gap: 10px; padding: 18px 0; border-bottom: 1px solid var(--color-line); }
@@ -18011,7 +18249,7 @@ legend { padding: 0; font-weight: 600; font-size: 1rem; margin-bottom: 10px; }
 
 ### `static/css/eventsite.css`
 
-<!-- FILE: static/css/eventsite.css sha256=2f269fd0872b9fccf1a3bd41d2f7aac0e6151e5eaa257b5a7072ce9517d1b3a4 nl=1 -->
+<!-- FILE: static/css/eventsite.css sha256=b906c56c5d2cdca093b08aecc569c51dd515f0ed5e38ff98a03449b8cb39795d nl=1 -->
 ```css
 /* Aurelia event websites: shared base + eleven designs (scoped by .d-<design>).
    Theme variables come from the event: --ev-bg --ev-surface --ev-text --ev-muted --ev-accent
@@ -18318,6 +18556,21 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 .orn-beads svg { display: block; }
 .bd-a { fill: var(--ev-accent); } .bd-b { fill: var(--ev-accent2); } .bd-c { fill: var(--ev-text); } .bd-d { fill: var(--ev-bg); }
 .bg-pattern.d-heritage { background-image: linear-gradient(45deg, color-mix(in srgb, var(--ev-accent) 6%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--ev-accent) 6%, transparent) 75%), linear-gradient(45deg, color-mix(in srgb, var(--ev-accent) 6%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--ev-accent) 6%, transparent) 75%); background-size: 36px 36px; background-position: 0 0, 18px 18px; }
+/* Heritage cultural styles: patterns take the culture's motif colours (--m1..--m6) */
+.orn-beads .m1 { fill: var(--m1); } .orn-beads .m2 { fill: var(--m2); } .orn-beads .m3 { fill: var(--m3); }
+.orn-beads .m4 { fill: var(--m4); } .orn-beads .m5 { fill: var(--m5); } .orn-beads .m6 { fill: var(--m6); }
+.d-heritage[class*="cult-"] .hr-sec--alt { border-image: repeating-linear-gradient(90deg, var(--m1) 0 14px, var(--m5) 14px 17px, var(--m2) 17px 31px, var(--m5) 31px 34px, var(--m3) 34px 48px, var(--m5) 48px 51px, var(--m4) 51px 65px, var(--m5) 65px 68px) 6; }
+.d-heritage[class*="cult-"] .hr-sec .ev-h::before { background: var(--m1); box-shadow: 6px -6px 0 -2px var(--m3); }
+.d-heritage[class*="cult-"] .hr-diamond { border-color: var(--m1); outline-color: var(--m3); }
+/* the hero diamond (when no photo is added) carries the culture's pattern; the monogram sits on a plaque */
+.cult-ndebele .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m5) 0 3px, var(--m2) 3px 15px, var(--m5) 15px 18px, var(--m1) 18px 30px, var(--m5) 30px 33px, var(--m3) 33px 45px, var(--m5) 45px 48px, var(--m6) 48px 60px); }
+.cult-zulu .hr-photo.ev-photo--art { background: conic-gradient(from 45deg, var(--m1) 0 25%, var(--m6) 0 50%, var(--m3) 0 75%, var(--m5) 0) 0 0 / 30px 30px; }
+.cult-xhosa .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m2) 0 12px, var(--m5) 12px 16px, var(--m2) 16px 20px, var(--m5) 20px 22px, var(--m2) 22px 26px, var(--m3) 26px 29px); }
+.cult-pedi .hr-photo.ev-photo--art { background: repeating-linear-gradient(90deg, var(--m1) 0 9px, var(--m6) 9px 13px, var(--m3) 13px 22px, var(--m2) 22px 31px, var(--m5) 31px 40px, var(--m4) 40px 49px); }
+.cult-venda .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m5) 0 16px, var(--m1) 16px 19px, var(--m2) 19px 22px, var(--m4) 22px 25px, var(--m3) 25px 28px, var(--m6) 28px 30px); }
+.cult-tsonga .hr-photo.ev-photo--art { background: repeating-linear-gradient(90deg, var(--m1) 0 6px, var(--m2) 6px 12px, var(--m3) 12px 18px, var(--m6) 18px 24px, var(--m4) 24px 30px, var(--m5) 30px 36px); }
+.cult-swati .hr-photo.ev-photo--art { background: repeating-linear-gradient(0deg, var(--m1) 0 14px, var(--m5) 14px 18px, var(--m6) 18px 21px, var(--m5) 21px 25px); }
+.d-heritage[class*="cult-"] .hr-photo.ev-photo--art > span { padding: .25em .55em; background: var(--ev-surface); color: var(--ev-text); border: 3px solid var(--m5); box-shadow: 0 0 0 4px var(--ev-surface); }
 .hr-hero { display: grid; gap: 32px; align-items: center; max-width: 1180px; margin: 0 auto; padding: clamp(48px, 8vw, 96px) var(--ev-pad); }
 @media (min-width: 900px) { .hr-hero { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); } }
 .hr-names { font-size: clamp(2.6rem, 1.6rem + 5vw, 5.4rem); font-weight: 700; letter-spacing: .04em; line-height: 1.02; text-transform: uppercase; display: grid; color: var(--ev-accent2); }
@@ -20494,7 +20747,7 @@ class GuestImportTests(unittest.TestCase):
 
 ### `tests/test_eventsite.py`
 
-<!-- FILE: tests/test_eventsite.py sha256=2aac6097b287d385a4351b8c258d20dea4924fc7ebab0b7002c359e1bb0b4d9c nl=1 -->
+<!-- FILE: tests/test_eventsite.py sha256=40db6c605990afa3ac8f49bad0533f71d2044106236fe60b75c0e9f5c95a33b2 nl=1 -->
 ```python
 """Event websites, template previews, RSVP and media access."""
 from __future__ import annotations
@@ -20556,10 +20809,66 @@ class TemplateTests(unittest.TestCase):
     def test_unknown_template_404(self):
         self.assertEqual(Client(self.app).get("/templates/nope/preview").status, 404)
 
+    def test_a_template_can_have_its_own_sample_photo(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        from app import stock
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(stock, "DIR", Path(tmp)):
+                self.assertEqual(demo_event("heritage", "weddings")["_hero"], "")
+                Path(tmp, "tpl-heritage.jpg").write_bytes(b"x")
+                self.assertEqual(demo_event("heritage", "weddings")["_hero"], "/static/img/stock/tpl-heritage.jpg")
+                self.assertEqual(demo_event("atelier", "weddings")["_hero"], "")       # others unchanged
+
     def test_render_function_direct(self):
         html = render(demo_event("heritage", "weddings"), "demo")
         self.assertIn("Two families", html)
         self.assertIn("The ceremonies", html)
+
+
+class CulturalStyleTests(unittest.TestCase):
+    """Heritage can be styled Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = fresh_app("eventsite-cultures")
+
+    def test_each_culture_renders_its_own_pattern_and_colours(self):
+        from app.eventsite import themes
+        self.assertEqual(set(themes.CULTURES), {"ndebele", "zulu", "xhosa", "pedi", "venda", "tsonga", "swati"})
+        for key, (name, _, palette, motif) in themes.CULTURES.items():
+            ev = demo_event("heritage", "weddings")
+            ev["design"] = {"palette": key}
+            html = render(ev, "demo")
+            self.assertIn(f"cult-{key}", html)
+            self.assertIn(f'id="bd-{key}-hr-top"', html)
+            self.assertIn(f"--m1:{motif[0]}", html)
+            self.assertIn(f"--ev-accent:{palette['accent']}", html)
+        classic = render(demo_event("heritage", "weddings"), "demo")
+        self.assertNotIn("cult-", classic)
+
+    def test_template_page_previews_a_culture_and_carries_it_to_create(self):
+        c = Client(self.app)
+        r = c.get("/templates/heritage?group=weddings&style=zulu")
+        self.assertEqual(r.status, 200)
+        self.assertIn("preview?group=weddings&amp;palette=zulu", r.text)
+        self.assertIn("/create?template=heritage&group=weddings&amp;palette=zulu", r.text)
+        self.assertIn("Cultural style", r.text)
+        self.assertIn("cult-zulu", c.get("/templates/heritage/preview?group=weddings&palette=zulu").text)
+        self.assertNotIn("cult-", c.get("/templates/atelier/preview?group=weddings&palette=zulu").text)
+
+    def test_design_step_offers_cultures_and_create_keeps_the_choice(self):
+        make_user("culture@example.com")
+        c = Client(self.app)
+        login(c, "culture@example.com")
+        r = c.post("/create", {"category": "traditional-wedding", "template": "heritage", "hosts": "Zanele & Musa", "palette": "xhosa"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        ev = db.one("SELECT e.* FROM events e JOIN users u ON u.id = e.owner_id WHERE u.email = ?", ("culture@example.com",))
+        self.assertEqual(db.loads(ev["design"], {}).get("palette"), "xhosa")
+        step2 = c.get(f"/dashboard/events/{ev['uid']}/setup/2").text
+        self.assertIn("Cultural style", step2)
+        self.assertIn('value="xhosa" checked', step2)
 
 
 class PublicSiteTests(unittest.TestCase):
@@ -21147,7 +21456,7 @@ if __name__ == "__main__":
 
 ### `tools/add_photos.py`
 
-<!-- FILE: tools/add_photos.py sha256=5cab910c15d8efa4bf3bb7d5e1566bae6d4af2d3cdfd2d43ad703a5310294530 nl=1 -->
+<!-- FILE: tools/add_photos.py sha256=2f3b9d0da4acc24013c90bf88865ea4fa40846f451e9352ea6a5ba57a18977dd nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Add photos for the home page tiles and the template sample galleries.
@@ -21157,7 +21466,9 @@ if __name__ == "__main__":
 Put each photo in a sub-folder named after where it goes (or start its file name with that word):
   weddings/  traditional/  baby/  parties/  other/
 The first photo in each folder (by name) becomes that occasion's main photo (home page tile and the
-big picture in the template samples); all of them go into the sample gallery. Photos are resized to
+big picture in the template samples); all of them go into the sample gallery.
+A photo named after a template (atelier, folio, bloom, heritage, champagne, linea, confetti, pulse,
+aurora, laureate, cradle), e.g. heritage.jpg, becomes that template's own main photo. Photos are resized to
 1600px on the long side and saved as JPEG, so they stay small. Needs Pillow (pip install Pillow);
 the website itself doesn't.
 """
@@ -21174,6 +21485,12 @@ from PIL import Image, ImageOps
 ROOT = Path(__file__).resolve().parent.parent
 STOCK = ROOT / "static" / "img" / "stock"
 SLOTS = ("weddings", "traditional", "baby", "parties", "other")
+TEMPLATES = ("atelier", "folio", "bloom", "heritage", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+
+
+def template_of(path: str) -> str:
+    stem = Path(path).stem.lower()
+    return next((t for t in TEMPLATES if stem == t or stem.startswith(t + "-") or stem.startswith(t + "_")), "")
 EXT = (".jpg", ".jpeg", ".png", ".webp", ".heic")
 
 
@@ -21203,6 +21520,15 @@ def items(src: str):
 def main(src: str) -> None:
     counts: dict = {}
     for name, data in items(src):
+        tpl = template_of(name)
+        if tpl:
+            img = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
+            img.thumbnail((1600, 1600))
+            STOCK.mkdir(parents=True, exist_ok=True)
+            img.save(STOCK / f"tpl-{tpl}.jpg", "JPEG", quality=82, optimize=True, progressive=True)
+            counts[tpl] = counts.get(tpl, 0) + 1
+            print(f"{tpl}: {name} -> tpl-{tpl}.jpg (the {tpl.capitalize()} template's main photo)")
+            continue
         slot = slot_of(name)
         if not slot:
             print(f"skipped (put it in a weddings/traditional/baby/parties/other folder): {name}")

@@ -58,6 +58,18 @@ class TemplateTests(unittest.TestCase):
     def test_unknown_template_404(self):
         self.assertEqual(Client(self.app).get("/templates/nope/preview").status, 404)
 
+    def test_a_template_can_have_its_own_sample_photo(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+        from app import stock
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(stock, "DIR", Path(tmp)):
+                self.assertEqual(demo_event("heritage", "weddings")["_hero"], "")
+                Path(tmp, "tpl-heritage.jpg").write_bytes(b"x")
+                self.assertEqual(demo_event("heritage", "weddings")["_hero"], "/static/img/stock/tpl-heritage.jpg")
+                self.assertEqual(demo_event("atelier", "weddings")["_hero"], "")       # others unchanged
+
     def test_render_function_direct(self):
         html = render(demo_event("heritage", "weddings"), "demo")
         self.assertIn("Two families", html)

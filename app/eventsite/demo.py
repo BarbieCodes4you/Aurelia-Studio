@@ -131,7 +131,11 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
 
 
 def _stock_hero(slug: str, group: str) -> str:
+    """The sample's main photo: the template's own (static/img/stock/tpl-<slug>.jpg) when added, else
+    the occasion's photo."""
     from .. import stock
+    if stock.url(f"tpl-{slug}"):
+        return stock.url(f"tpl-{slug}")
     if slug == "heritage" and stock.url("traditional"):
         return stock.url("traditional")
     return stock.url(group)
