@@ -151,6 +151,21 @@
     });
   });
 
+  // Cultural edition chips beside a sample switch that sample in place (the links still work without JS)
+  doc.querySelectorAll("[data-culture-frame]").forEach(function (frame) {
+    var fig = frame.closest("figure"); if (!fig) return;
+    fig.querySelectorAll("[data-culture]").forEach(function (chip) {
+      chip.addEventListener("click", function (e) {
+        e.preventDefault();
+        var key = chip.getAttribute("data-culture");
+        frame.src = frame.src.replace(/([?&]palette=)[a-z-]*/, "$1" + key);
+        fig.querySelectorAll("[data-culture]").forEach(function (c) {
+          if (c === chip) { c.setAttribute("aria-current", "true"); } else { c.removeAttribute("aria-current"); }
+        });
+      });
+    });
+  });
+
   // Scale fixed-size iframes (template thumbnails, showcase devices) to their box
   function fit() {
     doc.querySelectorAll("[data-fit]").forEach(function (box) {

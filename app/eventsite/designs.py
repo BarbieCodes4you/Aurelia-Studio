@@ -319,8 +319,11 @@ def rsvp_form(ctx) -> str:
     if ctx["thanks"]:
         if guest is not None:
             status = guest["status"]
-            msg = ("Thank you, we can't wait to see you." if status == "attending"
-                   else "Thank you for letting us know. You'll be missed." if status == "declined" else "Thank you.")
+            if ctx.get("solemn"):
+                msg = "Thank you for letting the family know." if status in ("attending", "declined") else "Thank you."
+            else:
+                msg = ("Thank you, we can't wait to see you." if status == "attending"
+                       else "Thank you for letting us know. You'll be missed." if status == "declined" else "Thank you.")
             change = f'<a class="ev-btn ev-btn--ghost" href="{esc(ctx["path"])}/i/{esc(guest["token"])}#rsvp">Change my answer</a>'
         else:
             msg, change = "Thank you, your reply has been sent to the hosts.", ""
@@ -351,9 +354,10 @@ def rsvp_form(ctx) -> str:
                      + _field(ctx, "phone", "Mobile (optional)", "tel", False, "tel") + "</div>")
     a_chk = " checked" if status == "attending" else ""
     d_chk = " checked" if status == "declined" else ""
+    yes, no = ("I will attend", "I can't attend") if ctx.get("solemn") else ("Joyfully accepts", "Regretfully declines")
     parts.append(f'<fieldset class="ev-choice"><legend>Will you attend?</legend>'
-                 f'<label class="ev-radio"><input type="radio" name="status" value="attending" required{a_chk}><span>Joyfully accepts</span></label>'
-                 f'<label class="ev-radio"><input type="radio" name="status" value="declined"{d_chk}><span>Regretfully declines</span></label>'
+                 f'<label class="ev-radio"><input type="radio" name="status" value="attending" required{a_chk}><span>{yes}</span></label>'
+                 f'<label class="ev-radio"><input type="radio" name="status" value="declined"{d_chk}><span>{no}</span></label>'
                  f'{_err(ctx, "status")}</fieldset>')
     att = []
     if allow["plus_ones"]:

@@ -93,12 +93,19 @@ text and checked controls so contrast stays AA. Footer and menu drawer are deep 
 glossy, transparent layer (frosted glass panels with a specular edge) and an Instrument Serif keyword.
 All colours are tokens at the top of `static/css/app.css`.
 Event websites open like a real invitation, then carry on as the full website. The catalogue offers
-nine designs, each with its own layout and animation: Nguni (a cowhide envelope with a gold wax seal),
-Terracotta (beadwork, shields and a Nguni cow), Ribbon (a hand-drawn ribbon and bow), Weave (a woven
-chevron envelope), Glitter (chrome balloons and a disco ball), Matcha (pink stripes and an olive bow),
-Festive (Christmas stripes and snow), Cheers (a champagne toast) and Heritage (seven cultural styles).
-They live in `app/eventsite/invites.py` and `static/css/invites.css`. The animations are CSS only, and
-they switch off for visitors who choose reduced motion; the finished invitation is the default.
+twelve designs, each with its own layout and animation: Festive (Christmas stripes and snow), Pilates and
+matcha (pink stripes and an olive bow), Heritage (a traditional wedding in an edition for each culture),
+Nguni (a cowhide envelope with a gold wax seal), Terracotta (beadwork and a Nguni cow crest), Ribbon (a
+hand-drawn ribbon and bow), Weave (a woven chevron envelope), Teddy (a teddy bear with balloons, for baby
+showers), Reveal (a balloon that pops into pink and blue confetti, for gender reveals), Glitter (chrome
+balloons and a disco ball), Cheers (a champagne pop and a golden ticket) and Memorial (a candle and white
+lilies, for funerals and memorial services). They live in `app/eventsite/invites.py`,
+`app/eventsite/cultures.py` (Heritage) and `static/css/invites.css`. The animations are CSS only, and they
+switch off for visitors who choose reduced motion; the finished invitation is the default.
+
+Heritage's seven editions (Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga, Swati) each have their own pattern,
+emblem and colours, drawn from each culture's wedding dress (sources are listed in `cultures.py`). The
+culture's own word for the wedding is shown only where a source confirmed it.
 
 The original eleven designs (Atelier, Folio, Bloom, Champagne, Linea, Confetti, Pulse, Aurora, Laureate
 and Cradle, in `designs.py`) are hidden from new customers by `migrations/004_invitation_collection.sql`

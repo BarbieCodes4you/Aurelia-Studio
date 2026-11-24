@@ -107,6 +107,7 @@ _TRADITIONAL = {
 # Festive...). Keys override the occasion's sample above; "on" fixes the month and day.
 TEMPLATE_SAMPLES = {
     "nguni": {"weddings": _TRADITIONAL},
+    "heritage": {"weddings": _TRADITIONAL},
     "terracotta": {"weddings": dict(_TRADITIONAL, name="Lerato & Sipho's lobola celebration", category="lobola",
                                     description="Our families are coming together. Join us for the lobola and the celebration that follows.",
                                     venue={"name": "The Mahlangu family home (sample)", "address": "Soweto, Johannesburg",
@@ -153,6 +154,40 @@ TEMPLATE_SAMPLES = {
             "dress": ("Festive smart", ""), "on": (12, 12), "functions": [], "end": "23:00",
             "schedule": [("18:30", "Welcome drinks", "", "other"), ("19:30", "Dinner", "", "reception"),
                          ("20:30", "Awards", "", "speech"), ("21:30", "Dancing", "", "entertainment")]}},
+    "teddy": {"parties": {
+        "name": "Lindo turns one", "hosts": "Lindo's first birthday",
+        "description": "Our little bear is turning one! Come for cake, balloons and a lot of happy mess.",
+        "venue": {"name": "The Jacaranda Garden Room (sample venue)", "address": "14 Acacia Avenue, Parkhurst, Johannesburg",
+                  "parking": "Street parking on Acacia Avenue.", "directions": "", "accommodation": ""},
+        "dress": ("Comfortable and colourful", "There will be a jumping castle."), "end": "14:00",
+        "schedule": [("10:00", "Arrivals and play", "", "other"), ("11:00", "Snacks", "", "reception"),
+                     ("12:00", "Cake and candle", "", "other"), ("12:30", "Party games", "", "activity")],
+        "menu": [("Food", "Mini sandwiches and fruit", "", ["Vegetarian"], 0), ("Food", "Chicken nuggets", "", [], 0),
+                 ("Sweet", "Honey cake", "", [], 0)],
+        "drinks": "Juice, rooibos and coffee for the grown-ups.", "gift_note": "Books for Lindo's first library are very welcome.",
+        "deadline_days": 14, "event_days": 30}},
+    "reveal": {"baby": {
+        "name": "Amahle & Thabo's gender reveal", "hosts": "Amahle & Thabo", "category": "gender-reveal",
+        "description": "We're finding out together! Come for cake, games and the big moment.",
+        "venue": {"name": "The Garden Room (sample venue)", "address": "7 Jan Smuts Avenue, Parktown, Johannesburg",
+                  "parking": "Parking in the courtyard.", "directions": "", "accommodation": ""},
+        "dress": ("Wear pink or blue", "Show us your guess!"), "end": "17:00",
+        "schedule": [("14:00", "Arrivals and drinks", "", "other"), ("14:30", "Games and guesses", "", "activity"),
+                     ("15:30", "The big reveal", "", "entertainment"), ("16:00", "Cake", "", "other")]}},
+    "memorial": {"other": {
+        "name": "Funeral service for Grace Dlamini, 1948 – 2026", "hosts": "Grace Nomvula Dlamini", "category": "funeral",
+        "description": "Mama Grace was a teacher for forty years, a mother of four and a grandmother of nine. Join us as we celebrate her life.",
+        "venue": {"name": "Moroka Community Hall (sample venue)", "address": "Moroka, Soweto",
+                  "parking": "Parking at the hall; marshals will guide you.", "directions": "", "accommodation": ""},
+        "dress": ("Smart and modest", "The family will wear purple."),
+        "functions": [("Funeral service", "08:00", "10:30", "Moroka Community Hall (sample venue)", "Moroka, Soweto"),
+                      ("Burial", "11:00", "12:00", "Cemetery (sample)", "Soweto"),
+                      ("Refreshments", "12:30", "15:00", "The Dlamini family home (sample)", "Moroka, Soweto")],
+        "schedule": [("08:00", "Gathering", "", "other"), ("08:20", "Welcome", "", "ceremony"), ("08:30", "Tributes", "Family, friends and colleagues.", "speech"),
+                     ("09:30", "Eulogy", "", "speech"), ("10:00", "Vote of thanks", "", "speech"), ("10:30", "Procession", "", "other")],
+        "menu": [], "drinks": "", "registry": [("Grace Dlamini bursary fund (sample)", "https://example.com/bursary", "In lieu of flowers, the family welcomes donations to the bursary in her name.")],
+        "gift_note": "", "contacts": [("Sipho Dlamini", "Son", "076 000 0000", "")], "accommodation": [],
+        "instructions": "Please arrive by 07:45; seating fills quickly.", "sides": [], "deadline_days": 5, "event_days": 9}},
     "cheers": {
         "parties": {
             "name": "New Year's Eve on the rooftop", "hosts": "Cheers to 2027",

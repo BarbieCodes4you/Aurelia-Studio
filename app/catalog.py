@@ -17,7 +17,7 @@ GROUPS = {
     "parties": {"name": "Parties", "path": "/parties",
                 "blurb": "Birthdays, anniversaries and private celebrations that deserve more than a group message."},
     "other": {"name": "Other events", "path": "/celebrations",
-              "blurb": "Graduations, corporate functions and family gatherings with programmes, menus and seating."},
+              "blurb": "Graduations, funerals and memorial services, corporate functions and family gatherings with programmes, menus and seating."},
 }
 
 # slug, name, group, description, feature hints
@@ -36,6 +36,7 @@ CATEGORIES = [
     ("graduation", "Graduation", "other", "Ceremony details, after-party and family seating.", []),
     ("corporate", "Corporate event", "other", "Agenda, catering choices and seating for teams and clients.", ["menu", "seating"]),
     ("family-celebration", "Family celebration", "other", "Reunions, unveilings and milestones, organised in one link.", ["family_sides"]),
+    ("funeral", "Funeral or memorial service", "other", "The order of service, venue and directions, and numbers for catering.", []),
 ]
 
 # slug, name, design key, direction, groups, description, tags
@@ -44,13 +45,25 @@ CATEGORIES = [
 # (RETIRED) but still render for every event that already uses them, and the admin can switch any
 # of them back on.
 TEMPLATES = [
+    ("festive", "Festive", "festive", "Christmas stripes and snow", ["parties", "other"],
+     "Candy-cane stripes, an arched card tied with red ribbon, a tree trimmed with bows and gently falling "
+     "snow. For Christmas lunches and year-end functions.",
+     ["christmas", "snow", "year-end"]),
+    ("matcha", "Pilates and matcha", "matcha", "Pink stripes, olive bow, matcha", ["parties", "baby"],
+     "Pink cabana stripes, an olive bow, a matcha latte and a bouncing pilates ball. For pilates mornings, "
+     "brunches, bridal and baby showers and soft-girl birthdays.",
+     ["pilates", "pastel", "brunch"]),
+    ("heritage", "Heritage", "heritage", "Traditional wedding, an edition per culture", ["weddings", "other"],
+     "A gatefold that opens on a beaded medallion, in an edition for each culture: Ndebele, Zulu, Xhosa, Pedi, "
+     "Venda, Tsonga and Swati, each with its own pattern, emblem and word for the wedding.",
+     ["traditional", "7 cultures", "animated gatefold"]),
     ("nguni", "Nguni", "nguni", "Cowhide envelope, gold wax seal", ["weddings", "other"],
      "A Nguni cowhide envelope sealed in gold wax opens, and your invitation card rises out of it, framed by "
      "dried pampas and woven baskets. For traditional weddings, lobola, umembeso and family celebrations.",
      ["traditional", "animated envelope", "wax seal"]),
     ("terracotta", "Terracotta", "terracotta", "Beadwork, shield and cattle", ["weddings", "other"],
-     "Cream paper, a beadwork border, a shield and spears that draw themselves, and a Nguni cow among the "
-     "baskets and clay pots. A live countdown sits on the invitation itself.",
+     "Cream paper, a beadwork border, a crest of a Nguni cow between two shields, and a live countdown on the "
+     "invitation itself. Made for lobola.",
      ["lobola", "animated", "countdown"]),
     ("ribbon", "Ribbon", "ribbon", "Hand-drawn ribbon and bow", ["weddings", "baby", "parties", "other"],
      "A hand-drawn ribbon draws itself around your card and ties into a bow. In olive, burgundy, blush or powder blue.",
@@ -58,24 +71,26 @@ TEMPLATES = [
     ("weave", "Weave", "weave", "Woven chevron envelope", ["weddings", "parties", "other"],
      "A woven chevron envelope in sunset reds, oranges and pinks opens, and a soft pink card slides out.",
      ["woven", "animated envelope", "colourful"]),
+    ("teddy", "Teddy", "teddy", "Teddy bear and balloons", ["baby", "parties"],
+     "\"We can bearly wait\": a teddy bear peeks over your card holding a bunch of balloons that sway in the "
+     "breeze, under drifting clouds. For baby showers and first birthdays.",
+     ["baby shower", "balloons", "playful"]),
+    ("reveal", "Reveal", "reveal", "Pink or blue balloon pop", ["baby"],
+     "Boy or girl? A big question-mark balloon pops into pink and blue confetti, then pink and blue balloons "
+     "bob either side of your card. For gender reveals.",
+     ["gender reveal", "confetti", "fun"]),
     ("glitter", "Glitter", "glitter", "Chrome balloons and disco", ["parties", "baby", "other"],
      "Chrome balloon numbers, a turning disco ball and sequins that catch the light. Made for 21sts, 30ths "
      "and every birthday that deserves a sparkle.",
      ["21st", "chrome", "disco"]),
-    ("matcha", "Matcha", "matcha", "Pink stripes and an olive bow", ["parties", "baby"],
-     "Pink cabana stripes, an olive bow, a matcha latte and a bouncing pilates ball. For brunches, bridal "
-     "and baby showers and soft-girl birthdays.",
-     ["pastel", "playful", "brunch"]),
-    ("festive", "Festive", "festive", "Christmas stripes and snow", ["parties", "other"],
-     "Candy-cane stripes, an arched card tied with red ribbon, a tree trimmed with bows and gently falling "
-     "snow. For Christmas lunches and year-end functions.",
-     ["christmas", "snow", "year-end"]),
-    ("cheers", "Cheers", "cheers", "Retro champagne toast", ["parties", "other", "weddings"],
-     "Retro stripes and a hand-drawn champagne toast with rising bubbles. For year-end parties, New Year's, "
-     "engagements and anniversaries.",
-     ["year-end", "champagne", "retro"]),
-    ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
-     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
+    ("cheers", "Cheers", "cheers", "Champagne pop and a golden ticket", ["parties", "other", "weddings"],
+     "A champagne bottle pops, bubbles fizz up the page and gold confetti falls around a golden ticket. For "
+     "New Year's, year-end parties, engagements and anniversaries.",
+     ["new year", "champagne", "confetti"]),
+    ("memorial", "Memorial", "memorial", "Candlelight and lilies", ["other"],
+     "For funerals and memorial services: a gently flickering candle, white lilies, a place for a photo of your "
+     "loved one, the order of service and directions. Calm, respectful wording throughout.",
+     ["funeral", "memorial service", "candle"]),
     ("atelier", "Atelier", "atelier", "Minimalist luxury", ["weddings", "other", "parties"],
      "Ivory and ink, a fine serif and generous space. A centred monogram leads into one calm column.", ["ivory", "serif", "monogram"]),
     ("folio", "Folio", "folio", "Modern editorial", ["weddings", "parties", "other"],
@@ -174,8 +189,9 @@ _REFRESH_TEXT = {"heritage": "Rich ochre, indigo and terracotta with geometric b
 
 
 def ensure_catalog() -> None:
-    if not db.val("SELECT COUNT(*) FROM categories"):
-        for i, (slug, name, group, desc, feats) in enumerate(CATEGORIES):
+    have = {r["slug"] for r in db.q("SELECT slug FROM categories")}
+    for i, (slug, name, group, desc, feats) in enumerate(CATEGORIES):
+        if slug not in have:
             db.insert("categories", {"slug": slug, "name": name, "group_slug": group, "description": desc,
                                      "features": db.dumps(feats), "sort": i})
     existing = {r["slug"] for r in db.q("SELECT slug FROM templates")}

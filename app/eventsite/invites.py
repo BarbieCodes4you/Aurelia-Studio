@@ -234,13 +234,13 @@ _SHIELD_SM = ('<ellipse class="sh-body" pathLength="1" cx="0" cy="0" rx="12" ry=
               '<path class="sh-stick" pathLength="1" d="M0-24v48"/>')
 # The lobola crest: a Nguni cow (lobola is counted in cattle) between two shields, over crossed spears.
 # The homepage phone shows the same crest with its colours written in.
-CREST = ('<svg class="crest" viewBox="0 0 150 84" aria-hidden="true" focusable="false">'
+CREST = ('<svg class="crest" viewBox="0 -8 150 92" aria-hidden="true" focusable="false">'
          '<g class="sh-spear" fill="none" stroke-linecap="round"><path pathLength="1" d="M22 80 128 6"/><path pathLength="1" d="M128 80 22 6"/></g>'
          '<ellipse class="sh-tip" cx="128.5" cy="5.5" rx="6" ry="2.2" transform="rotate(-35 128.5 5.5)"/>'
          '<ellipse class="sh-tip" cx="21.5" cy="5.5" rx="6" ry="2.2" transform="rotate(35 21.5 5.5)"/>'
          f'<g transform="translate(27 50) rotate(-12)"><g class="crest__shield">{_SHIELD_SM}</g></g>'
          f'<g transform="translate(123 50) rotate(12)"><g class="crest__shield">{_SHIELD_SM}</g></g>'
-         '<g class="crest__cow"><svg x="31" y="-1" width="88" height="73" viewBox="0 0 120 100">'
+         '<g class="crest__cow"><svg x="22" y="-10" width="106" height="88" viewBox="0 0 120 100">'
          + COW[COW.index(">") + 1:-len("</svg>")] + '</svg></g></svg>')
 
 POT = """<svg class="pot" viewBox="0 0 60 60" aria-hidden="true" focusable="false"><path class="pot__body" d="M14 18h32c-1 3-2 4-4 5 8 4 12 11 12 19 0 11-10 17-24 17S6 53 6 42c0-8 4-15 12-19-2-1-3-2-4-5Z"/>
@@ -444,24 +444,133 @@ def snow(count: int = 34, seed: int = 41) -> str:
     return f'<div class="snow" aria-hidden="true">{flakes}</div>'
 
 
-# --- cheers: coupes and bubbles ------------------------------------------------------------------------
-def _coupes() -> str:
-    rnd = _rng(52)
-    bubbles = "".join(f'<circle class="cs-bub" cx="{x:.1f}" cy="{y:.1f}" r="{1 + rnd() * 1.6:.1f}" style="--d:{1.6 + rnd() * 1.8:.2f}s;--dl:{-rnd() * 3:.2f}s"/>'
-                      for x, y in [(60 + rnd() * 34, 62 + rnd() * 6) for _ in range(9)] + [(132 + rnd() * 34, 62 + rnd() * 6) for _ in range(9)])
-    glass = ('<path class="cs-wine" d="M-34 0h68c-2 14-16 24-34 24S-32 14-34 0Z"/>'
-             '<path class="cs-line" d="M-38-4h76M-38-4c0 18 16 30 38 30S38 14 38-4M0 26v40M-20 70h40"/>'
-             '<path class="cs-glint" d="M-26 4c2 6 6 10 12 13"/>')
-    return (f'<svg class="coupes" viewBox="0 0 230 160" aria-hidden="true" focusable="false">'
-            f'<g transform="translate(76 66) rotate(-14)"><g class="cs-glass cs-glass--l">{glass}</g></g>'
-            f'<g transform="translate(154 66) rotate(14)"><g class="cs-glass cs-glass--r">{glass}</g></g>'
-            f'<g class="cs-bubbles">{bubbles}</g>'
-            f'<g class="cs-pop"><path d="M115 22v-14M115 22l-12-8M115 22l12-8M104 28l-12-2M126 28l12-2"/></g>'
-            f'<path class="cs-star" d="M30 30l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/><path class="cs-star" d="M200 20l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/>'
-            f'<path class="cs-squig" d="M18 120c8-10 16 10 24 0s16 10 24 0"/><path class="cs-squig" d="M168 128c8-10 16 10 24 0s16 10 24 0"/></svg>')
+# --- cheers: a champagne bottle that pops, falling confetti ------------------------------------------
+BOTTLE = """<svg class="bottle" viewBox="0 0 120 300" aria-hidden="true" focusable="false"><defs>
+<linearGradient id="bt-glass" x1="0" x2="1"><stop offset="0" stop-color="#0B2A1D"/><stop offset=".35" stop-color="#1D4A35"/><stop offset=".6" stop-color="#123426"/><stop offset="1" stop-color="#06160F"/></linearGradient>
+<linearGradient id="bt-foil" x1="0" x2="1"><stop offset="0" stop-color="#9C7A32"/><stop offset=".4" stop-color="#F3DDA0"/><stop offset=".7" stop-color="#C99B45"/><stop offset="1" stop-color="#7E5F22"/></linearGradient></defs>
+<g class="bt-cork"><path d="M51 4h18v18H51Z" fill="#D9B98A"/><path d="M47 0h26a4 4 0 0 1 4 4v3H43V4a4 4 0 0 1 4-4Z" fill="#C49C64"/></g>
+<path d="M50 22h20v70c0 18 22 30 22 56v132c0 6-4 10-10 10H38c-6 0-10-4-10-10V148c0-26 22-38 22-56Z" fill="url(#bt-glass)"/>
+<path d="M48 20h24v78c0 10 8 16 13 22H35c5-6 13-12 13-22Z" fill="url(#bt-foil)"/><path d="M48 60h24" stroke="#7E5F22" stroke-width="1.5"/>
+<rect x="34" y="176" width="52" height="64" rx="5" fill="#F7EFDD"/><rect x="38" y="180" width="44" height="56" rx="3" fill="none" stroke="#C99B45" stroke-width="1.2"/>
+<path d="M60 194l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#C99B45"/><path d="M44 222h32M48 228h24" stroke="#6E5420" stroke-width="1.6" stroke-linecap="round"/>
+<path d="M36 150c0-14 8-24 16-30" stroke="#fff" stroke-opacity=".22" stroke-width="5" stroke-linecap="round" fill="none"/>
+<rect x="33" y="150" width="7" height="125" rx="3.5" fill="#fff" opacity=".13"/></svg>"""
 
 
-COUPES = _coupes()
+def fizz(count: int = 14, seed: int = 61) -> str:
+    """Bubbles streaming out of the bottle neck (they burst out once, then keep fizzing)."""
+    rnd = _rng(seed)
+    return '<span class="cs-fizz" aria-hidden="true">' + "".join(
+        f'<i style="--s:{3 + rnd() * 6:.1f}px;--dx:{(rnd() - .5) * 70:.0f}px;--dy:{-90 - rnd() * 170:.0f}px;'
+        f'--d:{1.6 + rnd() * 1.8:.2f}s;--dl:{rnd() * 2.4:.2f}s"></i>' for _ in range(count)) + "</span>"
+
+
+def confetti(count: int = 34, seed: int = 71, cls: str = "cs-confetti") -> str:
+    """Pieces of confetti falling and turning (gold, champagne, white and the accent)."""
+    rnd = _rng(seed)
+    out = []
+    for k in range(count):
+        shape = ("rect", "rect", "dot", "curl")[k % 4]
+        out.append(f'<i class="cf-{shape} cf-c{k % 4}" style="--x:{rnd() * 100:.1f}%;--d:{6 + rnd() * 7:.1f}s;--dl:{-rnd() * 12:.1f}s;'
+                   f'--dx:{(rnd() - .5) * 120:.0f}px;--r:{360 + rnd() * 720:.0f}deg;--s:{.7 + rnd() * .7:.2f}"></i>')
+    return f'<div class="{cls}" aria-hidden="true">{"".join(out)}</div>'
+
+
+# --- teddy: a bear peeking over the card with a bunch of balloons --------------------------------
+def _balloon(cx, cy, r, cls):
+    return (f'<g class="tb-b {cls}"><ellipse cx="{cx}" cy="{cy}" rx="{r}" ry="{r * 1.16:.1f}"/>'
+            f'<path d="M{cx - 4} {cy + r * 1.16 + 5:.1f}l4-6 4 6Z"/>'
+            f'<ellipse class="tb-hi" cx="{cx - r * .38:.1f}" cy="{cy - r * .42:.1f}" rx="{r * .22:.1f}" ry="{r * .34:.1f}" transform="rotate(-24 {cx - r * .38:.1f} {cy - r * .42:.1f})"/></g>')
+
+
+_TB = [(72, 70, 30, "tb-1"), (126, 50, 34, "tb-2"), (184, 78, 28, "tb-3"), (104, 122, 24, "tb-4")]
+TEDDY = ('<svg class="teddy" viewBox="0 0 260 290" aria-hidden="true" focusable="false"><g class="tb-bunch">'
+         + "".join(f'<path class="tb-str" d="M{cx} {cy + r * 1.16 + 5:.1f}C{cx + 6} {cy + 90:.0f} {150 + (cx - 120) * .2:.0f} 226 178 266"/>' for cx, cy, r, _ in _TB)
+         + "".join(_balloon(*b) for b in _TB) + '</g>'
+         '<g class="tb-bear">'
+         '<circle class="tb-fur" cx="93" cy="179" r="17"/><circle class="tb-fur" cx="167" cy="179" r="17"/>'
+         '<circle class="tb-in" cx="93" cy="179" r="9"/><circle class="tb-in" cx="167" cy="179" r="9"/>'
+         '<circle class="tb-fur" cx="130" cy="214" r="45"/>'
+         '<ellipse class="tb-muzzle" cx="130" cy="234" rx="21" ry="15.5"/><ellipse class="tb-nose" cx="130" cy="225" rx="8" ry="5.6"/>'
+         '<path class="tb-line" d="M130 231v6M122 240q8 6 16 0"/>'
+         '<g class="tb-eyes"><circle class="tb-eye" cx="112" cy="206" r="4.6"/><circle class="tb-eye" cx="148" cy="206" r="4.6"/>'
+         '<circle cx="113.6" cy="204.4" r="1.4" fill="#fff"/><circle cx="149.6" cy="204.4" r="1.4" fill="#fff"/></g>'
+         '<circle class="tb-cheek" cx="104" cy="226" r="7"/><circle class="tb-cheek" cx="156" cy="226" r="7"/>'
+         '<ellipse class="tb-fur tb-paw" cx="86" cy="270" rx="19" ry="12"/><ellipse class="tb-fur tb-paw" cx="178" cy="268" rx="19" ry="12"/>'
+         '<path class="tb-line" d="M78 267v5M86 266v6M94 267v5M170 265v5M178 264v6M186 265v5"/></g></svg>')
+
+CLOUD = '<svg viewBox="0 0 120 60" aria-hidden="true"><path d="M22 52h76a20 20 0 0 0 0-40 26 26 0 0 0-48-6 18 18 0 0 0-28 20 13 13 0 0 0 0 26Z"/></svg>'
+
+
+def clouds(count: int = 4, seed: int = 81) -> str:
+    rnd = _rng(seed)
+    return '<div class="tb-clouds" aria-hidden="true">' + "".join(
+        f'<i style="--y:{8 + rnd() * 60:.0f}%;--w:{90 + rnd() * 90:.0f}px;--d:{38 + rnd() * 30:.0f}s;--dl:{-rnd() * 40:.0f}s">{CLOUD}</i>'
+        for _ in range(count)) + "</div>"
+
+
+# --- reveal: a question balloon that pops into pink and blue confetti ---------------------------------
+QBALLOON = """<svg class="qballoon" viewBox="0 0 160 230" aria-hidden="true" focusable="false"><defs>
+<radialGradient id="qb-g" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#5A5A66"/><stop offset=".45" stop-color="#1D1D24"/><stop offset="1" stop-color="#050507"/></radialGradient>
+<linearGradient id="qb-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE7A8"/><stop offset=".5" stop-color="#E0B54E"/><stop offset="1" stop-color="#A97C21"/></linearGradient></defs>
+<path class="qb-str" d="M80 160c-6 18 8 30 0 48s6 18 2 22"/>
+<ellipse cx="80" cy="82" rx="64" ry="74" fill="url(#qb-g)"/><path d="M74 160h12l-6-8Z" fill="#111"/>
+<ellipse cx="54" cy="48" rx="12" ry="22" fill="#fff" opacity=".18" transform="rotate(-24 54 48)"/>
+<text x="80" y="112" text-anchor="middle" class="qb-q" fill="url(#qb-gold)">?</text></svg>"""
+
+
+def pastel_balloon(cls: str) -> str:
+    return (f'<svg class="pb {cls}" viewBox="0 0 80 150" aria-hidden="true" focusable="false"><path class="pb-str" d="M40 86c-5 14 6 24 0 38s5 16 2 24"/>'
+            f'<ellipse class="pb-body" cx="40" cy="42" rx="34" ry="40"/><path class="pb-body" d="M35 86l5-6 5 6Z"/>'
+            f'<ellipse cx="28" cy="26" rx="7" ry="12" fill="#fff" opacity=".4" transform="rotate(-22 28 26)"/></svg>')
+
+
+def burst(count: int = 30, seed: int = 91) -> str:
+    """Confetti flying out from where the balloon popped, then drifting down."""
+    rnd = _rng(seed)
+    out = []
+    for k in range(count):
+        a = 2 * math.pi * k / count + rnd() * .3
+        dist = 90 + rnd() * 160
+        out.append(f'<i class="rv-c{k % 3}" style="--dx:{math.cos(a) * dist:.0f}px;--dy:{math.sin(a) * dist * .8 - 40:.0f}px;'
+                   f'--r:{rnd() * 720:.0f}deg;--dl:{rnd() * .15:.2f}s"></i>')
+    return f'<div class="rv-burst" aria-hidden="true">{"".join(out)}</div>'
+
+
+# --- memorial: a candle and white lilies -------------------------------------------------------------
+CANDLE = """<svg class="candle" viewBox="0 0 80 190" aria-hidden="true" focusable="false"><defs>
+<radialGradient id="cd-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFE6A8" stop-opacity=".85"/><stop offset=".4" stop-color="#FFD27A" stop-opacity=".28"/><stop offset="1" stop-color="#FFD27A" stop-opacity="0"/></radialGradient>
+<linearGradient id="cd-flame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF6D6"/><stop offset=".45" stop-color="#FFC94D"/><stop offset="1" stop-color="#F08A24"/></linearGradient>
+<linearGradient id="cd-wax" x1="0" x2="1"><stop offset="0" stop-color="#EDE6D8"/><stop offset=".45" stop-color="#FFFDF7"/><stop offset="1" stop-color="#DCD3C2"/></linearGradient></defs>
+<circle class="cd-glow" cx="40" cy="44" r="40" fill="url(#cd-glow)"/>
+<g class="cd-flame"><path d="M40 18c8 12 12 20 12 28a12 12 0 0 1-24 0c0-8 4-16 12-28Z" fill="url(#cd-flame)"/><path d="M40 40c3 4 4 7 4 10a4 4 0 0 1-8 0c0-3 1-6 4-10Z" fill="#7FB5FF" opacity=".55"/></g>
+<path d="M40 56v10" stroke="#3A2C22" stroke-width="2" stroke-linecap="round"/>
+<path d="M24 70c0-4 4-6 8-5 3 1 5 6 8 6s5-5 8-6c4-1 8 1 8 5v96H24Z" fill="url(#cd-wax)"/><path d="M48 66c2 6 1 14 3 18" stroke="#E2DACB" stroke-width="3" stroke-linecap="round" fill="none"/>
+<path d="M12 168h56l-4 10H16Z" class="cd-holder"/><ellipse cx="40" cy="168" rx="28" ry="4" class="cd-holder"/></svg>"""
+
+
+def _lily(cx, cy, s, rot):
+    petals = "".join(f'<path class="ly-petal" d="M0 0C-7 -12 -6 -34 0 -46C6 -34 7 -12 0 0Z" transform="rotate({a})"/>' for a in range(0, 360, 60))
+    stamens = "".join(f'<path class="ly-stamen" d="M0 0l{14 * math.cos(math.radians(a)):.1f} {14 * math.sin(math.radians(a)):.1f}"/>'
+                      f'<ellipse class="ly-anther" cx="{15 * math.cos(math.radians(a)):.1f}" cy="{15 * math.sin(math.radians(a)):.1f}" rx="2.6" ry="1.4" transform="rotate({a} {15 * math.cos(math.radians(a)):.1f} {15 * math.sin(math.radians(a)):.1f})"/>'
+                      for a in range(-150, 30, 36))
+    return f'<g transform="translate({cx} {cy}) rotate({rot}) scale({s})">{petals}<circle class="ly-heart" r="5"/>{stamens}</g>'
+
+
+LILIES = ('<svg class="lilies" viewBox="0 0 200 160" aria-hidden="true" focusable="false">'
+          '<path class="ly-stem" d="M100 160C96 120 70 96 52 70M100 160c2-36 16-62 40-84M100 160c0-30-2-56-6-80"/>'
+          '<path class="ly-leaf" d="M100 150c-20-6-40-22-46-44 18 6 36 22 46 44Z"/><path class="ly-leaf" d="M102 146c16-10 30-28 32-48-14 10-28 26-32 48Z"/>'
+          + _lily(52, 66, .82, -30) + _lily(142, 74, .74, 34) + _lily(94, 52, .9, 4)
+          + '<path class="ly-bud" d="M126 34c6-10 14-14 18-12-2 6-10 12-18 12Z"/></svg>')
+
+
+LILIES_L = LILIES.replace('class="lilies"', 'class="lilies lilies--l"', 1)
+LILIES_R = LILIES.replace('class="lilies"', 'class="lilies lilies--r"', 1)
+
+
+def life_years(ctx) -> str:
+    m = re.search(r"(1[89]\d\d|20\d\d)\s*[–—-]\s*(1[89]\d\d|20\d\d)", f'{ctx["title"]} {ctx["description"]}')
+    return f"{m.group(1)} – {m.group(2)}" if m else ""
 
 
 # --- shared invitation pieces -------------------------------------------------------------------------
@@ -651,15 +760,84 @@ def festive(ctx) -> str:
 
 
 def cheers(ctx) -> str:
-    """Cheers: retro stripes, a hand-drawn champagne toast with rising bubbles."""
+    """Cheers: a champagne bottle pops, bubbles fizz up and gold confetti falls around a golden ticket."""
     secs = D.collect(ctx)
-    hero = (f'<header class="cs-hero" id="welcome"><div class="cs-panel">{COUPES}'
-            f'{D.greeting(ctx)}<p class="cs-kicker">{esc(ctx["wording"]["welcome"])}</p>'
-            f'<h1 class="cs-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "cs-date")}{where(ctx, "cs-where")}'
-            f'{actions(ctx, "Count me in")}{reply_by(ctx)}</div></header>')
-    divider = '<div class="cs-div" aria-hidden="true"><svg viewBox="0 0 120 16"><path d="M4 8c8-8 16 8 24 0s16 8 24 0 16 8 24 0 16 8 24 0 16 8 16 0"/></svg></div>'
-    return hero + D.nav(ctx, secs, "ev-nav iv-nav cs-nav") + photo(ctx, "cs-photo") + f'<div class="cs-body">{body(ctx, secs, "cs-sec", divider)}</div>'
+    dp = D.date_parts(ctx)
+    stub = (f'<div class="cs-stub" aria-hidden="true"><span class="cs-admit">Admit one</span>'
+            f'<b>{esc(dp["day"] or "")}</b><span>{esc(dp["mon"])}</span><span>{esc(dp["year"])}</span></div>') if dp["day"] else ""
+    hero = (f'<header class="cs-hero" id="welcome">{confetti()}<div class="cs-stage">'
+            f'<div class="cs-bottlewrap" aria-hidden="true">{BOTTLE}{fizz()}</div>'
+            f'<article class="cs-ticket" aria-labelledby="cs-names"><div class="cs-main">{D.greeting(ctx)}'
+            f'<p class="cs-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="cs-names" id="cs-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "cs-date")}{where(ctx, "cs-where")}'
+            f'{actions(ctx, "Count me in")}{reply_by(ctx)}</div>{stub}</article></div></header>')
+    divider = '<div class="cs-div" aria-hidden="true"><i></i><i></i><i></i></div>'
+    from .render import luminance
+    light = " cs-light" if luminance(ctx["theme"]["colors"]["bg"]) > .4 else ""
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav cs-nav") + photo(ctx, "cs-photo") + f'<div class="cs-body{light}">{body(ctx, secs, "cs-sec", divider)}</div>'
+
+
+def teddy(ctx) -> str:
+    """Teddy: a teddy bear peeks over the card holding balloons, under drifting clouds."""
+    secs = D.collect(ctx)
+    tag = '<p class="tb-tag">We can bearly wait!</p>' if ctx["group"] == "baby" else ""
+    hero = (f'<header class="tb-hero" id="welcome">{clouds()}<div class="tb-stage">'
+            f'<article class="tb-card" aria-labelledby="tb-names">{TEDDY}{tag}{D.greeting(ctx)}'
+            f'<p class="tb-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="tb-names" id="tb-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "tb-date")}{where(ctx, "tb-where")}'
+            f'{actions(ctx, "RSVP")}{reply_by(ctx)}</article></div></header>')
+    divider = '<div class="tb-div" aria-hidden="true"><i></i><i></i><i></i></div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav tb-nav") + photo(ctx, "tb-photo") + f'<div class="tb-body">{body(ctx, secs, "tb-sec", divider)}</div>'
+
+
+def reveal(ctx) -> str:
+    """Reveal: a question balloon pops into pink and blue confetti; pink and blue balloons bob either side."""
+    secs = D.collect(ctx)
+    hero = (f'<header class="rv-hero" id="welcome"><div class="rv-pop" aria-hidden="true">{QBALLOON}{burst()}</div>'
+            f'<div class="rv-stage">{pastel_balloon("pb--pink")}'
+            f'<article class="rv-card" aria-labelledby="rv-names">{D.greeting(ctx)}<p class="rv-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="rv-names" id="rv-names">{D.names_html(ctx, "&amp;")}</h1>'
+            f'<p class="rv-teams" aria-hidden="true"><span class="rv-team rv-team--pink">Team pink</span><span class="rv-or">or</span>'
+            f'<span class="rv-team rv-team--blue">Team blue</span></p>'
+            f'{date_row(ctx, "rv-date")}{where(ctx, "rv-where")}{actions(ctx, "RSVP")}{reply_by(ctx)}</article>'
+            f'{pastel_balloon("pb--blue")}</div></header>')
+    divider = '<div class="rv-div" aria-hidden="true"><i></i><i></i></div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav rv-nav") + photo(ctx, "rv-photo") + f'<div class="rv-body">{body(ctx, secs, "rv-sec", divider)}</div>'
+
+
+MEMORIAL_TITLES = {"invitation": "In loving memory", "venue": "The service", "programme": "Order of service",
+                   "rsvp": "Let the family know", "registry": "In lieu of flowers", "gallery": "Memories",
+                   "contact": "Family contacts", "dress_code": "Dress", "menu": "Refreshments", "seating": "Your seat"}
+MEMORIAL_NAV = {"invitation": "Memory", "venue": "Service", "programme": "Order of service", "rsvp": "RSVP",
+                "registry": "Donations", "gallery": "Memories", "contact": "Family", "menu": "Refreshments"}
+
+
+def memorial(ctx) -> str:
+    """Memorial: calm and respectful, with a candle that gently flickers and white lilies."""
+    secs = [(k, h) for k, h in D.collect(ctx) if k != "countdown"]
+    years = life_years(ctx)
+    portrait = (f'<div class="mm-portrait">{D.hero_image(ctx, "ev-photo mm-photo")}</div>' if ctx["hero"]
+                else f'<div class="mm-portrait mm-portrait--candle" aria-hidden="true">{CANDLE}</div>')
+    name = ctx["hosts"]
+    hero = (f'<header class="mm-hero" id="welcome"><div class="mm-stage">'
+            f'<div class="mm-frame">{LILIES_L}{portrait}{LILIES_R}</div>'
+            f'{D.greeting(ctx)}<p class="mm-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="mm-name">{esc(name)}</h1>{f"<p class=mm-years>{esc(years)}</p>" if years else ""}'
+            f'<div class="mm-rule" aria-hidden="true"><i></i></div>{date_row(ctx, "mm-date")}{where(ctx, "mm-where")}'
+            f'{actions(ctx, "Let the family know")}{reply_by(ctx)}</div></header>')
+    out = []
+    for k, html in secs:
+        out.append(D.section(k, html, title=MEMORIAL_TITLES.get(k, ""), cls="iv-sec mm-sec rv"))
+    nav = D.nav(ctx, secs, "ev-nav iv-nav mm-nav")
+    for k, label in MEMORIAL_NAV.items():
+        nav = nav.replace(f'href="#{k}">{esc(D.NAV_LABELS[k])}<', f'href="#{k}">{esc(label)}<')
+    return hero + nav + f'<div class="mm-body">{"".join(out)}</div>'
 
 
 LAYOUTS = {"nguni": nguni, "terracotta": terracotta, "ribbon": ribbon, "weave": weave, "glitter": glitter,
-           "matcha": matcha, "festive": festive, "cheers": cheers}
+           "matcha": matcha, "festive": festive, "cheers": cheers, "teddy": teddy, "reveal": reveal, "memorial": memorial}
+
+# Heritage, the traditional wedding in an edition for each culture, lives in cultures.py.
+from .cultures import heritage as _heritage  # noqa: E402
+
+LAYOUTS["heritage"] = _heritage

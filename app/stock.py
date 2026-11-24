@@ -22,8 +22,8 @@ SLOTS = {
 
 # Each template can also have its own main photo, static/img/stock/tpl-<template>.jpg (e.g. tpl-heritage.jpg),
 # shown in that template's samples instead of the occasion photo.
-TEMPLATES = ("nguni", "terracotta", "ribbon", "weave", "glitter", "matcha", "festive", "cheers", "heritage",
-             "atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+TEMPLATES = ("festive", "matcha", "heritage", "nguni", "terracotta", "ribbon", "weave", "teddy", "reveal", "glitter",
+             "cheers", "memorial", "atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
 
 CREDITS: dict = {}   # slot -> "Photographer, source link, licence" (or the AI tool used)
 

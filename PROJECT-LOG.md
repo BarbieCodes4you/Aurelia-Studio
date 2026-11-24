@@ -3,6 +3,43 @@
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
+## 2026-11-24 (later): cultural editions, funeral, baby shower and gender reveal
+
+**Changes**
+- Heritage rebuilt after the owner's feedback that the cultural styles were basic: each of the seven
+  cultures now has its own invitation, a gatefold whose doors (in that culture's pattern) open on a
+  beaded medallion. Inside, the card carries the same pattern, an emblem from the culture's wedding dress
+  and, where a source confirmed it, the culture's own word for the wedding. Researched for each culture
+  (sources in `app/eventsite/cultures.py`):
+  - Ndebele: painted geometry, isigolwani hoops. No source confirmed the word, so it shows none.
+  - Zulu: beadwork diamonds, the isicholo; Umabo.
+  - Xhosa: umbhaco with black braid, a beaded collar; Umtshato.
+  - Pedi: turquoise, pink and yellow ribbons; Lenyalo.
+  - Venda: minwenda stripes, the ngoma drum; Mbingano.
+  - Tsonga: the xibelani, which sways; Vukati.
+  - Swati: red emahiya, the shield; Umtsimba.
+- Order: the catalogue and home page lead with Festive, Pilates and matcha (renamed from Matcha) and
+  Heritage. The home page sample of Heritage has a chip for each culture that switches it in place;
+  Heritage's card lists the editions.
+- Home page phone: the lobola invitation now arrives in a sealed Nguni cowhide envelope with a gold
+  "L | S" wax seal that opens on load; the cow on its crest is bigger.
+- New templates: Teddy (a bear peeking over the card with balloons; baby showers and first birthdays),
+  Reveal (a question balloon that pops into pink and blue confetti; gender reveals) and Memorial
+  (candle and lilies; funerals and memorial services).
+- Funerals: a new occasion, "Funeral or memorial service". Its wording is calm throughout: "Celebrating
+  the life of", "I will attend / I can't attend" instead of "Joyfully accepts", no countdown, "Order of
+  service", "In lieu of flowers". Events are named "Funeral service for ...".
+- Cheers redesigned so it no longer looks like Festive: a midnight background, a champagne bottle that
+  pops its cork, fizzing bubbles, falling gold confetti and a golden "Admit one" ticket.
+- `migrations/005_names_and_order.sql` renames and reorders the live catalogue once; new templates and
+  the funeral occasion are added on start.
+
+**Checked**
+- 126 tests pass, including the funeral wording, each culture's pattern, emblem and word, and the
+  upgrade of an existing catalogue.
+- Screenshots of every new design and every cultural edition on desktop and phone, and the home page
+  envelope frame by frame.
+
 ## 2026-11-24: animated invitation templates replace the basic ones
 
 **Changes**

@@ -68,6 +68,17 @@ WORDING = {
          "invitation": "Join {hosts} for the moment we find out if it's a boy or a girl.",
          "rsvp_note": "Please reply by {deadline}.", "closing": "Bring your best guess."},
     ],
+    "funeral": [
+        {"label": "Celebrating a life", "welcome": "Celebrating the life of",
+         "invitation": "With love and gratitude, the family invites you to celebrate the life of {hosts}.",
+         "rsvp_note": "Please let the family know by {deadline} if you will attend, so they can prepare.", "closing": "Forever in our hearts."},
+        {"label": "Funeral service", "welcome": "In loving memory",
+         "invitation": "The family of the late {hosts} invites you to the funeral service.",
+         "rsvp_note": "Kindly let us know by {deadline} if you will attend.", "closing": "Thank you for your love and support."},
+        {"label": "Memorial service", "welcome": "A life well lived",
+         "invitation": "Join us as we remember {hosts} and give thanks for a life well lived.",
+         "rsvp_note": "Please reply by {deadline}.", "closing": "Rest in peace."},
+    ],
     "welcome-baby": [
         {"label": "Meet the baby", "welcome": "Meet our little one",
          "invitation": "{hosts} would love you to come and meet the newest member of the family.",
@@ -162,6 +173,9 @@ PROGRAMMES = {
     "corporate": [(0, "Registration and coffee", "other", ""), (30, "Welcome and opening", "speech", ""), (45, "Keynote", "speech", ""),
                   (105, "Break", "meal", ""), (120, "Panel discussion", "speech", ""), (180, "Lunch", "meal", ""),
                   (240, "Workshops", "activity", ""), (330, "Closing remarks", "speech", ""), (345, "Networking drinks", "reception", "")],
+    "funeral": [(0, "Gathering", "other", ""), (20, "Welcome", "ceremony", ""), (30, "Tributes", "speech", ""),
+                (60, "Eulogy", "speech", ""), (80, "Vote of thanks", "speech", ""), (90, "Procession", "other", ""),
+                (150, "Refreshments", "meal", "")],
     "family-celebration": [(0, "Arrival", "other", ""), (30, "Welcome and prayer", "ceremony", ""), (60, "Main programme", "ceremony", ""),
                            (120, "Meal", "meal", ""), (180, "Family photo", "activity", ""), (210, "Thanks and closing", "speech", "")],
 }
@@ -178,6 +192,8 @@ NAME_NOUN = {"white-wedding": "wedding", "traditional-wedding": "wedding", "mult
 
 def auto_event_name(category: str, hosts: str) -> str:
     hosts = (hosts or "").strip()
+    if category == "funeral" and hosts:
+        return f"Funeral service for {hosts}"
     noun = NAME_NOUN.get(category)
     if not hosts or not noun:
         return hosts

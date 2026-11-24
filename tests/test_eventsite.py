@@ -86,7 +86,10 @@ class InvitationCollectionTests(unittest.TestCase):
 
     def test_catalogue_offers_the_invitation_collection_only(self):
         offered = [t["slug"] for t in catalog.templates()]
-        self.assertEqual(offered[:3], ["nguni", "terracotta", "ribbon"])                  # weddings first
+        self.assertEqual(offered[:3], ["festive", "matcha", "heritage"])                  # the three the owner chose
+        self.assertEqual(catalog.template("matcha")["name"], "Pilates and matcha")
+        for slug in ("teddy", "reveal", "memorial"):
+            self.assertIn(slug, offered)
         self.assertIn("heritage", offered)
         for slug in catalog.RETIRED:
             self.assertNotIn(slug, offered)
@@ -94,23 +97,29 @@ class InvitationCollectionTests(unittest.TestCase):
         c = Client(self.app)
         self.assertEqual(c.get("/templates/bloom/preview").status, 404)
         home = c.get("/").text
-        for slug in ("nguni", "ribbon", "glitter"):
+        for slug in ("festive", "matcha", "heritage"):
             self.assertIn(f"/templates/{slug}/preview", home)
         self.assertNotIn("/templates/champagne/preview", home)
+        self.assertIn('class="phone-env"', home)                       # the phone's invitation arrives in an envelope
+        self.assertIn("cow-horn", home)                                # with the Nguni cow on its crest
+        for key in ("ndebele", "zulu", "xhosa", "pedi", "venda", "tsonga", "swati"):
+            self.assertIn(f'data-culture="{key}"', home)              # each cultural edition one tap away
 
     def test_each_design_opens_like_an_invitation(self):
         c = Client(self.app)
         marks = {"nguni": ("env-flap", "nv-hide", "seal"), "weave": ("env-flap", "wv-cloth", "seal"),
                  "terracotta": ('class="crest"', "tc-beads", 'data-countdown'), "ribbon": ("ribbon-frame", "rb-bow"),
                  "glitter": ("gl-balloons", "disco"), "matcha": ("mt-awning", "matcha", "pball"),
-                 "festive": ("fs-arch", "snow", "tree"), "cheers": ("coupes", "cs-bub")}
+                 "festive": ("fs-arch", "snow", "tree"), "cheers": ("bottle", "cs-ticket", "cs-confetti", "Admit one"),
+                 "teddy": ("teddy", "tb-bunch", "tb-clouds"), "reveal": ("qballoon", "rv-burst", "Team pink"),
+                 "memorial": ("candle", "lilies", "mm-name"), "heritage": ("cu-door", "cu-medal", "cu-band")}
         for slug, needles in marks.items():
-            r = c.get(f"/templates/{slug}/preview?group=parties")
+            r = c.get(f"/templates/{slug}/preview")
             self.assertEqual(r.status, 200, slug)
             self.assertIn("/static/css/invites.css", r.text, slug)
             for n in needles:
                 self.assertIn(n, r.text, (slug, n))
-        self.assertNotIn("invites.css", c.get("/templates/heritage/preview").text)        # only where it's used
+        self.assertNotIn("invites.css", render(make_event(self.owner, template="atelier", paid=""), "preview"))   # only where used
 
     def test_glitter_balloons_spell_the_age(self):
         from app.eventsite import invites
@@ -144,6 +153,26 @@ class InvitationCollectionTests(unittest.TestCase):
             i += 1
         self.assertEqual(outside, [])
 
+    def test_funeral_service_is_worded_with_care(self):
+        from app import suggestions
+        self.assertEqual(suggestions.auto_event_name("funeral", "Grace Dlamini"), "Funeral service for Grace Dlamini")
+        self.assertIn("funeral", [c["slug"] for c in catalog.categories()])
+        ev = demo_event("memorial", "other")
+        html = render(ev, "demo")
+        self.assertIn("Celebrating the life of", html)
+        self.assertIn("1948 – 2026", html)
+        self.assertIn("I will attend", html)
+        self.assertIn("Order of service", html)
+        for word in ("Joyfully accepts", "Regretfully declines", "can't wait", 'id="countdown"', "You're invited"):
+            self.assertNotIn(word, html)
+
+    def test_gender_reveal_and_baby_shower(self):
+        html = render(demo_event("reveal", "baby"), "demo")
+        self.assertIn("Boy or girl?", html)
+        self.assertIn("Team blue", html)
+        self.assertIn("We can bearly wait!", render(demo_event("teddy", "baby"), "demo"))
+        self.assertNotIn("We can bearly wait!", render(demo_event("teddy", "parties"), "demo"))
+
     def test_existing_events_keep_a_retired_design(self):
         ev = make_event(self.owner, template="atelier", paid="")
         c = Client(self.app)
@@ -159,6 +188,27 @@ class InvitationCollectionTests(unittest.TestCase):
         self.assertEqual(events.by_id(ev["id"])["template"], "atelier")
 
 
+class CatalogueUpgradeTests(unittest.TestCase):
+    def test_an_existing_catalogue_is_renamed_and_reordered_once(self):
+        fresh_app("eventsite-upgrade")
+        db.run("UPDATE templates SET name = 'Matcha', sort = 5 WHERE slug = 'matcha'")
+        db.run("UPDATE templates SET sort = 0 WHERE slug = 'nguni'")
+        db.run("DELETE FROM templates WHERE slug IN ('teddy', 'reveal', 'memorial')")
+        db.run("DELETE FROM categories WHERE slug = 'funeral'")
+        db.run("DELETE FROM schema_migrations WHERE name = '005_names_and_order.sql'")
+        self.assertIn("005_names_and_order.sql", db.migrate())
+        catalog.ensure_catalog()
+        offered = [t["slug"] for t in catalog.templates()]
+        self.assertEqual(offered[:3], ["festive", "matcha", "heritage"])
+        self.assertEqual(catalog.template("matcha")["name"], "Pilates and matcha")
+        self.assertTrue({"teddy", "reveal", "memorial"} <= set(offered))
+        self.assertIsNotNone(catalog.category("funeral"))
+        db.run("UPDATE templates SET name = 'Matcha mornings' WHERE slug = 'matcha'")     # the admin's own name stays
+        self.assertEqual(db.migrate(), [])
+        catalog.ensure_catalog()
+        self.assertEqual(catalog.template("matcha")["name"], "Matcha mornings")
+
+
 class CulturalStyleTests(unittest.TestCase):
     """Heritage can be styled Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati."""
 
@@ -167,18 +217,27 @@ class CulturalStyleTests(unittest.TestCase):
         cls.app = fresh_app("eventsite-cultures")
 
     def test_each_culture_renders_its_own_pattern_and_colours(self):
-        from app.eventsite import themes
+        from app.eventsite import cultures, themes
         self.assertEqual(set(themes.CULTURES), {"ndebele", "zulu", "xhosa", "pedi", "venda", "tsonga", "swati"})
         for key, (name, _, palette, motif) in themes.CULTURES.items():
             ev = demo_event("heritage", "weddings")
             ev["design"] = {"palette": key}
             html = render(ev, "demo")
             self.assertIn(f"cult-{key}", html)
-            self.assertIn(f'id="bd-{key}-hr-top"', html)
+            self.assertIn(f"cu-emblem--{key}", html)                     # the culture's own emblem
+            self.assertIn('id="cu-band"', html)                          # and its own pattern
             self.assertIn(f"--m1:{motif[0]}", html)
             self.assertIn(f"--ev-accent:{palette['accent']}", html)
+            word, line = cultures.WORDS[key]
+            self.assertIn(line, html)
+            if word:
+                self.assertIn(f">{word}<", html)
+        self.assertEqual(cultures.WORDS["ndebele"][0], "")               # no source confirmed the word, so none is shown
+        patterns = {cultures.MAKERS[k]()[0] for k in themes.CULTURES}
+        self.assertEqual(len(patterns), 7)                               # seven different patterns
         classic = render(demo_event("heritage", "weddings"), "demo")
         self.assertNotIn("cult-", classic)
+        self.assertIn("cu-emblem--classic", classic)
 
     def test_template_page_previews_a_culture_and_carries_it_to_create(self):
         c = Client(self.app)

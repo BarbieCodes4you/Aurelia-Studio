@@ -212,12 +212,38 @@ DESIGNS.update({
             ("frost", "Frosted blue", {"bg": "#F2F6FA", "surface": "#FFFFFF", "text": "#172A40", "muted": "#56677C", "accent": "#2F5D8C", "accent2": "#B8C4D3"}),
         ]},
     "cheers": {
-        "font_pair": "dmserif-dm", "fonts": ["dmserif-dm", "playfair-lato", "gloock-dm", "bodoni-inter"],
-        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Caveat",
+        "font_pair": "dmserif-dm", "fonts": ["dmserif-dm", "playfair-lato", "bodoni-inter", "italiana-montserrat"],
+        "backgrounds": ["plain", "pattern", "image"], "background": "plain", "extra": "Great Vibes",
         "palettes": [
-            ("retro-red", "Retro red", {"bg": "#FBF1E4", "surface": "#FFF9F0", "text": "#4A0F1A", "muted": "#7A4B50", "accent": "#C8323E", "accent2": "#E9C46A"}),
-            ("burgundy", "Burgundy night", {"bg": "#2E0A12", "surface": "#3E111B", "text": "#F8EBDD", "muted": "#C9AFA6", "accent": "#E9C46A", "accent2": "#E8A0A0"}),
-            ("olive", "Olive toast", {"bg": "#F4F0E3", "surface": "#FFFCF3", "text": "#2F3320", "muted": "#61644E", "accent": "#6B7A3A", "accent2": "#E2C98F"}),
+            ("midnight", "Midnight and gold", {"bg": "#0B1020", "surface": "#151C33", "text": "#F6F1E6", "muted": "#A9AFBF", "accent": "#E2C47A", "accent2": "#F4E3B8"}),
+            ("burgundy", "Burgundy and champagne", {"bg": "#2A0710", "surface": "#3A0E19", "text": "#F8EBDD", "muted": "#CDB3AA", "accent": "#E9C46A", "accent2": "#F5DFC0"}),
+            ("emerald", "Emerald and gold", {"bg": "#071A14", "surface": "#0E281F", "text": "#F1EEE4", "muted": "#A8B5AC", "accent": "#D8BD74", "accent2": "#EAD9A8"}),
+            ("champagne", "Champagne", {"bg": "#F6EEE0", "surface": "#FFFBF3", "text": "#2A2118", "muted": "#6A5D4C", "accent": "#B8913F", "accent2": "#EADCC0"}),
+        ]},
+    "teddy": {
+        "font_pair": "fraunces-dm", "fonts": ["fraunces-dm", "fredoka-nunito", "gloock-dm", "playfair-lato"],
+        "backgrounds": ["plain", "paper", "image"], "background": "plain", "extra": "Caveat",
+        "palettes": [
+            ("sage", "Sage and cream", {"bg": "#F1F3EA", "surface": "#FFFDF7", "text": "#2E3A2C", "muted": "#5F6A5B", "accent": "#7F9670", "accent2": "#E6D3B6"}),
+            ("baby-blue", "Baby blue", {"bg": "#EDF4FB", "surface": "#FFFFFF", "text": "#1F3047", "muted": "#566579", "accent": "#7FA7D4", "accent2": "#F1E2C6"}),
+            ("blush", "Blush", {"bg": "#FBF0F1", "surface": "#FFFFFF", "text": "#4A2A31", "muted": "#7E5F66", "accent": "#E39AAE", "accent2": "#F2E0C7"}),
+        ]},
+    "reveal": {
+        "font_pair": "fredoka-nunito", "fonts": ["fredoka-nunito", "fraunces-dm", "outfit", "gloock-dm"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern",
+        "palettes": [
+            ("pink-blue", "Pink and blue", {"bg": "#FFF8F9", "surface": "#FFFFFF", "text": "#2B2A3A", "muted": "#64617A", "accent": "#EE7FA6", "accent2": "#6FAEE6"}),
+            ("pastel", "Soft pastels", {"bg": "#FCFAF7", "surface": "#FFFFFF", "text": "#2E2B36", "muted": "#67637A", "accent": "#F2A9C2", "accent2": "#9FC9EE"}),
+            ("bows-bowties", "Bows or bowties", {"bg": "#F7F5F2", "surface": "#FFFFFF", "text": "#1E2A40", "muted": "#5A6477", "accent": "#E58AA6", "accent2": "#2D4B7A"}),
+        ]},
+    "memorial": {
+        "font_pair": "garamond-franklin", "fonts": ["garamond-franklin", "cormorant-jost", "playfair-lato", "cinzel-marcellus"],
+        "backgrounds": ["plain", "paper", "image"], "background": "paper", "extra": "Pinyon Script",
+        "palettes": [
+            ("ivory", "Ivory and lily", {"bg": "#F7F4EE", "surface": "#FFFFFF", "text": "#1F2530", "muted": "#5B6270", "accent": "#8A7350", "accent2": "#DDE3E8"}),
+            ("midnight", "Midnight", {"bg": "#12161D", "surface": "#1B212B", "text": "#EEF0F3", "muted": "#A9B0BC", "accent": "#CDB27C", "accent2": "#2A3240"}),
+            ("lavender", "Lavender", {"bg": "#F5F3F8", "surface": "#FFFFFF", "text": "#2A2238", "muted": "#5E5670", "accent": "#6E5A8C", "accent2": "#E3DDEE"}),
+            ("sage", "Sage", {"bg": "#F1F3EE", "surface": "#FFFFFF", "text": "#1F2A22", "muted": "#566158", "accent": "#5E7052", "accent2": "#DCE3D6"}),
         ]},
 })
 
@@ -227,30 +253,31 @@ DESIGNS.update({
 # beadwork borders, which also take the culture's own pattern (designs.MOTIFS). They are chosen like
 # any other palette, so saving, the live preview and custom colours work unchanged.
 CULTURES = {
-    "ndebele": ("Ndebele", "Bold painted geometry in primary colours, outlined in black",
+    "ndebele": ("Ndebele", "Painted geometry in bold colour outlined in black, and beaded isigolwani hoops",
                 {"bg": "#FBFAF6", "surface": "#FFFFFF", "text": "#141414", "muted": "#555555", "accent": "#D62828", "accent2": "#1D3E8A"},
                 ("#D62828", "#F2B705", "#1D5FB8", "#2E8B57", "#111111", "#FFFFFF")),
-    "zulu": ("Zulu", "Beadwork triangles in red, blue, black and yellow",
+    "zulu": ("Zulu", "Beadwork diamonds and the isicholo, the wide hat of a married woman",
              {"bg": "#F8F5EE", "surface": "#FFFFFF", "text": "#1A1A1A", "muted": "#5E5A55", "accent": "#C1272D", "accent2": "#1B3F8B"},
              ("#C1272D", "#F2C200", "#1B3F8B", "#2F8F46", "#151515", "#FFFFFF")),
-    "xhosa": ("Xhosa", "Umbhaco cream and ochre with black braid bands",
+    "xhosa": ("Xhosa", "Umbhaco cloth edged in black braid, with white, turquoise and orange beads",
               {"bg": "#F7F1E6", "surface": "#FFFDF8", "text": "#161616", "muted": "#5D564D", "accent": "#B8541E", "accent2": "#111111"},
-              ("#C8642A", "#E9D8B6", "#1FA6A0", "#B23A2E", "#111111", "#FFFFFF")),
-    "pedi": ("Pedi", "Bright stripes in pink, yellow, blue and purple",
-             {"bg": "#FBF6F4", "surface": "#FFFFFF", "text": "#24132B", "muted": "#67586B", "accent": "#D6337A", "accent2": "#2A3F96"},
-             ("#E0338A", "#F5B700", "#2D4FB0", "#2E9E5B", "#6B2FA0", "#FFFFFF")),
-    "venda": ("Venda", "Minwenda stripes and zigzags on deep navy",
+              ("#C8642A", "#EFE3C8", "#1FA6A0", "#B23A2E", "#111111", "#FFFFFF")),
+    "pedi": ("Pedi", "Turquoise, bright pink and yellow, with ribbon trims",
+             {"bg": "#FBF6F4", "surface": "#FFFFFF", "text": "#24132B", "muted": "#67586B", "accent": "#D6337A", "accent2": "#0E8A90"},
+             ("#E0338A", "#F5B700", "#19A9B0", "#2D4FB0", "#1B2A4A", "#FFFFFF")),
+    "venda": ("Venda", "Minwenda stripes of red, yellow, green and blue between bold black lines, and the ngoma drum",
               {"bg": "#FAF7F0", "surface": "#FFFFFF", "text": "#121212", "muted": "#5A5650", "accent": "#C8102E", "accent2": "#12284C"},
-              ("#D7262E", "#F4C20D", "#2457C5", "#229A4C", "#12284C", "#FFFFFF")),
-    "tsonga": ("Tsonga", "Xibelani colour with a beaded fringe",
-               {"bg": "#FFF8F0", "surface": "#FFFFFF", "text": "#2A1810", "muted": "#6E5A4E", "accent": "#E8590C", "accent2": "#1C5D99"},
-               ("#F26B1D", "#F7C531", "#1C5D99", "#2FA36B", "#D7263D", "#F06EAA")),
-    "swati": ("Swati", "Emahiya red with black and white shields",
+              ("#D7262E", "#F4C20D", "#2457C5", "#229A4C", "#141414", "#FFFFFF")),
+    "tsonga": ("Tsonga", "The xibelani's gathered layers of pink, yellow, purple, blue and green",
+               {"bg": "#FFF8F4", "surface": "#FFFFFF", "text": "#2A1428", "muted": "#6E5A6A", "accent": "#D63384", "accent2": "#6A2C91"},
+               ("#E8478B", "#F7C531", "#1C6FC2", "#2FA36B", "#7A3FA0", "#FFFFFF")),
+    "swati": ("Swati", "Red emahiya printed in white, with the shield and spears",
               {"bg": "#FBF7F2", "surface": "#FFFFFF", "text": "#1B1414", "muted": "#625656", "accent": "#B5232A", "accent2": "#1E1E1E"},
-              ("#C0262D", "#F2C200", "#2B3F8C", "#2E7D46", "#141414", "#FFFFFF")),
+              ("#C0262D", "#F2C200", "#2B5CB0", "#2E7D46", "#141414", "#FFFFFF")),
 }
 DESIGNS["heritage"]["palettes"] = DESIGNS["heritage"]["palettes"] + [(k, v[0], v[2]) for k, v in CULTURES.items()]
 DESIGNS["heritage"]["cultures"] = list(CULTURES)
+DESIGNS["heritage"]["extra"] = "Great Vibes"
 
 
 def culture(design_key: str, palette_key: str) -> str:

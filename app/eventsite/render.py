@@ -35,6 +35,20 @@ GROUP_WORDING = {
               "closing": "We look forward to welcoming you."},
 }
 
+# Occasions whose words differ from their group's (a funeral is in "other events", whose default
+# greeting is "You're invited").
+CATEGORY_WORDING = {
+    "funeral": {"welcome": "Celebrating the life of",
+                "invitation": "With love and gratitude, the family invites you to celebrate the life of {hosts}.",
+                "rsvp_note": "Please let the family know by {deadline} if you will attend, so they can prepare.",
+                "closing": "Forever in our hearts."},
+    "gender-reveal": {"welcome": "Boy or girl?",
+                      "invitation": "{hosts} are finding out, and they want you there when they do.",
+                      "rsvp_note": "Reply by {deadline}, and leave your guess in your message.",
+                      "closing": "Pink or blue, we love you already."},
+}
+SOLEMN = {"funeral"}           # no "joyfully accepts", no countdown
+
 SAST = "+02:00"
 
 
@@ -149,7 +163,7 @@ def build_context(ev, mode: str = "public", guest=None, req=None, notice: str = 
     info = ev.get("info") or {}
     hosts = events.title(ev)
     deadline = fmt_date(gs.get("rsvp_deadline")) if gs.get("rsvp_deadline") else "the date on your invitation"
-    defaults = GROUP_WORDING.get(group, GROUP_WORDING["other"])
+    defaults = dict(GROUP_WORDING.get(group, GROUP_WORDING["other"]), **CATEGORY_WORDING.get(ev.get("category") or "", {}))
     raw_w = design.get("wording") or {}
     wording = {}
     for k, v in defaults.items():
@@ -184,6 +198,7 @@ def build_context(ev, mode: str = "public", guest=None, req=None, notice: str = 
         "csrf": getattr(req, "csrf", "") if req is not None else "",
         "thanks": bool(req is not None and req.arg("rsvp") == "thanks"),
         "path": f"/events/{ev.get('slug', '')}",
+        "solemn": (ev.get("category") or "") in SOLEMN,
     }
     ctx["guest_functions"] = {}
     if guest is not None and not ev.get("_demo"):
