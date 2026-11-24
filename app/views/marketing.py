@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .. import auth, catalog, config, db, stock
+from ..eventsite.invites import CREST
 from ..icons import i
 from ..services import email as mail
 from ..web import HTTPError, esc, redirect, router, url
@@ -133,6 +134,17 @@ def page_hero(title: str, intro: str, crumbs: list, extra: str = "") -> str:
 
 
 # --- home --------------------------------------------------------------------------------------
+# The invitation's crest (the Terracotta template's: a Nguni cow between two shields over crossed spears),
+# with its colours written in because the homepage doesn't load the event-website styles.
+HERO_CREST = (CREST.replace('class="crest"', 'class="invite__emblem"')
+              .replace('class="cow-base"', 'fill="#F7F1E7"').replace('class="cow-a"', 'fill="#6B3F22"')
+              .replace('class="cow-b"', 'fill="#241A14"').replace('class="cow-in"', 'fill="#E3BFA4"')
+              .replace('class="cow-eye"', 'fill="#1E1611"').replace('class="cow-muzzle"', 'fill="#CFA392"')
+              .replace('class="sh-spear" fill="none"', 'fill="none" stroke="#4A2E1C" stroke-width="1.7"')
+              .replace('class="sh-tip"', 'fill="#8A5A2B"')
+              .replace('class="sh-body"', 'fill="#F6E8CF" stroke="#4A2E1C" stroke-width="1.8"')
+              .replace('class="sh-spots"', 'fill="#4A2E1C"').replace('class="sh-stick"', 'stroke="#4A2E1C" stroke-width="1.6"'))
+
 HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 <div class="orbit__ring"></div><div class="orbit__ring orbit__ring--2"></div>
 <svg class="orbit__lines" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -141,11 +153,7 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 <div class="phone"><div class="phone__screen"><div class="phone__notch"></div>
 <div class="invite"><span class="invite__beads"></span>
 <svg class="invite__leaf" viewBox="0 0 60 80"><g fill="#7C8C5A"><path d="M58 2C40 10 30 26 28 46c10-14 22-24 30-44Z"/><path d="M60 22C46 30 40 44 40 60c8-10 16-22 20-38Z" opacity=".75"/></g><path d="M58 2 26 70" stroke="#5E6B42" stroke-width="1" fill="none"/></svg>
-<svg class="invite__emblem" viewBox="0 0 64 56"><g stroke="#4A2E1C" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M8 52 56 4"/><path d="M56 52 8 4"/></g>
-<ellipse cx="56.5" cy="3.5" rx="5" ry="1.9" transform="rotate(-45 56.5 3.5)" fill="#8A5A2B"/><ellipse cx="7.5" cy="3.5" rx="5" ry="1.9" transform="rotate(45 7.5 3.5)" fill="#8A5A2B"/>
-<ellipse cx="32" cy="29" rx="12" ry="21" fill="#F6E8CF" stroke="#4A2E1C" stroke-width="1.8"/>
-<path d="M27 16c3-2 7-1 8 2-1 3-6 4-8 2-1-1-1-3 0-4Zm7 14c3 0 5 3 4 6-3 2-7 1-8-2 0-2 2-4 4-4Zm-10 7c2-1 4 1 4 3-1 2-4 2-5 1-1-1 0-3 1-4Z" fill="#4A2E1C"/>
-<path d="M32 6v46" stroke="#4A2E1C" stroke-width="1.6"/></svg>
+{HERO_CREST}
 <p class="invite__title">Lobola</p><p class="invite__sub">Celebration</p>
 <p class="invite__intro">You are warmly invited to celebrate with our families</p>
 <p class="invite__names">Lerato <span>&amp;</span> Sipho</p>
@@ -172,7 +180,7 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 </div>"""
 
 FEATURES = [
-    ("globe", "A website for your event", "Eleven distinct designs, made for phones first and filled with your details and photos."),
+    ("globe", "A website for your event", "Animated invitation designs, made for phones first and filled with your details and photos."),
     ("check", "RSVPs that count themselves", "Attending, declined and pending at a glance, with plus-ones, children and meal choices."),
     ("users", "Guest list and families", "Import a spreadsheet, group families, mark VIPs and send personal invitation links."),
     ("seat", "Drag-and-drop seating", "Build your floor plan, seat parties at tables, and print the final chart."),
@@ -238,7 +246,7 @@ def healthz(req):
 
 @router.get("/")
 def home(req):
-    featured = ["champagne", "atelier", "heritage", "bloom", "cradle", "confetti"]   # gold-friendly first
+    featured = ["nguni", "ribbon", "weave", "terracotta", "glitter", "matcha"]   # weddings first
     templates = sorted(catalog.templates(), key=lambda t: featured.index(t["slug"]) if t["slug"] in featured else 99)[:6]
     tpl_cards = "".join(template_card(t) for t in templates)
     feats = "".join(f'<div class="feature card" data-reveal><span class="icon-tile">{i(ic)}</span><h3>{esc(t)}</h3><p>{esc(d)}</p></div>'
@@ -266,11 +274,11 @@ def home(req):
 {why_digital()}
 
 <section class="section section--surface"><div class="container">
-{section_head("Finished event websites", "Real layouts, filled with sample content. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
+{section_head("Finished event websites", "Each one opens like a real invitation, then carries on as the full event website. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
 <div class="showcase">
-<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/champagne/preview?group=weddings" width="1280" title="Champagne wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Champagne · a black-tie wedding</figcaption></figure>
-<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/bloom/preview?group=baby" width="390" title="Bloom baby shower sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Bloom · a baby shower</figcaption></figure>
-<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/confetti/preview?group=parties" width="390" title="Confetti party sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Confetti · a first birthday</figcaption></figure>
+<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/nguni/preview?group=weddings" width="1280" title="Nguni traditional wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Nguni · a traditional wedding</figcaption></figure>
+<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/ribbon/preview?group=weddings" width="390" title="Ribbon wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Ribbon · a white wedding</figcaption></figure>
+<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/glitter/preview?group=parties" width="390" title="Glitter 21st birthday sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Glitter · a 21st birthday</figcaption></figure>
 </div></div></section>
 
 <section class="section"><div class="container">{section_head("How it works", "From blank page to RSVPs in an afternoon.")}
@@ -282,7 +290,7 @@ def home(req):
 </ol></div></section>
 
 <section class="section section--surface"><div class="container">
-{section_head("Templates with their own character", "Not one design in different colours. Each template has its own layout, typography and details.", '<a class="arrow-link" href="/templates"><span>Browse all ' + str(len(catalog.templates())) + '</span>' + i("arrow") + '</a>', "split")}
+{section_head("Templates with their own character", "Invitations that move: an envelope that unseals, a ribbon that ties itself, balloons that float. Each has its own layout, typography and details.", '<a class="arrow-link" href="/templates"><span>Browse all ' + str(len(catalog.templates())) + '</span>' + i("arrow") + '</a>', "split")}
 <div class="grid grid--3" data-stagger>{tpl_cards}</div></div></section>
 
 <section class="section"><div class="container">{section_head("One platform for the whole event", "Everything you would otherwise print, chase or put in a spreadsheet.")}
@@ -375,7 +383,7 @@ def templates_gallery(req):
             card = card.replace('<article class="tpl-card"', '<article class="tpl-card" hidden', 1)
         cards.append(card)
     body = (page_hero('Event website <span class="serif grad">templates</span>',
-                      "Eleven designs with their own layouts and character. Filter by occasion, preview on desktop and mobile, then make it yours.",
+                      "Invitations that open, draw and sparkle, then carry on as your full event website. Filter by occasion, preview on desktop and mobile, then make it yours.",
                       [("Templates", "")]) + f"""
 <section class="section"><div class="container"><div class="chips-scroll" data-filter-bar role="group" aria-label="Filter by event type" style="margin-bottom:28px">{"".join(chips)}</div>
 <div class="grid grid--3">{"".join(cards)}</div></div></section>{cta_panel("Found the one?", "Start with any template. You can switch designs at any time before and after publishing.")}""")

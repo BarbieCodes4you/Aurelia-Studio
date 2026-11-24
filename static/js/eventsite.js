@@ -40,6 +40,20 @@
     sync();
   });
 
+  // Sections drift in as they scroll into view, only for visitors happy to see motion.
+  // Without JavaScript or with reduced motion, everything is simply shown.
+  var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reveal = document.querySelectorAll(".rv");
+  if (!calm && reveal.length && "IntersectionObserver" in window) {
+    document.documentElement.classList.add("ev-motion");
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target); }
+      });
+    }, { rootMargin: "0px 0px -6% 0px", threshold: 0.06 });
+    reveal.forEach(function (el) { io.observe(el); });
+  }
+
   var thanks = document.querySelector("[data-focus-me]");
   if (thanks) { thanks.focus({ preventScroll: false }); }
   var err = document.querySelector(".ev-errors");

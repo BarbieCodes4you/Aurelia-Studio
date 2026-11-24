@@ -39,15 +39,49 @@ CATEGORIES = [
 ]
 
 # slug, name, design key, direction, groups, description, tags
+# The invitation collection comes first: each opens like a real invitation and then carries on as the
+# full event website. The original eleven designs follow; they are retired from the catalogue
+# (RETIRED) but still render for every event that already uses them, and the admin can switch any
+# of them back on.
 TEMPLATES = [
+    ("nguni", "Nguni", "nguni", "Cowhide envelope, gold wax seal", ["weddings", "other"],
+     "A Nguni cowhide envelope sealed in gold wax opens, and your invitation card rises out of it, framed by "
+     "dried pampas and woven baskets. For traditional weddings, lobola, umembeso and family celebrations.",
+     ["traditional", "animated envelope", "wax seal"]),
+    ("terracotta", "Terracotta", "terracotta", "Beadwork, shield and cattle", ["weddings", "other"],
+     "Cream paper, a beadwork border, a shield and spears that draw themselves, and a Nguni cow among the "
+     "baskets and clay pots. A live countdown sits on the invitation itself.",
+     ["lobola", "animated", "countdown"]),
+    ("ribbon", "Ribbon", "ribbon", "Hand-drawn ribbon and bow", ["weddings", "baby", "parties", "other"],
+     "A hand-drawn ribbon draws itself around your card and ties into a bow. In olive, burgundy, blush or powder blue.",
+     ["bow", "animated", "romantic"]),
+    ("weave", "Weave", "weave", "Woven chevron envelope", ["weddings", "parties", "other"],
+     "A woven chevron envelope in sunset reds, oranges and pinks opens, and a soft pink card slides out.",
+     ["woven", "animated envelope", "colourful"]),
+    ("glitter", "Glitter", "glitter", "Chrome balloons and disco", ["parties", "baby", "other"],
+     "Chrome balloon numbers, a turning disco ball and sequins that catch the light. Made for 21sts, 30ths "
+     "and every birthday that deserves a sparkle.",
+     ["21st", "chrome", "disco"]),
+    ("matcha", "Matcha", "matcha", "Pink stripes and an olive bow", ["parties", "baby"],
+     "Pink cabana stripes, an olive bow, a matcha latte and a bouncing pilates ball. For brunches, bridal "
+     "and baby showers and soft-girl birthdays.",
+     ["pastel", "playful", "brunch"]),
+    ("festive", "Festive", "festive", "Christmas stripes and snow", ["parties", "other"],
+     "Candy-cane stripes, an arched card tied with red ribbon, a tree trimmed with bows and gently falling "
+     "snow. For Christmas lunches and year-end functions.",
+     ["christmas", "snow", "year-end"]),
+    ("cheers", "Cheers", "cheers", "Retro champagne toast", ["parties", "other", "weddings"],
+     "Retro stripes and a hand-drawn champagne toast with rising bubbles. For year-end parties, New Year's, "
+     "engagements and anniversaries.",
+     ["year-end", "champagne", "retro"]),
+    ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
+     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
     ("atelier", "Atelier", "atelier", "Minimalist luxury", ["weddings", "other", "parties"],
      "Ivory and ink, a fine serif and generous space. A centred monogram leads into one calm column.", ["ivory", "serif", "monogram"]),
     ("folio", "Folio", "folio", "Modern editorial", ["weddings", "parties", "other"],
      "A magazine spread: oversized headline, an index that follows you down the page, and a split layout.", ["editorial", "split", "bold type"]),
     ("bloom", "Bloom", "bloom", "Romantic floral", ["weddings", "baby"],
      "Blush and sage with drawn botanicals, arched frames and a flowing script for your names.", ["floral", "script", "arches"]),
-    ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
-     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
     ("champagne", "Champagne", "champagne", "Champagne and gold", ["weddings", "parties", "other"],
      "Midnight backdrop, gold foil lettering and Art Deco fans. Glass panels catch the light.", ["deco", "dark", "gold"]),
     ("linea", "Linea", "linea", "Contemporary minimalist", ["weddings", "other", "parties"],
@@ -63,6 +97,10 @@ TEMPLATES = [
     ("cradle", "Cradle", "cradle", "Soft storybook", ["baby"],
      "Cream, sage and hand-drawn moons and stars, laid out like the pages of a picture book.", ["storybook", "soft", "illustrated"]),
 ]
+
+# Original designs no longer offered for new events (new databases add them switched off; existing
+# ones are switched off once by migrations/004_invitation_collection.sql).
+RETIRED = {"atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle"}
 
 FEATURES = {
     # Essential
@@ -145,7 +183,7 @@ def ensure_catalog() -> None:
         if slug not in existing:
             db.insert("templates", {"slug": slug, "name": name, "design": design, "direction": direction,
                                     "groups": db.dumps(groups), "description": desc, "tags": db.dumps(tags),
-                                    "sort": i, "updated_at": db.now()})
+                                    "sort": i, "active": 0 if slug in RETIRED else 1, "updated_at": db.now()})
     for slug, old_text in _REFRESH_TEXT.items():
         row = next((t for t in TEMPLATES if t[0] == slug), None)
         if row:

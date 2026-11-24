@@ -35,6 +35,9 @@ FONTS = {
     "Lora": "ital,wght@0,400..700;1,400..700",
     "Instrument Serif": "ital@0;1",
     "Geist": "wght@300..700",
+    "Gloock": "",
+    "DM Serif Display": "ital@0;1",
+    "Caveat": "wght@400..700",
 }
 
 FONT_PAIRS = {
@@ -52,6 +55,8 @@ FONT_PAIRS = {
     "fraunces-dm": ("Warm storybook", "Fraunces", "DM Sans"),
     "playfair-lato": ("Timeless", "Playfair Display", "Lato"),
     "instrument-geist": ("Contemporary serif", "Instrument Serif", "Geist"),
+    "gloock-dm": ("Retro serif", "Gloock", "DM Sans"),
+    "dmserif-dm": ("Soft display serif", "DM Serif Display", "DM Sans"),
 }
 
 # palette keys: bg, surface, text, muted, accent, accent2
@@ -146,6 +151,77 @@ DESIGNS = {
         ]},
 }
 
+# --- The invitation collection (app/eventsite/invites.py) -----------------------------------------
+# "extra" is a third font some designs use for a script or hand-written accent (--ev-extra).
+DESIGNS.update({
+    "nguni": {
+        "font_pair": "cormorant-jost", "fonts": ["cormorant-jost", "cinzel-marcellus", "playfair-lato", "bodoni-inter"],
+        "backgrounds": ["paper", "plain", "image"], "background": "paper", "extra": "Pinyon Script",
+        "palettes": [
+            ("brown-hide", "Brown hide and gold", {"bg": "#F2EBE0", "surface": "#FFFBF4", "text": "#2B1D14", "muted": "#6E5A4A", "accent": "#A97C2F", "accent2": "#6B3F22"}),
+            ("black-hide", "Black hide and gold", {"bg": "#EFEDE8", "surface": "#FFFDF8", "text": "#1A1714", "muted": "#615A53", "accent": "#A88A4E", "accent2": "#2A2420"}),
+            ("golden-hide", "Golden hide", {"bg": "#F5EDE1", "surface": "#FFFAF1", "text": "#3A2414", "muted": "#755F4C", "accent": "#B0782F", "accent2": "#A8692F"}),
+        ]},
+    "terracotta": {
+        "font_pair": "greatvibes-lora", "fonts": ["greatvibes-lora", "pinyon-cormorant", "cinzel-marcellus", "playfair-lato"],
+        "backgrounds": ["paper", "plain", "image"], "background": "paper", "extra": "Cinzel",
+        "palettes": [
+            ("terracotta", "Terracotta and cream", {"bg": "#F8EEDD", "surface": "#FFF8EC", "text": "#2E1F14", "muted": "#6B4A33", "accent": "#8E3B22", "accent2": "#D9A441"}),
+            ("indigo", "Indigo and sand", {"bg": "#EEF1F6", "surface": "#FFFFFF", "text": "#13213F", "muted": "#4E5A72", "accent": "#1F3A73", "accent2": "#C9A26B"}),
+            ("olive", "Olive and clay", {"bg": "#F3F0E2", "surface": "#FFFDF4", "text": "#2B2E1C", "muted": "#5E604A", "accent": "#5E6B42", "accent2": "#C0702E"}),
+        ]},
+    "ribbon": {
+        "font_pair": "instrument-geist", "fonts": ["instrument-geist", "cormorant-jost", "playfair-lato", "pinyon-cormorant"],
+        "backgrounds": ["paper", "plain", "image"], "background": "paper",
+        "palettes": [
+            ("olive", "Olive ribbon", {"bg": "#F5F1E6", "surface": "#FFFDF7", "text": "#2C3122", "muted": "#626850", "accent": "#66743A", "accent2": "#D8CBA4"}),
+            ("burgundy", "Burgundy bow", {"bg": "#F7EEEC", "surface": "#FFFBFA", "text": "#3A1418", "muted": "#6E4E52", "accent": "#7A1F2B", "accent2": "#E8C5C3"}),
+            ("blush", "Blush bow", {"bg": "#FCF2F3", "surface": "#FFFFFF", "text": "#4A2B33", "muted": "#7E5F66", "accent": "#D17C8F", "accent2": "#F3D3D9"}),
+            ("powder", "Powder blue", {"bg": "#F1F5F9", "surface": "#FFFFFF", "text": "#1F2E44", "muted": "#58677C", "accent": "#6F95BE", "accent2": "#D8E4F1"}),
+        ]},
+    "weave": {
+        "font_pair": "fraunces-dm", "fonts": ["fraunces-dm", "playfair-lato", "instrument-geist", "gloock-dm"],
+        "backgrounds": ["plain", "paper", "image"], "background": "plain",
+        "palettes": [
+            ("sunset", "Sunset weave", {"bg": "#FFF4EF", "surface": "#FFE3E7", "text": "#540F1B", "muted": "#83434E", "accent": "#E4572E", "accent2": "#F49BB4"}),
+            ("indigo", "Indigo weave", {"bg": "#F2F4FA", "surface": "#E4EAF7", "text": "#14213D", "muted": "#4F5B78", "accent": "#2B50AA", "accent2": "#9EC1E8"}),
+            ("earth", "Earth weave", {"bg": "#F7F0E6", "surface": "#F3E5D0", "text": "#3B2314", "muted": "#6F5643", "accent": "#B5651D", "accent2": "#E3B47A"}),
+        ]},
+    "glitter": {
+        "font_pair": "bodoni-inter", "fonts": ["bodoni-inter", "syne-space", "italiana-montserrat", "playfair-lato"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Fredoka",
+        "palettes": [
+            ("silver", "Silver chrome", {"bg": "#0B0B10", "surface": "#17171F", "text": "#F4F4F8", "muted": "#A9A9B9", "accent": "#C9CDD8", "accent2": "#FF6FAE"}),
+            ("gold", "Gold chrome", {"bg": "#0E0B07", "surface": "#1B160E", "text": "#FBF3E2", "muted": "#B8A98C", "accent": "#E3C27A", "accent2": "#F2E2BC"}),
+            ("pink", "Pink glitter", {"bg": "#FFEFF6", "surface": "#FFFFFF", "text": "#3A0B24", "muted": "#7A4A63", "accent": "#E0428A", "accent2": "#C9CDD8"}),
+        ]},
+    "matcha": {
+        "font_pair": "gloock-dm", "fonts": ["gloock-dm", "fraunces-dm", "instrument-geist", "playfair-lato"],
+        "backgrounds": ["plain", "paper", "image"], "background": "plain",
+        "palettes": [
+            ("matcha-pink", "Matcha and pink", {"bg": "#FFF6F6", "surface": "#FFFFFF", "text": "#2F3A1F", "muted": "#626B4E", "accent": "#E98AA6", "accent2": "#7E8C45"}),
+            ("strawberry", "Strawberry milk", {"bg": "#FFF3F3", "surface": "#FFFFFF", "text": "#4A1D24", "muted": "#7B5157", "accent": "#E55B6F", "accent2": "#8FA352"}),
+            ("butter", "Butter yellow", {"bg": "#FFF9EA", "surface": "#FFFFFF", "text": "#3B331A", "muted": "#6B6247", "accent": "#E9B53F", "accent2": "#7E8C45"}),
+        ]},
+    "festive": {
+        "font_pair": "playfair-lato", "fonts": ["playfair-lato", "cormorant-jost", "fraunces-dm", "greatvibes-lora"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Great Vibes",
+        "palettes": [
+            ("candy-cane", "Candy cane red", {"bg": "#FBF5EE", "surface": "#FFFDF8", "text": "#2B1414", "muted": "#6A4E4E", "accent": "#C8102E", "accent2": "#1F5C3A"}),
+            ("evergreen", "Evergreen and gold", {"bg": "#0F2A20", "surface": "#16382B", "text": "#F7F1E6", "muted": "#B9C2B4", "accent": "#D9B45F", "accent2": "#C8102E"}),
+            ("frost", "Frosted blue", {"bg": "#F2F6FA", "surface": "#FFFFFF", "text": "#172A40", "muted": "#56677C", "accent": "#2F5D8C", "accent2": "#B8C4D3"}),
+        ]},
+    "cheers": {
+        "font_pair": "dmserif-dm", "fonts": ["dmserif-dm", "playfair-lato", "gloock-dm", "bodoni-inter"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Caveat",
+        "palettes": [
+            ("retro-red", "Retro red", {"bg": "#FBF1E4", "surface": "#FFF9F0", "text": "#4A0F1A", "muted": "#7A4B50", "accent": "#C8323E", "accent2": "#E9C46A"}),
+            ("burgundy", "Burgundy night", {"bg": "#2E0A12", "surface": "#3E111B", "text": "#F8EBDD", "muted": "#C9AFA6", "accent": "#E9C46A", "accent2": "#E8A0A0"}),
+            ("olive", "Olive toast", {"bg": "#F4F0E3", "surface": "#FFFCF3", "text": "#2F3320", "muted": "#61644E", "accent": "#6B7A3A", "accent2": "#E2C98F"}),
+        ]},
+})
+
+
 # --- Cultural styles for Heritage ----------------------------------------------------------------
 # Each is a palette for the page (text contrast checked to WCAG AA) plus six motif colours for the
 # beadwork borders, which also take the culture's own pattern (designs.MOTIFS). They are chosen like
@@ -194,6 +270,11 @@ BACKGROUND_LABELS = {
 
 def design(key: str) -> dict:
     return DESIGNS.get(key) or DESIGNS["atelier"]
+
+
+def extra_font(key: str) -> str:
+    """The design's accent font (a script or hand-writing), or "" when it has none."""
+    return design(key).get("extra", "")
 
 
 def palettes(key: str) -> list:

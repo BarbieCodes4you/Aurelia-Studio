@@ -92,9 +92,18 @@ with blush, mint, peach and sky washes, glossy pastel buttons with dark text, an
 text and checked controls so contrast stays AA. Footer and menu drawer are deep plum. Aurelia adds a
 glossy, transparent layer (frosted glass panels with a specular edge) and an Instrument Serif keyword.
 All colours are tokens at the top of `static/css/app.css`.
-Event websites have their own identities. Each of the 11 templates has a different layout, not just
-different colours: Atelier, Folio, Bloom, Heritage, Champagne, Linea, Confetti, Pulse, Aurora, Laureate
-and Cradle. Light and dark themes are supported, and motion turns off under reduced-motion settings.
+Event websites open like a real invitation, then carry on as the full website. The catalogue offers
+nine designs, each with its own layout and animation: Nguni (a cowhide envelope with a gold wax seal),
+Terracotta (beadwork, shields and a Nguni cow), Ribbon (a hand-drawn ribbon and bow), Weave (a woven
+chevron envelope), Glitter (chrome balloons and a disco ball), Matcha (pink stripes and an olive bow),
+Festive (Christmas stripes and snow), Cheers (a champagne toast) and Heritage (seven cultural styles).
+They live in `app/eventsite/invites.py` and `static/css/invites.css`. The animations are CSS only, and
+they switch off for visitors who choose reduced motion; the finished invitation is the default.
+
+The original eleven designs (Atelier, Folio, Bloom, Champagne, Linea, Confetti, Pulse, Aurora, Laureate
+and Cradle, in `designs.py`) are hidden from new customers by `migrations/004_invitation_collection.sql`
+but still render for every event that uses them. An admin can switch any of them back on in
+`/admin/templates`.
 
 ## Security and privacy
 

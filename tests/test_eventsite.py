@@ -44,7 +44,7 @@ class TemplateTests(unittest.TestCase):
     def test_every_template_renders_demo(self):
         c = Client(self.app)
         slugs = [t["slug"] for t in catalog.templates()]
-        self.assertGreaterEqual(len(slugs), 10)
+        self.assertGreaterEqual(len(slugs), 9)
         bodies = set()
         for slug in slugs:
             for group in ("weddings", "baby", "parties", "other"):
@@ -74,6 +74,89 @@ class TemplateTests(unittest.TestCase):
         html = render(demo_event("heritage", "weddings"), "demo")
         self.assertIn("Two families", html)
         self.assertIn("The ceremonies", html)
+
+
+class InvitationCollectionTests(unittest.TestCase):
+    """The animated invitation designs replace the original ones in the catalogue."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = fresh_app("eventsite-invites")
+        cls.owner = make_user("invites-owner@example.com")
+
+    def test_catalogue_offers_the_invitation_collection_only(self):
+        offered = [t["slug"] for t in catalog.templates()]
+        self.assertEqual(offered[:3], ["nguni", "terracotta", "ribbon"])                  # weddings first
+        self.assertIn("heritage", offered)
+        for slug in catalog.RETIRED:
+            self.assertNotIn(slug, offered)
+            self.assertEqual(catalog.template(slug)["active"], 0)                         # kept, switched off
+        c = Client(self.app)
+        self.assertEqual(c.get("/templates/bloom/preview").status, 404)
+        home = c.get("/").text
+        for slug in ("nguni", "ribbon", "glitter"):
+            self.assertIn(f"/templates/{slug}/preview", home)
+        self.assertNotIn("/templates/champagne/preview", home)
+
+    def test_each_design_opens_like_an_invitation(self):
+        c = Client(self.app)
+        marks = {"nguni": ("env-flap", "nv-hide", "seal"), "weave": ("env-flap", "wv-cloth", "seal"),
+                 "terracotta": ('class="crest"', "tc-beads", 'data-countdown'), "ribbon": ("ribbon-frame", "rb-bow"),
+                 "glitter": ("gl-balloons", "disco"), "matcha": ("mt-awning", "matcha", "pball"),
+                 "festive": ("fs-arch", "snow", "tree"), "cheers": ("coupes", "cs-bub")}
+        for slug, needles in marks.items():
+            r = c.get(f"/templates/{slug}/preview?group=parties")
+            self.assertEqual(r.status, 200, slug)
+            self.assertIn("/static/css/invites.css", r.text, slug)
+            for n in needles:
+                self.assertIn(n, r.text, (slug, n))
+        self.assertNotIn("invites.css", c.get("/templates/heritage/preview").text)        # only where it's used
+
+    def test_glitter_balloons_spell_the_age(self):
+        from app.eventsite import invites
+        from app.eventsite.render import build_context
+        for hosts, name, group, want in [("Thabo's 40th", "Thabo turns 40", "parties", "40"),
+                                         ("Naledi", "Naledi turns 21", "parties", "21"),
+                                         ("Amahle", "Baby shower for Amahle", "baby", "oh baby")]:
+            ev = demo_event("glitter", group)
+            ev.update(hosts=hosts, name=name)
+            self.assertEqual(invites.balloon_text(build_context(ev, "demo")), want)
+
+    def test_motion_is_only_for_visitors_who_welcome_it(self):
+        """Every animation in invites.css sits inside @media (prefers-reduced-motion: no-preference)."""
+        from pathlib import Path
+        css = (Path(__file__).resolve().parent.parent / "static/css/invites.css").read_text()
+        depth, stack, outside = 0, [], []
+        i = 0
+        while i < len(css):
+            ch = css[i]
+            if ch == "{":
+                start = css.rfind("}", 0, i)
+                start = max(start, css.rfind("{", 0, i), css.rfind("*/", 0, i))
+                stack.append(css[start + 1:i].strip())
+                depth += 1
+            elif ch == "}":
+                stack.pop()
+                depth -= 1
+            elif css.startswith("animation:", i) or css.startswith("animation-name:", i):
+                if not any("prefers-reduced-motion: no-preference" in sel for sel in stack):
+                    outside.append(css[max(0, i - 60):i + 40])
+            i += 1
+        self.assertEqual(outside, [])
+
+    def test_existing_events_keep_a_retired_design(self):
+        ev = make_event(self.owner, template="atelier", paid="")
+        c = Client(self.app)
+        login(c, "invites-owner@example.com")
+        r = c.get(f"/dashboard/events/{ev['uid']}/setup/2")
+        self.assertEqual(r.status, 200)
+        self.assertIn('value="atelier" checked', r.text)                 # still shown as the current design
+        r = c.post(f"/dashboard/events/{ev['uid']}/setup/2", {"template": "atelier", "nav": "stay"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        self.assertIn("d-atelier", render(events.by_id(ev["id"]), "preview"))
+        r = c.post(f"/dashboard/events/{ev['uid']}/setup/2", {"template": "folio", "nav": "stay"})
+        self.assertEqual(r.status, 200)                                   # but can't switch to another retired one
+        self.assertEqual(events.by_id(ev["id"])["template"], "atelier")
 
 
 class CulturalStyleTests(unittest.TestCase):

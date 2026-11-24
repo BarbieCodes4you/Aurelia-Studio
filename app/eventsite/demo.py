@@ -87,14 +87,109 @@ SAMPLES = {
 }
 
 
+_TRADITIONAL = {
+    "name": "Lerato & Sipho's traditional wedding", "hosts": "Lerato & Sipho", "category": "traditional-wedding",
+    "description": "Two families, one celebration. Join us for umembeso in the morning and the wedding celebration that follows.",
+    "venue": {"name": "Inkosi Gardens (sample venue)", "address": "Muldersdrift, Gauteng",
+              "parking": "Parking on the lawn, with marshals to guide you.", "directions": "", "accommodation": ""},
+    "dress": ("Traditional attire", "Wear your family's colours with pride."),
+    "functions": [("Umembeso", "10:00", "13:00", "The Dlamini family home (sample)", "Soweto, Johannesburg"),
+                  ("Wedding celebration", "14:00", "21:00", "Inkosi Gardens (sample venue)", "Muldersdrift, Gauteng")],
+    "schedule": [("10:00", "Umembeso", "Gifts are presented to the bride's family.", "ceremony"),
+                 ("12:30", "Lunch", "", "reception"), ("14:00", "Wedding celebration", "", "ceremony"),
+                 ("16:00", "Speeches and dancing", "", "entertainment")],
+    "menu": [("Main", "Slow-cooked beef stew", "With dumplings", [], 0), ("Main", "Roast chicken", "", [], 0),
+             ("Sides", "Pap, chakalaka and samp", "", ["Vegetarian"], 0), ("Dessert", "Malva pudding", "Custard", [], 0)],
+    "sides": ["The Dlamini family", "The Mahlangu family"],
+}
+
+# A few designs read best with their own kind of sample (a 21st for Glitter, a Christmas lunch for
+# Festive...). Keys override the occasion's sample above; "on" fixes the month and day.
+TEMPLATE_SAMPLES = {
+    "nguni": {"weddings": _TRADITIONAL},
+    "terracotta": {"weddings": dict(_TRADITIONAL, name="Lerato & Sipho's lobola celebration", category="lobola",
+                                    description="Our families are coming together. Join us for the lobola and the celebration that follows.",
+                                    venue={"name": "The Mahlangu family home (sample)", "address": "Soweto, Johannesburg",
+                                           "parking": "Street parking, with marshals on the day.", "directions": "", "accommodation": ""},
+                                    functions=[],
+                                    schedule=[("10:00", "Families arrive", "", "other"), ("11:00", "Negotiations", "For the family delegations.", "ceremony"),
+                                              ("14:00", "Celebration", "Lunch, music and dancing for everyone.", "reception")])},
+    "glitter": {"parties": {
+        "name": "Naledi turns 21", "hosts": "Naledi's 21st",
+        "description": "Twenty-one, glitter everywhere and a playlist we've been building for months. Dress up and shine.",
+        "venue": {"name": "The Mirror Room (sample venue)", "address": "Rosebank, Johannesburg",
+                  "parking": "Secure parking in the basement.", "directions": "", "accommodation": ""},
+        "dress": ("Glitter, sequins and chrome", "Silver, gold or anything that sparkles."), "end": "01:00",
+        "schedule": [("19:00", "Doors open", "Welcome cocktails.", "other"), ("20:00", "Dinner", "", "reception"),
+                     ("21:00", "Speeches and cake", "", "speech"), ("22:00", "Dance floor opens", "", "entertainment")]}},
+    "matcha": {"parties": {
+        "name": "Zanele's matcha morning", "hosts": "Zanele's 30th",
+        "description": "A slow Saturday: a gentle pilates class, matcha and pastries, and the people I love. Bring a mat if you have one.",
+        "venue": {"name": "The Studio on 7th (sample venue)", "address": "Melville, Johannesburg",
+                  "parking": "Street parking on 7th Street.", "directions": "", "accommodation": ""},
+        "dress": ("Athleisure in soft colours", "Comfortable enough to stretch, cute enough for photos."), "end": "12:30",
+        "schedule": [("09:00", "Arrive and settle in", "", "other"), ("09:30", "Pilates class", "Mats provided.", "activity"),
+                     ("10:30", "Matcha and brunch", "", "reception"), ("11:30", "Cake", "", "other")],
+        "menu": [("Brunch", "Matcha lattes", "Oat, almond or full cream", ["Vegan option"], 0),
+                 ("Brunch", "Berry yoghurt bowls", "", ["Vegetarian"], 0), ("Brunch", "Croissants and pastries", "", [], 0)],
+        "drinks": "Matcha, fresh juice and sparkling water.", "gift_note": "No gifts, just good company."}},
+    "festive": {
+        "parties": {
+            "name": "The Mokoena family Christmas lunch", "hosts": "Christmas at the Mokoenas", "category": "private-celebration",
+            "description": "Christmas lunch is at ours this year. Bring your appetite, your best festive outfit and a gift for secret Santa.",
+            "venue": {"name": "The Mokoena family home (sample)", "address": "Morningside, Durban",
+                      "parking": "Park in the street; the gate will be open.", "directions": "", "accommodation": ""},
+            "dress": ("Something red or green", ""), "on": (12, 25), "end": "18:00",
+            "schedule": [("12:00", "Arrivals and drinks", "", "other"), ("13:00", "Christmas lunch", "", "reception"),
+                         ("15:00", "Secret Santa", "", "activity"), ("16:00", "Dessert and games", "", "entertainment")],
+            "menu": [("Lunch", "Glazed gammon", "Pineapple and mustard glaze", [], 0), ("Lunch", "Roast chicken and potatoes", "", [], 0),
+                     ("Lunch", "Festive salads", "", ["Vegetarian"], 0), ("Dessert", "Trifle", "", [], 0)],
+            "gift_note": "Secret Santa: one gift of about R150, wrapped and labelled."},
+        "other": {
+            "name": "Kumo Studio year-end function", "hosts": "Kumo Studio year-end", "category": "corporate",
+            "description": "Thank you for a wonderful year. Join the team for dinner, awards and a little dancing.",
+            "venue": {"name": "The Glasshouse (sample venue)", "address": "Sandton, Johannesburg",
+                      "parking": "Valet parking at the entrance.", "directions": "", "accommodation": ""},
+            "dress": ("Festive smart", ""), "on": (12, 12), "functions": [], "end": "23:00",
+            "schedule": [("18:30", "Welcome drinks", "", "other"), ("19:30", "Dinner", "", "reception"),
+                         ("20:30", "Awards", "", "speech"), ("21:30", "Dancing", "", "entertainment")]}},
+    "cheers": {
+        "parties": {
+            "name": "New Year's Eve on the rooftop", "hosts": "Cheers to 2027",
+            "description": "Out with the old, in with the new. Join us on the rooftop to toast the year.",
+            "venue": {"name": "Skyline Rooftop (sample venue)", "address": "Florida Road, Morningside, Durban",
+                      "parking": "Secure parking behind the building.", "directions": "", "accommodation": ""},
+            "dress": ("Black, gold and a little sparkle", ""), "on": (12, 31), "end": "01:00",
+            "schedule": [("20:00", "Doors open", "", "other"), ("21:00", "Dinner", "", "reception"),
+                         ("23:45", "Countdown", "", "entertainment"), ("23:59", "Champagne toast", "", "speech")]},
+        "weddings": {
+            "name": "Thandi & Kabelo are engaged", "hosts": "Thandi & Kabelo", "category": "engagement",
+            "description": "She said yes! Join us for champagne, dinner and far too many toasts.",
+            "venue": {"name": "The Courtyard (sample venue)", "address": "Bree Street, Cape Town",
+                      "parking": "Paid parking on Bree Street.", "directions": "", "accommodation": ""},
+            "dress": ("Cocktail", ""), "functions": [],
+            "schedule": [("18:00", "Welcome drinks", "", "other"), ("19:00", "Toasts", "", "speech"),
+                         ("19:30", "Dinner", "", "reception"), ("21:00", "Dancing", "", "entertainment")]}},
+}
+
+
+def _next_date(month: int, day: int, after: date) -> date:
+    d = date(after.year, month, day)
+    return d if d >= after else date(after.year + 1, month, day)
+
+
 def demo_event(template_slug: str, group: str = "weddings") -> dict:
     if group not in SAMPLES:
         group = "weddings"
     t = catalog.template(template_slug)
     design = t["design"] if t else template_slug
-    s = SAMPLES[group]
+    s = dict(SAMPLES[group], **TEMPLATE_SAMPLES.get(template_slug, {}).get(group, {}))
     today = date.today()
     ev_date = today + timedelta(days=s["event_days"])
+    deadline = today + timedelta(days=s["deadline_days"])
+    if s.get("on"):
+        ev_date = _next_date(*s["on"], today + timedelta(days=10))
+        deadline = max(today + timedelta(days=3), ev_date - timedelta(days=10))
     first_time = s["functions"][0][1] if s["functions"] else s["schedule"][0][0]
     functions = [{"id": k + 1, "name": n, "func_date": ev_date.isoformat(), "start_time": st, "end_time": en,
                   "venue_name": vn, "address": ad, "map_url": "", "description": "", "dress_code": ""}
@@ -112,12 +207,12 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
         "id": 0, "uid": "demo", "slug": f"sample-{template_slug}", "status": "published", "owner_id": 0,
         "template": template_slug, "category": s["category"], "name": s["name"], "hosts": s["hosts"],
         "description": s["description"], "event_date": ev_date.isoformat(), "start_time": first_time,
-        "end_time": "23:00" if group in ("weddings", "parties") else "16:00",
+        "end_time": s.get("end") or ("23:00" if group in ("weddings", "parties") else "16:00"),
         "venue": dict(s["venue"], map_url=""),
         "design": {}, "guest_settings": {
             "estimated": 150, "categories": ["Family", "Friends"], "sides": s["sides"],
             "children_allowed": group == "baby", "max_children": 2, "plus_one_policy": "per_guest",
-            "plus_ones_default": 1, "rsvp_deadline": (today + timedelta(days=s["deadline_days"])).isoformat()},
+            "plus_ones_default": 1, "rsvp_deadline": deadline.isoformat()},
         "info": {"dress_code": s["dress"][0], "dress_code_notes": s["dress"][1],
                  "registry": [{"name": n, "url": u, "note": no} for n, u, no in s["registry"]],
                  "gift_note": s["gift_note"],

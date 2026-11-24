@@ -16,12 +16,13 @@ class AccountsTest(unittest.TestCase):
 
     def test_marketing_pages_render(self):
         for path in ["/", "/weddings", "/baby-celebrations", "/parties", "/celebrations", "/templates",
-                     "/templates/atelier", "/pricing", "/how-it-works", "/faq", "/contact", "/privacy", "/terms",
+                     "/templates/nguni", "/pricing", "/how-it-works", "/faq", "/contact", "/privacy", "/terms",
                      "/refunds", "/create", "/login", "/register", "/forgot-password"]:
             r = self.c.get(path)
             self.assertEqual(r.status, 200, path)
             self.assertIn("<h1", r.text, path)
         self.assertEqual(self.c.get("/templates/does-not-exist").status, 404)
+        self.assertEqual(self.c.get("/templates/atelier").status, 404)       # a retired design is no longer offered
 
     def test_pricing_reads_packages_from_db(self):
         db.run("UPDATE packages SET price_cents = 1234500 WHERE code = 'premium'")
@@ -34,7 +35,8 @@ class AccountsTest(unittest.TestCase):
         r = self.c.get("/sitemap.xml")
         self.assertEqual(r.status, 200)
         self.assertIn("/pricing</loc>", r.text)
-        self.assertIn("/templates/atelier</loc>", r.text)
+        self.assertIn("/templates/nguni</loc>", r.text)
+        self.assertNotIn("/templates/atelier</loc>", r.text)
 
     def test_register_login_logout(self):
         r = self.c.post("/register", {"name": "Lerato Dube", "email": "lerato@example.com", "password": "Sunrise-2027a",
@@ -93,14 +95,14 @@ class WizardTest(unittest.TestCase):
         self.user = make_user()
         login(self.c)
 
-    def create(self, category="white-wedding", template="atelier", hosts="Lerato & Sipho"):
+    def create(self, category="white-wedding", template="ribbon", hosts="Lerato & Sipho"):
         r = self.c.post("/create", {"category": category, "template": template, "hosts": hosts})
         self.assertEqual(r.status, 303, r.text[:400])
         uid = find(r"/dashboard/events/([0-9a-f]+)/setup/1", r.location)
         return uid
 
     def test_create_asks_for_names(self):
-        r = self.c.post("/create", {"category": "white-wedding", "template": "atelier"})
+        r = self.c.post("/create", {"category": "white-wedding", "template": "ribbon"})
         self.assertEqual(r.status, 200)
         self.assertIn("Add the names", r.text)
         uid = self.create()
@@ -110,14 +112,14 @@ class WizardTest(unittest.TestCase):
 
     def test_create_without_account_needs_name_email_and_password(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle"})
+        r = anon.post("/create", {"category": "baby-shower", "template": "matcha", "hosts": "Amahle"})
         self.assertEqual(r.status, 200)
         self.assertIn("Your name", r.text)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
+        r = anon.post("/create", {"category": "baby-shower", "template": "matcha", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
         self.assertEqual(r.status, 200)
         self.assertIn("Choose a password", r.text)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
+        r = anon.post("/create", {"category": "baby-shower", "template": "matcha", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1",
                                   "password": "Nursery-2027b", "password_confirm": "Nursery-2027b"})
         self.assertEqual(r.status, 303, r.text[:300])
@@ -130,7 +132,7 @@ class WizardTest(unittest.TestCase):
 
     def test_create_with_existing_email_sends_sign_in_link(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "birthday", "template": "pulse", "hosts": "Kagiso's 40th", "contact_name": "Thandi",
+        r = anon.post("/create", {"category": "birthday", "template": "glitter", "hosts": "Kagiso's 40th", "contact_name": "Thandi",
                                   "contact_email": "organiser@example.com", "terms": "1"})
         self.assertEqual(r.status, 200)
         self.assertIn("sign-in link", r.text)
@@ -146,10 +148,10 @@ class WizardTest(unittest.TestCase):
         self.assertEqual(r.location, base + "/2")
         ev = events.get(uid)
         self.assertEqual((ev["slug"], ev["venue"]["name"]), ("lerato-and-sipho", "Avianto"))
-        r = self.c.post(base + "/2", {"template": "atelier", "palette": "stone", "font_pair": "cormorant-jost", "background": "paper",
+        r = self.c.post(base + "/2", {"template": "ribbon", "palette": "burgundy", "font_pair": "instrument-geist", "background": "paper",
                                       "monogram": "L&S", "w_welcome": "Together with their families", "nav": "next"})
         self.assertEqual(r.status, 303)
-        self.assertEqual(events.get(uid)["design"]["palette"], "stone")
+        self.assertEqual(events.get(uid)["design"]["palette"], "burgundy")
         r = self.c.post(base + "/3", {"estimated": "150", "categories": ["Family", "Friends"], "categories_other": "Choir",
                                       "plus_one_policy": "per_guest", "plus_ones_default": "1", "rsvp_deadline": "2027-02-01",
                                       "children_allowed": "1", "max_children": "2", "nav": "next"})
@@ -212,11 +214,11 @@ class WizardTest(unittest.TestCase):
 
     def test_image_upload_checks_content(self):
         uid = self.create()
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"},
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "ribbon", "nav": "stay"},
                              {"hero": ("evil.png", b"<script>alert(1)</script>", "image/png")})
         self.assertIn("Upload a JPG, PNG, WebP or GIF", r.text)
         png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "ribbon", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
         self.assertEqual(r.status, 303)
         self.assertEqual(len(events.uploads(events.get(uid)["id"], "hero")), 1)
 

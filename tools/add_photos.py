@@ -25,7 +25,8 @@ from PIL import Image, ImageOps
 ROOT = Path(__file__).resolve().parent.parent
 STOCK = ROOT / "static" / "img" / "stock"
 SLOTS = ("weddings", "traditional", "baby", "parties", "other")
-TEMPLATES = ("atelier", "folio", "bloom", "heritage", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+TEMPLATES = ("nguni", "terracotta", "ribbon", "weave", "glitter", "matcha", "festive", "cheers", "heritage",
+             "atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
 
 
 def template_of(path: str) -> str:

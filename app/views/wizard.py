@@ -368,7 +368,10 @@ def step_design(req, ev):
     g = group_of(ev)
     upload_errors = []
     if req.method == "POST":
-        tpl = f.choice("template", [t["slug"] for t in catalog.templates()], "templates", required=True, default=ev["template"])
+        offered = [t["slug"] for t in catalog.templates()]
+        if ev["template"] not in offered:            # a retired design the event already uses stays allowed
+            offered.append(ev["template"])
+        tpl = f.choice("template", offered, "templates", required=True, default=ev["template"])
         t_row = catalog.template(tpl)
         dkey = t_row["design"] if t_row else "atelier"
         dsg = themes.design(dkey)
@@ -423,7 +426,10 @@ def step_design(req, ev):
     res = themes.resolve(dkey, ev["design"])
     w = (ev["design"] or {}).get("wording", {})
     tpl_opts = []
-    for t in sorted(catalog.templates(), key=lambda t: g not in db.loads(t["groups"], [])):
+    choices = list(catalog.templates())
+    if not t_row["active"] and t_row["slug"] == ev["template"]:
+        choices.insert(0, t_row)                     # keep showing a retired design the event already uses
+    for t in sorted(choices, key=lambda t: g not in db.loads(t["groups"], [])):
         p = themes.design(t["design"])["palettes"][0][2]
         sw = "".join(f'<i style="background:{c}"></i>' for c in (p["bg"], p["text"], p["accent"], p["accent2"]))
         tpl_opts.append(f'<label class="choice"><input type="radio" name="template" value="{esc(t["slug"])}"{" checked" if t["slug"] == ev["template"] else ""}>'

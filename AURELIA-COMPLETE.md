@@ -1,6 +1,6 @@
 # Aurelia Studios: complete project and hosting guide
 
-Generated 2026-11-23 from the working project. **81 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
+Generated 2026-11-24 from the working project. **84 files**, each included in full under section 12, with a checksum. Nothing else is needed to rebuild and host the website.
 
 ## Contents
 
@@ -556,12 +556,14 @@ is manual today, by design).
 - `app/eventsite/__init__.py`
 - `app/eventsite/demo.py`
 - `app/eventsite/designs.py`
+- `app/eventsite/invites.py`
 - `app/eventsite/render.py`
 - `app/eventsite/themes.py`
 - `app/icons.py`
 - `app/migrations/001_init.sql`
 - `app/migrations/002_login_links.sql`
 - `app/migrations/003_floor_pixels.sql`
+- `app/migrations/004_invitation_collection.sql`
 - `app/notify.py`
 - `app/seed.py`
 - `app/services/__init__.py`
@@ -599,6 +601,7 @@ is manual today, by design).
 - `static/css/app.css`
 - `static/css/eventsite.css`
 - `static/css/icons.css`
+- `static/css/invites.css`
 - `static/img/favicon.svg`
 - `static/js/app.js`
 - `static/js/eventsite.js`
@@ -1005,7 +1008,7 @@ For the Netlify site, send me the WhatsApp number or social links and I'll rebui
 
 ### `PHOTO-PROMPTS.md`
 
-<!-- FILE: PHOTO-PROMPTS.md sha256=52626f1783560267935aa1bf855bb6d0782df0418f2c329e709f0d5f3f7ad13c nl=1 -->
+<!-- FILE: PHOTO-PROMPTS.md sha256=8ddb787fce459017869e5b16d24e3806e84939766b7eadd79cada2b11ad27b28 nl=1 -->
 ```markdown
 # Photos of people for the template samples
 
@@ -1017,26 +1020,27 @@ permission you need.
 **For every image:** photorealistic, natural skin texture and lighting, natural-looking hands and faces,
 no text, logos or watermarks. If a face or hand looks odd, generate it again.
 
-**Shape:** "portrait 4:5" for Folio and Bloom, "square 1:1" for Heritage and Cradle, "landscape 3:2" for
-the rest. Keep the people in the middle of the picture: some templates crop to an arch, a diamond or a
-circle.
+**Shape:** "landscape 3:2" for every template except Heritage, which crops to a diamond ("square 1:1").
+In the new templates the photo appears just below the opening invitation. Keep the people in the middle
+of the picture.
 
-**Name each file after its template** (for example `heritage.jpg`) and send them to Claude: attach them
+**Name each file after its template** (for example `nguni.jpg`) and send them to Claude: attach them
 in the chat, or put the originals in a Google Drive folder for full quality. Claude resizes and adds them.
 
 | File | Template (style) | Prompt |
 | --- | --- | --- |
-| `atelier.jpg` | Atelier, minimalist luxury | Photorealistic wedding photo of a Black South African couple on their wedding day, bride in a minimalist ivory satin gown, groom in a black tuxedo, standing close and laughing, soft window light, warm ivory stone wall behind them, elegant and calm, 85mm lens, shallow depth of field, landscape 3:2, no text. |
-| `folio.jpg` | Folio, modern editorial | Photorealistic editorial-style photo of a stylish South African couple in modern wedding outfits on a Johannesburg rooftop at golden hour, city skyline softly blurred, confident fashion-magazine pose, portrait 4:5, no text. |
-| `bloom.jpg` | Bloom, romantic floral | Photorealistic photo of a smiling Black South African bride and groom under an arch of blush roses and greenery in a Cape Winelands garden, soft afternoon light, romantic and joyful, portrait 4:5, no text. |
+| `nguni.jpg` | Nguni, cowhide envelope | Photorealistic photo of a Black South African couple at their traditional wedding, bride in a beaded headpiece and an ochre and cream outfit, groom in a traditional shirt with a cowhide accent, standing beside woven baskets and dried pampas grass, warm afternoon light, joyful and elegant, landscape 3:2, couple centred, no text. |
+| `terracotta.jpg` | Terracotta, lobola | Photorealistic photo of two South African families meeting at a lobola celebration at a family home, elders in traditional dress greeting each other warmly, terracotta pots and woven mats in the yard, golden sunlight, landscape 3:2, no text. |
+| `ribbon.jpg` | Ribbon, romantic | Photorealistic photo of a smiling Black South African bride and groom in a garden, bride in a simple ivory gown with an olive-green satin bow in her hair, groom in a sage suit, soft afternoon light, romantic and modern, landscape 3:2, no text. |
+| `weave.jpg` | Weave, colourful modern | Photorealistic photo of a stylish South African couple at a colourful modern wedding, bride in a pink gown, groom in a burnt-orange suit, a backdrop of woven fabric in red, orange and pink, joyful, landscape 3:2, no text. |
+| `glitter.jpg` | Glitter, 21st birthdays | Photorealistic photo of a young South African woman celebrating her 21st birthday with friends, silver chrome "21" balloons, a disco ball and sequin outfits, sparkling party lights, energetic and stylish, landscape 3:2, no text. |
+| `matcha.jpg` | Matcha, brunches and showers | Photorealistic photo of three South African women laughing at a soft-pink pilates and matcha brunch, holding iced matcha lattes, pink and white striped decor, pastel exercise balls, bright daylight, landscape 3:2, no text. |
+| `festive.jpg` | Festive, Christmas and year-end | Photorealistic photo of a South African family at a summer Christmas lunch outdoors, a long table with red and white decorations, a small Christmas tree with red bows, everyone smiling and raising glasses, landscape 3:2, no text. |
+| `cheers.jpg` | Cheers, year-end and New Year's | Photorealistic photo of friends at a South African rooftop New Year's Eve party clinking champagne coupes, warm string lights and a city skyline at dusk, celebratory, landscape 3:2, no text. |
 | `heritage.jpg` | Heritage, traditional (7 cultural styles) | Photorealistic photo of a South African couple in traditional wedding attire at a lobola celebration, bride in beaded jewellery and a traditional headpiece, groom in a traditional shirt, family softly blurred in the background, rural homestead, warm sunlight, square 1:1, couple centred, no text. |
-| `champagne.jpg` | Champagne, black tie | Photorealistic photo of an elegant South African couple in black-tie evening wear raising champagne glasses at a candlelit gala, warm gold bokeh lights, luxurious ballroom, landscape 3:2, no text. |
-| `linea.jpg` | Linea, contemporary minimalist | Photorealistic photo of an Indian South African bride and groom in contemporary minimalist wedding attire in a light-filled modern space with clean lines and neutral tones, landscape 3:2, no text. |
-| `confetti.jpg` | Confetti, pastel celebrations | Photorealistic photo of a joyful first birthday party: a South African mother lifting her laughing toddler among pastel balloons and confetti, soft daylight, playful, landscape 3:2, no text. |
-| `pulse.jpg` | Pulse, bold modern parties | Photorealistic photo of a young South African woman celebrating her 21st birthday with friends at a night party, gold "21" balloons, disco-ball reflections and glitter, energetic and stylish, landscape 3:2, no text. |
-| `aurora.jpg` | Aurora, glass and light | Photorealistic photo of a South African couple sharing a slow dance at a modern wedding reception, dreamy iridescent pastel lighting and soft haze, romantic, landscape 3:2, no text. |
-| `laureate.jpg` | Laureate, graduations | Photorealistic photo of a proud young South African graduate in gown and cap hugging her parents on a university campus on a sunny day, landscape 3:2, no text. |
-| `cradle.jpg` | Cradle, baby celebrations | Photorealistic photo of an expecting South African couple at a baby shower, mother-to-be in a soft sage dress holding her bump, partner smiling beside her, cream and sage decor, gentle light, square 1:1, no text. |
+
+The original eleven designs (Atelier, Folio, Bloom and the rest) are no longer offered to new customers,
+so they don't need photos.
 
 **Optional, for the home page tiles and the sample galleries:** up to six photos per occasion, in
 folders named `weddings`, `traditional`, `baby`, `parties` and `other` (the first photo in each folder
@@ -1045,14 +1049,56 @@ also becomes that occasion's tile photo on the home page).
 
 ### `PROJECT-LOG.md`
 
-<!-- FILE: PROJECT-LOG.md sha256=e85dfc36c8718ce8edc7a11669da65ab42387f7df740cf3e5b161177b1776808 nl=1 -->
+<!-- FILE: PROJECT-LOG.md sha256=d8e91f5d9cb51e1e63eeede92b278ee7a8bf6d02e0fd13080eb707d5727926ad nl=1 -->
 ```markdown
 # Aurelia project log
 
 Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLETE.md` as shared on
 2026-11-16 (67 files, 70 tests passing).
 
-## 2026-11-26: lobola invite, cultural styles, photos of people
+## 2026-11-24: animated invitation templates replace the basic ones
+
+**Changes**
+- New template collection (`app/eventsite/invites.py`, `static/css/invites.css`), from the owner's
+  Pinterest and TikTok references and current invitation trends (wax seals, envelope reveals, bows,
+  chrome balloons, hand-drawn illustration). Each design opens like a real invitation, then carries on
+  as the full event website:
+  - **Nguni**: a Nguni cowhide envelope with a gold wax seal (the couple's initials) opens and the card
+    rises out, with dried pampas and woven baskets. Made for traditional weddings, lobola and umembeso.
+  - **Terracotta**: the homepage lobola invitation as a full website, with beadwork, a crest of a Nguni
+    cow between two shields, a live countdown, a basket and a clay pot.
+  - **Ribbon**: a hand-drawn ribbon draws itself round the card and ties into a bow.
+  - **Weave**: a woven chevron envelope in sunset colours opens to a pink card.
+  - **Glitter**: chrome balloon numbers (the age comes from the event title), a turning disco ball,
+    sequins.
+  - **Matcha**: pink cabana stripes, an olive bow, a matcha latte and a bouncing pilates ball.
+  - **Festive**: candy-cane stripes, an arched card in red ribbon, a tree with bows, falling snow.
+  - **Cheers**: retro stripes and a hand-drawn champagne toast with rising bubbles.
+- Sections drift in as guests scroll. All motion is CSS and is off for visitors who choose reduced
+  motion; the finished invitation is the default, so nothing depends on the animation or on JavaScript.
+- The catalogue now offers these eight plus Heritage. The original ten basic designs are switched off
+  once by `migrations/004_invitation_collection.sql`. They stay in the database, every event already
+  using one keeps it (the design step still shows it), and an admin can switch any back on.
+- Home page: "Finished event websites" shows Nguni, Ribbon and Glitter; "Templates with their own
+  character" leads with Nguni, Ribbon, Weave, Terracotta, Glitter and Matcha. The phone's lobola
+  invitation now has a cow, in a crest between the two shields (the floating tiles cover the bottom
+  of the phone, so it sits at the top).
+- Samples suited to each design: a traditional wedding with umembeso (Nguni), a lobola (Terracotta),
+  a 21st (Glitter), a matcha brunch (Matcha), a family Christmas lunch and a company year-end
+  (Festive), New Year's Eve and an engagement (Cheers).
+- `PHOTO-PROMPTS.md` lists prompts for the new templates.
+
+**Checked**
+- 123 tests pass, including new ones: only the new collection is offered, retired designs keep working
+  for existing events, every animation sits behind the reduced-motion check, and the upgrade path on a
+  copy of an existing database.
+- Screenshots of every design on desktop and phone, mid-animation and finished, and the home page.
+
+**Waiting on**
+- Railway variables: BASE_URL=https://aureliastudios.co.za and APP_ENV=production.
+- Photos for the new templates (optional; prompts in PHOTO-PROMPTS.md).
+
+## 2026-11-23: lobola invite, cultural styles, photos of people
 
 **Changes**
 - Home page: the phone (Lerato & Sipho) shows a lobola celebration invitation in a cream,
@@ -1074,7 +1120,7 @@ Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLE
 - The photos (generated by the owner from PHOTO-PROMPTS.md).
 - Railway variables: BASE_URL=https://aureliastudios.co.za and APP_ENV=production.
 
-## 2026-11-25 (night): settings copied from the example file
+## 2026-11-23: settings copied from the example file
 
 **Found**
 - The live site runs with BASE_URL=http://127.0.0.1:8040 and a non-production APP_ENV: robots.txt
@@ -1096,7 +1142,7 @@ Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLE
 - In Railway: BASE_URL=https://aureliastudios.co.za, APP_ENV=production (or delete it), then the
   launch checks screenshot.
 
-## 2026-11-25 (evening): domain live, safer launch checks
+## 2026-11-23: domain live, safer launch checks
 
 **Changes**
 - aureliastudios.co.za is live on Railway through Cloudflare DNS (CNAME at the root, DNS only) and
@@ -1113,7 +1159,7 @@ Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLE
 - BASE_URL=https://aureliastudios.co.za in Railway (edit the existing variable), then a look at the
   launch checks to tidy the other variables.
 
-## 2026-11-25 (later): Aurelia Studios, GoDaddy domain
+## 2026-11-23: Aurelia Studios, GoDaddy domain
 
 **Changes**
 - The name is now **Aurelia Studios**, to match the domain. It comes from `BRAND_NAME`, so page titles,
@@ -1132,7 +1178,7 @@ Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLE
   mentions PayShap. If PayShap is wanted, Ozow, Peach Payments and Stitch offer PayShap payment requests;
   adding one means a new gateway in `services/payments.py` once there is a merchant account with it.
 
-## 2026-11-25: golden-moment colours, new logo, aureliastudios.co.za
+## 2026-11-23: golden-moment colours, new logo, aureliastudios.co.za
 
 **Changes**
 - Colours follow the name (Aurelia, the golden moment): warm white and ivory with charcoal text, and a
@@ -1155,7 +1201,7 @@ Decisions, changes and open items, newest first. The baseline is `AURELIA-COMPLE
 **Waiting on**
 - The domain doesn't answer yet. Connect it with the deploy guide, part 3, then set BASE_URL.
 
-## 2026-11-24: liquid-glass look
+## 2026-11-23: liquid-glass look
 
 **Changes**
 - The site and the app take an iOS-style "liquid glass" look: a pearl-grey base with white cells
@@ -1446,7 +1492,7 @@ The 21 pain points from the journey review, fixed in both the hosted app and the
 
 ### `README.md`
 
-<!-- FILE: README.md sha256=e5fe2a59412d913c9e6cbed6f1e7e48d0417a4514ce4b1dcf535e3aaa8eef857 nl=1 -->
+<!-- FILE: README.md sha256=34b661716f189d0a88b644970be9293e1b77cd29e3b99d158be18469ea7f2c6a nl=1 -->
 ````markdown
 # Aurelia Studios — digital event experience platform
 
@@ -1542,9 +1588,18 @@ with blush, mint, peach and sky washes, glossy pastel buttons with dark text, an
 text and checked controls so contrast stays AA. Footer and menu drawer are deep plum. Aurelia adds a
 glossy, transparent layer (frosted glass panels with a specular edge) and an Instrument Serif keyword.
 All colours are tokens at the top of `static/css/app.css`.
-Event websites have their own identities. Each of the 11 templates has a different layout, not just
-different colours: Atelier, Folio, Bloom, Heritage, Champagne, Linea, Confetti, Pulse, Aurora, Laureate
-and Cradle. Light and dark themes are supported, and motion turns off under reduced-motion settings.
+Event websites open like a real invitation, then carry on as the full website. The catalogue offers
+nine designs, each with its own layout and animation: Nguni (a cowhide envelope with a gold wax seal),
+Terracotta (beadwork, shields and a Nguni cow), Ribbon (a hand-drawn ribbon and bow), Weave (a woven
+chevron envelope), Glitter (chrome balloons and a disco ball), Matcha (pink stripes and an olive bow),
+Festive (Christmas stripes and snow), Cheers (a champagne toast) and Heritage (seven cultural styles).
+They live in `app/eventsite/invites.py` and `static/css/invites.css`. The animations are CSS only, and
+they switch off for visitors who choose reduced motion; the finished invitation is the default.
+
+The original eleven designs (Atelier, Folio, Bloom, Champagne, Linea, Confetti, Pulse, Aurora, Laureate
+and Cradle, in `designs.py`) are hidden from new customers by `migrations/004_invitation_collection.sql`
+but still render for every event that uses them. An admin can switch any of them back on in
+`/admin/templates`.
 
 ## Security and privacy
 
@@ -2285,7 +2340,7 @@ def audit(actor_id, action: str, target: str = "", **meta) -> None:
 
 ### `app/catalog.py`
 
-<!-- FILE: app/catalog.py sha256=63912b359898e835294f379ce64241ff0ed0c2563421c9feb5bf2c26eafdcd29 nl=1 -->
+<!-- FILE: app/catalog.py sha256=959e5bfcf731955c30e40f8fd5007a6b394035a38014b3e28dae1862590efbc2 nl=1 -->
 ```python
 """Event categories, website templates and packages: defaults, seeding and lookups.
 
@@ -2328,15 +2383,49 @@ CATEGORIES = [
 ]
 
 # slug, name, design key, direction, groups, description, tags
+# The invitation collection comes first: each opens like a real invitation and then carries on as the
+# full event website. The original eleven designs follow; they are retired from the catalogue
+# (RETIRED) but still render for every event that already uses them, and the admin can switch any
+# of them back on.
 TEMPLATES = [
+    ("nguni", "Nguni", "nguni", "Cowhide envelope, gold wax seal", ["weddings", "other"],
+     "A Nguni cowhide envelope sealed in gold wax opens, and your invitation card rises out of it, framed by "
+     "dried pampas and woven baskets. For traditional weddings, lobola, umembeso and family celebrations.",
+     ["traditional", "animated envelope", "wax seal"]),
+    ("terracotta", "Terracotta", "terracotta", "Beadwork, shield and cattle", ["weddings", "other"],
+     "Cream paper, a beadwork border, a shield and spears that draw themselves, and a Nguni cow among the "
+     "baskets and clay pots. A live countdown sits on the invitation itself.",
+     ["lobola", "animated", "countdown"]),
+    ("ribbon", "Ribbon", "ribbon", "Hand-drawn ribbon and bow", ["weddings", "baby", "parties", "other"],
+     "A hand-drawn ribbon draws itself around your card and ties into a bow. In olive, burgundy, blush or powder blue.",
+     ["bow", "animated", "romantic"]),
+    ("weave", "Weave", "weave", "Woven chevron envelope", ["weddings", "parties", "other"],
+     "A woven chevron envelope in sunset reds, oranges and pinks opens, and a soft pink card slides out.",
+     ["woven", "animated envelope", "colourful"]),
+    ("glitter", "Glitter", "glitter", "Chrome balloons and disco", ["parties", "baby", "other"],
+     "Chrome balloon numbers, a turning disco ball and sequins that catch the light. Made for 21sts, 30ths "
+     "and every birthday that deserves a sparkle.",
+     ["21st", "chrome", "disco"]),
+    ("matcha", "Matcha", "matcha", "Pink stripes and an olive bow", ["parties", "baby"],
+     "Pink cabana stripes, an olive bow, a matcha latte and a bouncing pilates ball. For brunches, bridal "
+     "and baby showers and soft-girl birthdays.",
+     ["pastel", "playful", "brunch"]),
+    ("festive", "Festive", "festive", "Christmas stripes and snow", ["parties", "other"],
+     "Candy-cane stripes, an arched card tied with red ribbon, a tree trimmed with bows and gently falling "
+     "snow. For Christmas lunches and year-end functions.",
+     ["christmas", "snow", "year-end"]),
+    ("cheers", "Cheers", "cheers", "Retro champagne toast", ["parties", "other", "weddings"],
+     "Retro stripes and a hand-drawn champagne toast with rising bubbles. For year-end parties, New Year's, "
+     "engagements and anniversaries.",
+     ["year-end", "champagne", "retro"]),
+    ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
+     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
     ("atelier", "Atelier", "atelier", "Minimalist luxury", ["weddings", "other", "parties"],
      "Ivory and ink, a fine serif and generous space. A centred monogram leads into one calm column.", ["ivory", "serif", "monogram"]),
     ("folio", "Folio", "folio", "Modern editorial", ["weddings", "parties", "other"],
      "A magazine spread: oversized headline, an index that follows you down the page, and a split layout.", ["editorial", "split", "bold type"]),
     ("bloom", "Bloom", "bloom", "Romantic floral", ["weddings", "baby"],
      "Blush and sage with drawn botanicals, arched frames and a flowing script for your names.", ["floral", "script", "arches"]),
-    ("heritage", "Heritage", "heritage", "African traditional luxury", ["weddings", "other"],
-     "Geometric beadwork borders in rich ochre and indigo, or in a Ndebele, Zulu, Xhosa, Pedi, Venda, Tsonga or Swati style. Built for several ceremonies and both families.", ["traditional", "7 cultural styles", "multi-ceremony"]),
     ("champagne", "Champagne", "champagne", "Champagne and gold", ["weddings", "parties", "other"],
      "Midnight backdrop, gold foil lettering and Art Deco fans. Glass panels catch the light.", ["deco", "dark", "gold"]),
     ("linea", "Linea", "linea", "Contemporary minimalist", ["weddings", "other", "parties"],
@@ -2352,6 +2441,10 @@ TEMPLATES = [
     ("cradle", "Cradle", "cradle", "Soft storybook", ["baby"],
      "Cream, sage and hand-drawn moons and stars, laid out like the pages of a picture book.", ["storybook", "soft", "illustrated"]),
 ]
+
+# Original designs no longer offered for new events (new databases add them switched off; existing
+# ones are switched off once by migrations/004_invitation_collection.sql).
+RETIRED = {"atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle"}
 
 FEATURES = {
     # Essential
@@ -2434,7 +2527,7 @@ def ensure_catalog() -> None:
         if slug not in existing:
             db.insert("templates", {"slug": slug, "name": name, "design": design, "direction": direction,
                                     "groups": db.dumps(groups), "description": desc, "tags": db.dumps(tags),
-                                    "sort": i, "updated_at": db.now()})
+                                    "sort": i, "active": 0 if slug in RETIRED else 1, "updated_at": db.now()})
     for slug, old_text in _REFRESH_TEXT.items():
         row = next((t for t in TEMPLATES if t[0] == slug), None)
         if row:
@@ -3254,7 +3347,7 @@ def suggested_rsvp_deadline(event_date: str) -> str:
 
 ### `app/eventsite/demo.py`
 
-<!-- FILE: app/eventsite/demo.py sha256=bd16a3edf83166068ba95fbed3d3ba7c739ceebd8a7d3458e4aa99b71d076573 nl=1 -->
+<!-- FILE: app/eventsite/demo.py sha256=5e91276d319b70f8d503b7872ef50f127713c50eaf51d783d9fb07ce27f67849 nl=1 -->
 ```python
 """Sample events for the template gallery. All names and venues are fictional."""
 from __future__ import annotations
@@ -3345,14 +3438,109 @@ SAMPLES = {
 }
 
 
+_TRADITIONAL = {
+    "name": "Lerato & Sipho's traditional wedding", "hosts": "Lerato & Sipho", "category": "traditional-wedding",
+    "description": "Two families, one celebration. Join us for umembeso in the morning and the wedding celebration that follows.",
+    "venue": {"name": "Inkosi Gardens (sample venue)", "address": "Muldersdrift, Gauteng",
+              "parking": "Parking on the lawn, with marshals to guide you.", "directions": "", "accommodation": ""},
+    "dress": ("Traditional attire", "Wear your family's colours with pride."),
+    "functions": [("Umembeso", "10:00", "13:00", "The Dlamini family home (sample)", "Soweto, Johannesburg"),
+                  ("Wedding celebration", "14:00", "21:00", "Inkosi Gardens (sample venue)", "Muldersdrift, Gauteng")],
+    "schedule": [("10:00", "Umembeso", "Gifts are presented to the bride's family.", "ceremony"),
+                 ("12:30", "Lunch", "", "reception"), ("14:00", "Wedding celebration", "", "ceremony"),
+                 ("16:00", "Speeches and dancing", "", "entertainment")],
+    "menu": [("Main", "Slow-cooked beef stew", "With dumplings", [], 0), ("Main", "Roast chicken", "", [], 0),
+             ("Sides", "Pap, chakalaka and samp", "", ["Vegetarian"], 0), ("Dessert", "Malva pudding", "Custard", [], 0)],
+    "sides": ["The Dlamini family", "The Mahlangu family"],
+}
+
+# A few designs read best with their own kind of sample (a 21st for Glitter, a Christmas lunch for
+# Festive...). Keys override the occasion's sample above; "on" fixes the month and day.
+TEMPLATE_SAMPLES = {
+    "nguni": {"weddings": _TRADITIONAL},
+    "terracotta": {"weddings": dict(_TRADITIONAL, name="Lerato & Sipho's lobola celebration", category="lobola",
+                                    description="Our families are coming together. Join us for the lobola and the celebration that follows.",
+                                    venue={"name": "The Mahlangu family home (sample)", "address": "Soweto, Johannesburg",
+                                           "parking": "Street parking, with marshals on the day.", "directions": "", "accommodation": ""},
+                                    functions=[],
+                                    schedule=[("10:00", "Families arrive", "", "other"), ("11:00", "Negotiations", "For the family delegations.", "ceremony"),
+                                              ("14:00", "Celebration", "Lunch, music and dancing for everyone.", "reception")])},
+    "glitter": {"parties": {
+        "name": "Naledi turns 21", "hosts": "Naledi's 21st",
+        "description": "Twenty-one, glitter everywhere and a playlist we've been building for months. Dress up and shine.",
+        "venue": {"name": "The Mirror Room (sample venue)", "address": "Rosebank, Johannesburg",
+                  "parking": "Secure parking in the basement.", "directions": "", "accommodation": ""},
+        "dress": ("Glitter, sequins and chrome", "Silver, gold or anything that sparkles."), "end": "01:00",
+        "schedule": [("19:00", "Doors open", "Welcome cocktails.", "other"), ("20:00", "Dinner", "", "reception"),
+                     ("21:00", "Speeches and cake", "", "speech"), ("22:00", "Dance floor opens", "", "entertainment")]}},
+    "matcha": {"parties": {
+        "name": "Zanele's matcha morning", "hosts": "Zanele's 30th",
+        "description": "A slow Saturday: a gentle pilates class, matcha and pastries, and the people I love. Bring a mat if you have one.",
+        "venue": {"name": "The Studio on 7th (sample venue)", "address": "Melville, Johannesburg",
+                  "parking": "Street parking on 7th Street.", "directions": "", "accommodation": ""},
+        "dress": ("Athleisure in soft colours", "Comfortable enough to stretch, cute enough for photos."), "end": "12:30",
+        "schedule": [("09:00", "Arrive and settle in", "", "other"), ("09:30", "Pilates class", "Mats provided.", "activity"),
+                     ("10:30", "Matcha and brunch", "", "reception"), ("11:30", "Cake", "", "other")],
+        "menu": [("Brunch", "Matcha lattes", "Oat, almond or full cream", ["Vegan option"], 0),
+                 ("Brunch", "Berry yoghurt bowls", "", ["Vegetarian"], 0), ("Brunch", "Croissants and pastries", "", [], 0)],
+        "drinks": "Matcha, fresh juice and sparkling water.", "gift_note": "No gifts, just good company."}},
+    "festive": {
+        "parties": {
+            "name": "The Mokoena family Christmas lunch", "hosts": "Christmas at the Mokoenas", "category": "private-celebration",
+            "description": "Christmas lunch is at ours this year. Bring your appetite, your best festive outfit and a gift for secret Santa.",
+            "venue": {"name": "The Mokoena family home (sample)", "address": "Morningside, Durban",
+                      "parking": "Park in the street; the gate will be open.", "directions": "", "accommodation": ""},
+            "dress": ("Something red or green", ""), "on": (12, 25), "end": "18:00",
+            "schedule": [("12:00", "Arrivals and drinks", "", "other"), ("13:00", "Christmas lunch", "", "reception"),
+                         ("15:00", "Secret Santa", "", "activity"), ("16:00", "Dessert and games", "", "entertainment")],
+            "menu": [("Lunch", "Glazed gammon", "Pineapple and mustard glaze", [], 0), ("Lunch", "Roast chicken and potatoes", "", [], 0),
+                     ("Lunch", "Festive salads", "", ["Vegetarian"], 0), ("Dessert", "Trifle", "", [], 0)],
+            "gift_note": "Secret Santa: one gift of about R150, wrapped and labelled."},
+        "other": {
+            "name": "Kumo Studio year-end function", "hosts": "Kumo Studio year-end", "category": "corporate",
+            "description": "Thank you for a wonderful year. Join the team for dinner, awards and a little dancing.",
+            "venue": {"name": "The Glasshouse (sample venue)", "address": "Sandton, Johannesburg",
+                      "parking": "Valet parking at the entrance.", "directions": "", "accommodation": ""},
+            "dress": ("Festive smart", ""), "on": (12, 12), "functions": [], "end": "23:00",
+            "schedule": [("18:30", "Welcome drinks", "", "other"), ("19:30", "Dinner", "", "reception"),
+                         ("20:30", "Awards", "", "speech"), ("21:30", "Dancing", "", "entertainment")]}},
+    "cheers": {
+        "parties": {
+            "name": "New Year's Eve on the rooftop", "hosts": "Cheers to 2027",
+            "description": "Out with the old, in with the new. Join us on the rooftop to toast the year.",
+            "venue": {"name": "Skyline Rooftop (sample venue)", "address": "Florida Road, Morningside, Durban",
+                      "parking": "Secure parking behind the building.", "directions": "", "accommodation": ""},
+            "dress": ("Black, gold and a little sparkle", ""), "on": (12, 31), "end": "01:00",
+            "schedule": [("20:00", "Doors open", "", "other"), ("21:00", "Dinner", "", "reception"),
+                         ("23:45", "Countdown", "", "entertainment"), ("23:59", "Champagne toast", "", "speech")]},
+        "weddings": {
+            "name": "Thandi & Kabelo are engaged", "hosts": "Thandi & Kabelo", "category": "engagement",
+            "description": "She said yes! Join us for champagne, dinner and far too many toasts.",
+            "venue": {"name": "The Courtyard (sample venue)", "address": "Bree Street, Cape Town",
+                      "parking": "Paid parking on Bree Street.", "directions": "", "accommodation": ""},
+            "dress": ("Cocktail", ""), "functions": [],
+            "schedule": [("18:00", "Welcome drinks", "", "other"), ("19:00", "Toasts", "", "speech"),
+                         ("19:30", "Dinner", "", "reception"), ("21:00", "Dancing", "", "entertainment")]}},
+}
+
+
+def _next_date(month: int, day: int, after: date) -> date:
+    d = date(after.year, month, day)
+    return d if d >= after else date(after.year + 1, month, day)
+
+
 def demo_event(template_slug: str, group: str = "weddings") -> dict:
     if group not in SAMPLES:
         group = "weddings"
     t = catalog.template(template_slug)
     design = t["design"] if t else template_slug
-    s = SAMPLES[group]
+    s = dict(SAMPLES[group], **TEMPLATE_SAMPLES.get(template_slug, {}).get(group, {}))
     today = date.today()
     ev_date = today + timedelta(days=s["event_days"])
+    deadline = today + timedelta(days=s["deadline_days"])
+    if s.get("on"):
+        ev_date = _next_date(*s["on"], today + timedelta(days=10))
+        deadline = max(today + timedelta(days=3), ev_date - timedelta(days=10))
     first_time = s["functions"][0][1] if s["functions"] else s["schedule"][0][0]
     functions = [{"id": k + 1, "name": n, "func_date": ev_date.isoformat(), "start_time": st, "end_time": en,
                   "venue_name": vn, "address": ad, "map_url": "", "description": "", "dress_code": ""}
@@ -3370,12 +3558,12 @@ def demo_event(template_slug: str, group: str = "weddings") -> dict:
         "id": 0, "uid": "demo", "slug": f"sample-{template_slug}", "status": "published", "owner_id": 0,
         "template": template_slug, "category": s["category"], "name": s["name"], "hosts": s["hosts"],
         "description": s["description"], "event_date": ev_date.isoformat(), "start_time": first_time,
-        "end_time": "23:00" if group in ("weddings", "parties") else "16:00",
+        "end_time": s.get("end") or ("23:00" if group in ("weddings", "parties") else "16:00"),
         "venue": dict(s["venue"], map_url=""),
         "design": {}, "guest_settings": {
             "estimated": 150, "categories": ["Family", "Friends"], "sides": s["sides"],
             "children_allowed": group == "baby", "max_children": 2, "plus_one_policy": "per_guest",
-            "plus_ones_default": 1, "rsvp_deadline": (today + timedelta(days=s["deadline_days"])).isoformat()},
+            "plus_ones_default": 1, "rsvp_deadline": deadline.isoformat()},
         "info": {"dress_code": s["dress"][0], "dress_code_notes": s["dress"][1],
                  "registry": [{"name": n, "url": u, "note": no} for n, u, no in s["registry"]],
                  "gift_note": s["gift_note"],
@@ -3412,9 +3600,12 @@ def _stock_gallery(slug: str, group: str) -> list:
 
 ### `app/eventsite/designs.py`
 
-<!-- FILE: app/eventsite/designs.py sha256=d7b0361fe1eea68be455b81b49d827e5b1c0704249b2d84368f7fe6899304c45 nl=1 -->
+<!-- FILE: app/eventsite/designs.py sha256=ffa1ad7e6bfd2a3a3ebf2867314a58bc4f060a18083cbee8a59452b7af3ca4a7 nl=1 -->
 ```python
-"""The eleven event-website designs.
+"""The original eleven event-website designs, and the section builders every design uses.
+
+The invitation collection (invites.py), which opens like a real invitation and is what the catalogue
+now offers, builds on these; render.py picks the layout from either.
 
 Shared section builders turn the render context into semantic HTML (only for sections that are
 visible and have content). Each design then arranges them in its own structure: a different
@@ -4158,9 +4349,680 @@ LAYOUTS = {
 }
 ```
 
+### `app/eventsite/invites.py`
+
+<!-- FILE: app/eventsite/invites.py sha256=c2d6e0e0ac8710b585383efe0d65edca2e5d67889738ba09cd1d721f650de5db nl=1 -->
+```python
+"""The invitation collection: event websites that open like a real invitation.
+
+Each design starts with an invitation people recognise from 2026 stationery and digital invites: a
+Nguni cowhide envelope sealed in gold wax, a woven chevron envelope, a card tied with a hand-drawn bow,
+chrome party balloons, a Christmas card in the snow, a champagne toast. Below it the page carries on
+as the full event website (RSVP, programme, menu, seating...), built with the shared section builders
+in designs.py.
+
+Motion lives in static/css/invites.css. The finished invitation is the base style: animations only add
+an entrance or a gentle loop, and they are off for visitors who ask for reduced motion, so nothing has
+to animate (or run JavaScript) to be read.
+"""
+from __future__ import annotations
+
+import functools
+import math
+import re
+
+from ..web import esc
+from . import designs as D
+
+
+# --- small helpers for drawing ------------------------------------------------------------------
+def _rng(seed: int):
+    """Deterministic pseudo-random numbers, so a drawing is identical on every page load."""
+    state = [seed * 7919 + 17]
+
+    def rnd() -> float:
+        state[0] = (state[0] * 1103515245 + 12345) & 0x7FFFFFFF
+        return state[0] / 0x7FFFFFFF
+    return rnd
+
+
+def _smooth(pts, closed: bool = True, tension: float = 1 / 6) -> str:
+    """Points → a smooth SVG path (Catmull-Rom curves through every point)."""
+    n = len(pts)
+    out = f"M{pts[0][0]:.1f} {pts[0][1]:.1f}"
+    last = n if closed else n - 1
+    for i in range(last):
+        p0 = pts[i - 1] if (closed or i > 0) else pts[i]
+        p1, p2 = pts[i], pts[(i + 1) % n]
+        p3 = pts[(i + 2) % n] if (closed or i + 2 < n) else p2
+        c1 = (p1[0] + (p2[0] - p0[0]) * tension, p1[1] + (p2[1] - p0[1]) * tension)
+        c2 = (p2[0] - (p3[0] - p1[0]) * tension, p2[1] - (p3[1] - p1[1]) * tension)
+        out += f"C{c1[0]:.1f} {c1[1]:.1f} {c2[0]:.1f} {c2[1]:.1f} {p2[0]:.1f} {p2[1]:.1f}"
+    return out + ("Z" if closed else "")
+
+
+def blob(cx: float, cy: float, r: float, seed: int, n: int = 11, jitter: float = .3, squash: float = .8) -> str:
+    rnd = _rng(seed)
+    pts = []
+    for k in range(n):
+        a = 2 * math.pi * k / n + (rnd() - .5) * (math.pi / n)
+        rr = r * (1 - jitter + 2 * jitter * rnd())
+        pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a) * squash))
+    return _smooth(pts)
+
+
+# --- Nguni cowhide ------------------------------------------------------------------------------
+# Patches of a Nguni hide as a seamless tile (patches crossing an edge are repeated on the far side).
+# Colours come from CSS: --hide-base, --hide-a (main patches), --hide-b (darker patches and speckles).
+_HIDE_W, _HIDE_H = 560, 470
+_HIDE_SPOTS = [
+    # x, y, radius, seed, tone ("a" main patches, "b" darker ones); small ones are the dappled speckles
+    (92, 96, 92, 11, "a"), (318, 58, 62, 23, "b"), (476, 176, 84, 37, "a"), (232, 246, 98, 29, "a"),
+    (52, 340, 66, 41, "b"), (396, 388, 76, 53, "a"), (152, 446, 48, 61, "b"), (524, 456, 40, 67, "b"),
+    (330, 214, 30, 139, "b"), (140, 330, 26, 149, "a"),
+    (300, 118, 11, 71, "b"), (322, 140, 7, 73, "b"), (282, 152, 6, 79, "a"), (400, 250, 12, 83, "b"),
+    (424, 272, 8, 89, "b"), (126, 222, 10, 97, "a"), (110, 246, 6, 101, "a"), (500, 300, 7, 103, "b"),
+    (182, 30, 8, 107, "b"), (262, 360, 9, 109, "b"), (248, 384, 5, 113, "a"), (36, 190, 6, 127, "b"),
+    (540, 80, 9, 131, "a"), (330, 452, 7, 137, "b"),
+]
+
+
+def _hide_tile() -> str:
+    out = []
+    for cx, cy, r, seed, cls in _HIDE_SPOTS:
+        for dx in (-_HIDE_W, 0, _HIDE_W):
+            for dy in (-_HIDE_H, 0, _HIDE_H):
+                x, y = cx + dx, cy + dy
+                if x + r * 1.4 < 0 or x - r * 1.4 > _HIDE_W or y + r * 1.4 < 0 or y - r * 1.4 > _HIDE_H:
+                    continue
+                out.append(f'<path class="hd-{cls}" d="{blob(x, y, r, seed, n=10 if r > 20 else 7, jitter=.24 if r > 20 else .3, squash=.72 + (seed % 5) * .07)}"/>')
+    return "".join(out)
+
+
+HIDE_TILE = _hide_tile()
+
+# One hidden <svg> per page holds the shared patterns and filters (referenced by id).
+def defs_hide(pid: str = "nv-hide") -> str:
+    return (f'<svg class="iv-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>'
+            f'<pattern id="{pid}" width="{_HIDE_W}" height="{_HIDE_H}" patternUnits="userSpaceOnUse">'
+            f'<rect class="hd-base" width="{_HIDE_W}" height="{_HIDE_H}"/>{HIDE_TILE}</pattern>'
+            f'<pattern id="{pid}-sm" href="#{pid}" patternTransform="scale(.28)"/>'
+            f'<filter id="{pid}-fur" x="-2%" y="-2%" width="104%" height="104%"><feTurbulence type="fractalNoise" baseFrequency=".045" numOctaves="2" seed="7"/>'
+            f'<feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/></filter>'
+            f'<filter id="{pid}-grain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>'
+            f'<feColorMatrix values="0 0 0 0 .16  0 0 0 0 .11  0 0 0 0 .07  0 0 0 .55 0"/></filter>'
+            f'</defs></svg>')
+
+
+def hide_fill(pid: str = "nv-hide", small: bool = False) -> str:
+    """A rectangle of cowhide that fills its box (patterns keep their size, so nothing stretches)."""
+    fill = f"{pid}-sm" if small else pid
+    return (f'<svg class="hide-fill" width="100%" height="100%" aria-hidden="true" focusable="false">'
+            f'<rect x="-3%" y="-3%" width="106%" height="106%" fill="url(#{fill})" filter="url(#{pid}-fur)"/>'
+            f'<rect width="100%" height="100%" filter="url(#{pid}-grain)" opacity=".32"/></svg>')
+
+
+# --- wax seal -------------------------------------------------------------------------------------
+def seal(mono: str, sid: str, cls: str = "") -> str:
+    letters = [c for c in (mono or "") if c.strip()][:3]
+    text = " | ".join(esc(c) for c in letters) if len(letters) == 2 else esc("".join(letters))
+    size = 30 if len(letters) <= 2 else 26
+    edge = blob(60, 60, 55, 5, n=19, jitter=.045, squash=1)
+    return (f'<svg class="seal {cls}" viewBox="0 0 120 120" aria-hidden="true" focusable="false"><defs>'
+            f'<radialGradient id="{sid}-g" cx="38%" cy="30%" r="80%"><stop offset="0" class="sl-1"/><stop offset=".45" class="sl-2"/>'
+            f'<stop offset=".85" class="sl-3"/><stop offset="1" class="sl-4"/></radialGradient>'
+            f'<clipPath id="{sid}-c"><path d="{edge}"/></clipPath>'
+            f'<linearGradient id="{sid}-glint" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/>'
+            f'<stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'
+            f'<path class="seal__edge" d="{edge}" fill="url(#{sid}-g)"/>'
+            f'<circle class="seal__ring" cx="60" cy="60" r="41"/><circle class="seal__ring2" cx="60" cy="60" r="36.5"/>'
+            f'<text class="seal__shadow" x="61" y="{70.5 if size == 30 else 69.5}" text-anchor="middle" font-size="{size}">{text}</text>'
+            f'<text class="seal__mono" x="60" y="{69.5 if size == 30 else 68.5}" text-anchor="middle" font-size="{size}">{text}</text>'
+            f'<g clip-path="url(#{sid}-c)"><rect class="seal__glint" x="-50" y="-20" width="40" height="160" fill="url(#{sid}-glint)"/></g>'
+            f'</svg>')
+
+
+# --- dried pampas and bunny tails -------------------------------------------------------------------
+def _quad(p0, p1, p2, t):
+    return ((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0],
+            (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1])
+
+
+def _dquad(p0, p1, p2, t):
+    return (2 * (1 - t) * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0]),
+            2 * (1 - t) * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1]))
+
+
+@functools.lru_cache(maxsize=8)
+def pampas(cls: str, seed: int = 3, stems: int = 5, tails: int = 3) -> str:
+    """A spray of dried pampas plumes and bunny-tail grass growing from the bottom centre of a 220×320 box."""
+    rnd = _rng(seed)
+    groups = []
+    for s in range(stems):
+        base = (110 + (rnd() - .5) * 24, 318)
+        tip = (22 + s * (176 / max(1, stems - 1)) + (rnd() - .5) * 24, 16 + rnd() * 64)
+        ctrl = ((base[0] + tip[0]) / 2 + (rnd() - .5) * 50, (base[1] + tip[1]) / 2 + 20)
+        stem = f"M{base[0]:.1f} {base[1]:.1f}Q{ctrl[0]:.1f} {ctrl[1]:.1f} {tip[0]:.1f} {tip[1]:.1f}"
+        body = [_quad(base, ctrl, tip, .44 + .56 * k / 8) for k in range(9)]
+        fibres = []
+        for _ in range(96):
+            t = .44 + .56 * rnd() ** .8
+            x, y = _quad(base, ctrl, tip, t)
+            dx, dy = _dquad(base, ctrl, tip, t)
+            ln = math.hypot(dx, dy) or 1
+            ux, uy = dx / ln, dy / ln
+            side = 1 if rnd() > .5 else -1
+            # plumes are fullest a third of the way up and taper to a soft point
+            fullness = math.sin(math.pi * min(1, (t - .44) / .56 * 1.1)) ** .7
+            reach = (5 + 22 * fullness) * (.55 + .45 * rnd())
+            ang = (.35 + .5 * rnd()) * side
+            ex = x + (ux * math.cos(ang) - uy * math.sin(ang)) * reach
+            ey = y + (uy * math.cos(ang) + ux * math.sin(ang)) * reach
+            mx = (x + ex) / 2 + (rnd() - .5) * 4
+            my = (y + ey) / 2 + (rnd() - .5) * 4
+            fibres.append(f"M{x:.0f} {y:.0f}q{mx - x:.0f} {my - y:.0f} {ex - x:.0f} {ey - y:.0f}")
+        plume = _smooth(body, closed=False)
+        groups.append(f'<g class="pm-stem" style="--i:{s}"><path class="pm-s" d="{stem}"/><path class="pm-glow" d="{plume}"/>'
+                      f'<path class="pm-glow pm-glow--in" d="{plume}"/><path class="pm-f" d="{"".join(fibres)}"/></g>')
+    for s in range(tails):
+        base = (100 + rnd() * 20, 318)
+        tip = (50 + rnd() * 120, 110 + rnd() * 100)
+        ctrl = ((base[0] + tip[0]) / 2 + (rnd() - .5) * 30, (base[1] + tip[1]) / 2)
+        lean = (tip[0] - base[0]) / 4
+        groups.append(f'<g class="pm-tail" style="--i:{s + stems}"><path class="pm-s pm-s--thin" d="M{base[0]:.1f} {base[1]:.1f}Q{ctrl[0]:.1f} {ctrl[1]:.1f} {tip[0]:.1f} {tip[1]:.1f}"/>'
+                      f'<ellipse class="pm-bun" cx="{tip[0]:.1f}" cy="{tip[1] - 9:.1f}" rx="6" ry="11" transform="rotate({lean:.0f} {tip[0]:.1f} {tip[1]:.1f})"/></g>')
+    return f'<svg class="pampas {cls}" viewBox="0 0 220 320" aria-hidden="true" focusable="false">{"".join(groups)}</svg>'
+
+
+# --- woven baskets (wall-basket cluster) -------------------------------------------------------
+def _basket(cx, cy, r, tone, band, seed):
+    rnd = _rng(seed)
+    rings = "".join(f'<circle cx="{cx}" cy="{cy}" r="{rr:.1f}" class="bk-ring"/>' for rr in [r * f for f in (.92, .8, .68, .32, .2)])
+    n = 12 if r > 40 else 9
+    tris = []
+    for k in range(n):
+        a0 = 2 * math.pi * k / n
+        a1 = 2 * math.pi * (k + .5) / n
+        a2 = 2 * math.pi * (k + 1) / n
+        ri, ro = r * .4, r * .62
+        pts = [(cx + ri * math.cos(a0), cy + ri * math.sin(a0)), (cx + ro * math.cos(a1), cy + ro * math.sin(a1)),
+               (cx + ri * math.cos(a2), cy + ri * math.sin(a2))]
+        tris.append(f'<path class="bk-{band[k % len(band)]}" d="M{pts[0][0]:.1f} {pts[0][1]:.1f}L{pts[1][0]:.1f} {pts[1][1]:.1f}L{pts[2][0]:.1f} {pts[2][1]:.1f}Z"/>')
+    spokes = '<path class="bk-spoke" d="' + "".join(
+        f"M{cx + r * .2 * math.cos(a):.0f} {cy + r * .2 * math.sin(a):.0f}L{cx + r * .97 * math.cos(a):.0f} {cy + r * .97 * math.sin(a):.0f}"
+        for a in [2 * math.pi * k / 30 + rnd() * .02 for k in range(30)]) + '"/>'
+    return (f'<g class="bk" style="--r:{r}"><ellipse class="bk-shadow" cx="{cx + 4}" cy="{cy + r * .12 + 4}" rx="{r}" ry="{r * .98:.1f}"/>'
+            f'<circle class="bk-{tone}" cx="{cx}" cy="{cy}" r="{r}"/>{spokes}{rings}{"".join(tris)}'
+            f'<circle class="bk-c" cx="{cx}" cy="{cy}" r="{r * .14:.1f}"/></g>')
+
+
+BASKETS = ('<svg class="baskets" viewBox="0 0 240 190" aria-hidden="true" focusable="false">'
+           + _basket(84, 104, 66, "straw", ("ink", "clay"), 2) + _basket(186, 62, 44, "straw2", ("clay", "ink", "straw"), 4)
+           + _basket(178, 152, 28, "dark", ("straw", "straw2"), 6) + "</svg>")
+
+
+# --- a Nguni cow, head on, with lyre horns ------------------------------------------------------------
+COW = """<svg class="cow" viewBox="0 0 120 100" aria-hidden="true" focusable="false"><defs>
+<linearGradient id="cow-horn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3B2A1F"/><stop offset=".32" stop-color="#C9B48F"/><stop offset="1" stop-color="#F3EADA"/></linearGradient>
+<clipPath id="cow-face"><path d="M60 25C70 25 77 30 77 40 77 52 73 64 71 74 70 80 72 86 70 90 67 95 53 95 50 90 48 86 50 80 49 74 47 64 43 52 43 40 43 30 50 25 60 25Z"/></clipPath></defs>
+<g class="cow__horns" fill="url(#cow-horn)" stroke="#3B2A1E" stroke-width=".8"><path d="M47 33C36 34 24 32 18 24 13 18 11 11 13 4 16 11 20 18 27 22 33 25 41 26 49 26Z"/>
+<path d="M73 33C84 34 96 32 102 24 107 18 109 11 107 4 104 11 100 18 93 22 87 25 79 26 71 26Z"/></g>
+<g class="cow__ears" stroke="#3B2A1E" stroke-width=".8"><path class="cow-a" d="M46 38C38 34 28 35 21 41 28 47 39 47 46 43Z"/><path class="cow-a" d="M74 38C82 34 92 35 99 41 92 47 81 47 74 43Z"/>
+<path class="cow-in" d="M43 40C37 38.4 31 39 26.5 41.3 31.5 44 38 44 43 42.4Z"/><path class="cow-in" d="M77 40C83 38.4 89 39 93.5 41.3 88.5 44 82 44 77 42.4Z"/></g>
+<path class="cow-base" d="M60 25C70 25 77 30 77 40 77 52 73 64 71 74 70 80 72 86 70 90 67 95 53 95 50 90 48 86 50 80 49 74 47 64 43 52 43 40 43 30 50 25 60 25Z"/>
+<g clip-path="url(#cow-face)"><path class="cow-a" d="M40 30C49 27 57 34 57 45 57 54 52 62 45 66L38 60Z"/><path class="cow-b" d="M63 24C72 23 79 30 78 38 72 40 66 36 63 24Z"/>
+<circle class="cow-a" cx="60" cy="53" r="1.6"/><circle class="cow-a" cx="56.5" cy="59" r="1.2"/><circle class="cow-b" cx="66" cy="62" r="1.1"/><circle class="cow-a" cx="61.5" cy="47" r=".9"/></g>
+<path d="M60 25C70 25 77 30 77 40 77 52 73 64 71 74 70 80 72 86 70 90 67 95 53 95 50 90 48 86 50 80 49 74 47 64 43 52 43 40 43 30 50 25 60 25Z" fill="none" stroke="#3B2A1E" stroke-width=".9"/>
+<path d="M53 27.5c2-3.5 5.5-4 7-1.4 1.6-2.6 5-2.1 6.8 1.4" fill="none" stroke="#B9A27C" stroke-width="1.1" stroke-linecap="round"/>
+<ellipse class="cow-eye" cx="51" cy="47.5" rx="2.3" ry="2.7"/><ellipse class="cow-eye" cx="69" cy="47.5" rx="2.3" ry="2.7"/><circle cx="51.8" cy="46.6" r=".7" fill="#fff"/><circle cx="69.8" cy="46.6" r=".7" fill="#fff"/>
+<ellipse class="cow-muzzle" cx="60" cy="87.5" rx="11.5" ry="7.6"/><ellipse cx="55.6" cy="88.6" rx="1.9" ry="1.25" fill="#3A2A22"/><ellipse cx="64.4" cy="88.6" rx="1.9" ry="1.25" fill="#3A2A22"/>
+<path d="M56 93.2c2.6 1.1 5.4 1.1 8 0" fill="none" stroke="#7A5246" stroke-width=".8" stroke-linecap="round"/></svg>"""
+
+SHIELD = """<svg class="shield" viewBox="0 0 64 56" aria-hidden="true" focusable="false"><g class="sh-spear" fill="none" stroke-linecap="round"><path pathLength="1" d="M8 52 56 4"/><path pathLength="1" d="M56 52 8 4"/></g>
+<ellipse class="sh-tip" cx="56.5" cy="3.5" rx="5" ry="1.9" transform="rotate(-45 56.5 3.5)"/><ellipse class="sh-tip" cx="7.5" cy="3.5" rx="5" ry="1.9" transform="rotate(45 7.5 3.5)"/>
+<ellipse class="sh-body" pathLength="1" cx="32" cy="29" rx="12" ry="21"/>
+<path class="sh-spots" d="M27 16c3-2 7-1 8 2-1 3-6 4-8 2-1-1-1-3 0-4Zm7 14c3 0 5 3 4 6-3 2-7 1-8-2 0-2 2-4 4-4Zm-10 7c2-1 4 1 4 3-1 2-4 2-5 1-1-1 0-3 1-4Z"/>
+<path class="sh-stick" pathLength="1" d="M32 6v46"/></svg>"""
+
+_SHIELD_SM = ('<ellipse class="sh-body" pathLength="1" cx="0" cy="0" rx="12" ry="22"/>'
+              '<path class="sh-spots" d="M-5-13c3-2 7-1 8 2-1 3-6 4-8 2-1-1-1-3 0-4Zm7 14c3 0 5 3 4 6-3 2-7 1-8-2 0-2 2-4 4-4Zm-10 7c2-1 4 1 4 3-1 2-4 2-5 1-1-1 0-3 1-4Z"/>'
+              '<path class="sh-stick" pathLength="1" d="M0-24v48"/>')
+# The lobola crest: a Nguni cow (lobola is counted in cattle) between two shields, over crossed spears.
+# The homepage phone shows the same crest with its colours written in.
+CREST = ('<svg class="crest" viewBox="0 0 150 84" aria-hidden="true" focusable="false">'
+         '<g class="sh-spear" fill="none" stroke-linecap="round"><path pathLength="1" d="M22 80 128 6"/><path pathLength="1" d="M128 80 22 6"/></g>'
+         '<ellipse class="sh-tip" cx="128.5" cy="5.5" rx="6" ry="2.2" transform="rotate(-35 128.5 5.5)"/>'
+         '<ellipse class="sh-tip" cx="21.5" cy="5.5" rx="6" ry="2.2" transform="rotate(35 21.5 5.5)"/>'
+         f'<g transform="translate(27 50) rotate(-12)"><g class="crest__shield">{_SHIELD_SM}</g></g>'
+         f'<g transform="translate(123 50) rotate(12)"><g class="crest__shield">{_SHIELD_SM}</g></g>'
+         '<g class="crest__cow"><svg x="31" y="-1" width="88" height="73" viewBox="0 0 120 100">'
+         + COW[COW.index(">") + 1:-len("</svg>")] + '</svg></g></svg>')
+
+POT = """<svg class="pot" viewBox="0 0 60 60" aria-hidden="true" focusable="false"><path class="pot__body" d="M14 18h32c-1 3-2 4-4 5 8 4 12 11 12 19 0 11-10 17-24 17S6 53 6 42c0-8 4-15 12-19-2-1-3-2-4-5Z"/>
+<path d="M9 36h42" stroke="#F3DDB8" stroke-width="1.4"/><path d="M10 40l4-4 4 4 4-4 4 4 4-4 4 4 4-4 4 4 4-4 4 4" fill="none" stroke="#2A1A10" stroke-width="1.2"/><path d="M16 18h28" stroke="#6E3520" stroke-width="2"/></svg>"""
+
+BASKET_BOWL = """<svg class="bowl" viewBox="0 0 70 50" aria-hidden="true" focusable="false"><path d="M4 14h62c0 18-12 32-31 32S4 32 4 14Z" fill="#C9A26B"/><ellipse cx="35" cy="14" rx="31" ry="6" fill="#DDBB85"/>
+<path d="M8 24l6 6 6-6 6 6 6-6 6 6 6-6 6 6 6-6 6 6" fill="none" stroke="#3B2A1E" stroke-width="1.6"/><path d="M13 34l5 4 5-4 5 4 5-4 5 4 5-4 5 4 5-4" fill="none" stroke="#8E3B22" stroke-width="1.4"/></svg>"""
+
+ORNAMENT = """<svg class="tc-orn" viewBox="0 0 120 10" aria-hidden="true" focusable="false"><path d="M2 5h40M78 5h40" fill="none" stroke-width=".8"/><path class="tc-orn__d" d="M50 5 53 2l3 3-3 3ZM64 5l3-3 3 3-3 3Z"/>
+<path class="tc-orn__h" d="M60 8.5c-3-2.2-5-3.8-5-5.6 0-1.3 1-2.2 2.2-2.2.9 0 1.8.5 2.8 1.6 1-1.1 1.9-1.6 2.8-1.6 1.2 0 2.2.9 2.2 2.2 0 1.8-2 3.4-5 5.6Z"/></svg>"""
+
+ICONS = {
+    "date": '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+    "time": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>',
+    "venue": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10Z"/><circle cx="12" cy="11" r="2.2"/></svg>',
+}
+
+
+# --- ribbon and bow ----------------------------------------------------------------------------------
+BOW = """<svg class="bow" viewBox="0 0 240 172" aria-hidden="true" focusable="false">
+<g class="bow__tail bow__tail--l"><path class="bw-a" d="M113 78C103 100 88 128 70 158l22-6 6 16c14-30 22-60 26-86Z"/><path class="bw-line" d="M108 92c-8 18-18 38-30 58"/></g>
+<g class="bow__tail bow__tail--r"><path class="bw-a" d="M127 78c10 22 23 50 41 76l-22-4-2 18c-12-30-20-60-24-86Z"/><path class="bw-line" d="M132 92c8 18 16 36 28 54"/></g>
+<g class="bow__loop bow__loop--l"><path class="bw-a" d="M120 70C104 52 84 30 60 26 36 22 20 36 24 56c4 20 32 30 62 26 14-2 26-6 34-10Z"/>
+<path class="bw-b" d="M120 70C102 66 84 60 68 46c14 4 32 12 52 22Z"/><path class="bw-hi" d="M40 40c8-8 22-8 34-2"/></g>
+<g class="bow__loop bow__loop--r"><path class="bw-a" d="M120 70c16-18 36-40 60-44 24-4 40 10 36 30-4 20-32 30-62 26-14-2-26-6-34-10Z"/>
+<path class="bw-b" d="M120 70c18-4 36-10 52-24-14 4-32 12-52 22Z"/><path class="bw-hi" d="M200 40c-8-8-22-8-34-2"/></g>
+<path class="bw-k" d="M108 60c4-4 20-4 24 0 4 8 2 20-2 24-6 4-14 4-20 0-4-6-6-16-2-24Z"/><path class="bw-line" d="M112 64c4 6 12 6 16 0M112 80c4-3 12-3 16 0"/></svg>"""
+
+
+BOW_RB = BOW.replace('class="bow"', 'class="bow rb-bow"', 1)
+BOW_MT = BOW.replace('class="bow"', 'class="bow mt-bow"', 1)
+BOW_FS = BOW.replace('class="bow"', 'class="bow fs-bow"', 1)
+BOW_DIV = BOW.replace('class="bow"', 'class="bow bow--div"', 1)
+
+
+_EDGE_H = "M0 6C18 4.6 32 7.4 50 6S82 4.6 100 6"          # left to right, 12 high
+_EDGE_V = "M6 0C4.6 18 7.4 32 6 50S4.6 82 6 100"          # top to bottom, 12 wide
+_LOOP = "M0 12C10 12 19 11.4 24.5 8.6 30 5.8 30.6 -.4 26.2 -1.6 21.6-2.8 18.6 2.6 20 8.4 21.4 14.6 24 22 24 36"
+
+
+def _rf_piece(cls: str, d: str, box: str, stretch: bool) -> str:
+    keep = ' preserveAspectRatio="none"' if stretch else ""
+    paths = "".join(f'<path class="{c}" pathLength="1" d="{d}"/>' for c in ("rf-under", "rf-ribbon", "rf-sheen"))
+    return f'<svg class="rf {cls}" viewBox="{box}"{keep} focusable="false">{paths}</svg>'
+
+
+def ribbon_frame(cls: str = "") -> str:
+    """A hand-drawn ribbon round the card that draws itself from under the bow, loops at each corner
+    and comes back to the bow (pieces are animated one after another in invites.css)."""
+    rev_h = "M100 6C82 7.4 68 4.6 50 6S18 7.4 0 6"
+    rev_v = "M6 100C7.4 82 4.6 68 6 50S7.4 18 6 0"
+    pieces = [("rf-t2", _EDGE_H, "0 0 100 12", True), ("rf-c rf-c1", _LOOP, "0 0 36 36", False),
+              ("rf-r", _EDGE_V, "0 0 12 100", True), ("rf-c rf-c2", _LOOP, "0 0 36 36", False),
+              ("rf-b", rev_h, "0 0 100 12", True), ("rf-c rf-c3", _LOOP, "0 0 36 36", False),
+              ("rf-l", rev_v, "0 0 12 100", True), ("rf-c rf-c4", _LOOP, "0 0 36 36", False),
+              ("rf-t1", _EDGE_H, "0 0 100 12", True)]
+    return (f'<div class="ribbon-frame {cls}" aria-hidden="true">'
+            + "".join(_rf_piece(c, d, b, st) for c, d, b, st in pieces) + "</div>")
+
+
+MINI_BOW = ('<svg viewBox="0 0 40 28" aria-hidden="true"><path d="M20 12C15 6 8 2 4 5S3 15 9 15c4 0 8-1 11-3Z"/>'
+            '<path d="M20 12c5-6 12-10 16-7s1 10-5 10c-4 0-8-1-11-3Z"/><path d="M18.5 13 14 26l3-1 2 2 1.5-13M21.5 13 26 26l-3-1-2 2-1.5-13Z"/>'
+            '<circle cx="20" cy="12.5" r="2.6"/></svg>')
+
+
+def scatter(cls: str, count: int, seed: int, art: str) -> str:
+    """Small ornaments (sparkles, bows) scattered down both sides of a hero, clear of the text."""
+    rnd = _rng(seed)
+    out = []
+    for k in range(count):
+        x = rnd() * 24 + (74 if k % 2 else 0)
+        out.append(f'<i style="--x:{x:.1f}%;--y:{rnd() * 100:.1f}%;--s:{10 + rnd() * 16:.0f}px;'
+                   f'--d:{2.6 + rnd() * 2.6:.2f}s;--dl:{-rnd() * 4:.2f}s;--r:{(rnd() - .5) * 50:.0f}deg">{art}</i>')
+    return f'<div class="iv-scatter {cls}" aria-hidden="true">{"".join(out)}</div>'
+
+
+# --- woven chevron cloth ---------------------------------------------------------------------------
+def defs_weave(pid: str = "wv-cloth") -> str:
+    """Stacked chevrons in four colours with a fine basket-weave texture over them (a seamless 48×96 tile)."""
+    band = 12
+    colours = ("wc-1", "wc-2", "wc-3", "wc-4", "wc-2", "wc-1", "wc-4", "wc-3")
+
+    def chevron(y, cls):
+        return f'<path class="{cls}" d="M0 {y + 24}L24 {y}L48 {y + 24}V{y + 24 + band}L24 {y + band}L0 {y + 24 + band}Z"/>'
+    rows = [chevron(k * band - 24, c) for k, c in enumerate(colours)]
+    rows += [chevron(k * band - 24 + 96, c) for k, c in enumerate(colours[:2])]   # what spills over the top, repeated below
+    weave = "".join(f'<rect class="wc-ta" x="{i * 4}" y="{j * 4 + 1.3}" width="4" height="1.4"/>' if (i + j) % 2 else
+                    f'<rect class="wc-tb" x="{i * 4 + 1.3}" y="{j * 4}" width="1.4" height="4"/>'
+                    for i in range(12) for j in range(24))
+    return (f'<svg class="iv-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>'
+            f'<pattern id="{pid}" width="48" height="96" patternUnits="userSpaceOnUse"><rect class="wc-4" width="48" height="96"/>{"".join(rows)}</pattern>'
+            f'<pattern id="{pid}-tex" width="48" height="96" patternUnits="userSpaceOnUse">{weave}</pattern>'
+            f'<filter id="{pid}-grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/>'
+            f'<feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .3 0"/></filter></defs></svg>')
+
+
+def cloth_fill(pid: str = "wv-cloth") -> str:
+    return (f'<svg class="cloth-fill" width="100%" height="100%" aria-hidden="true" focusable="false">'
+            f'<rect width="100%" height="100%" fill="url(#{pid})"/><rect width="100%" height="100%" fill="url(#{pid}-tex)"/>'
+            f'<rect width="100%" height="100%" filter="url(#{pid}-grain)"/></svg>')
+
+
+# --- glitter: disco ball, sparkles -----------------------------------------------------------------
+def _disco() -> str:
+    rnd = _rng(21)
+    tiles = []
+    for row in range(13):
+        shades = [rnd() for _ in range(13)]
+        for col in range(26):                       # 13 columns, twice, so the turning loop is seamless
+            shade = shades[col % 13]
+            cls = "db-h" if shade > .9 else "db-l" if shade > .55 else "db-m" if shade > .2 else "db-d"
+            tiles.append(f'<rect class="{cls}" x="{col * 8.4:.1f}" y="{10 + row * 8.4:.1f}" width="7.6" height="7.6" rx=".8"/>')
+    return ("<svg class=\"disco\" viewBox=\"0 0 120 132\" aria-hidden=\"true\" focusable=\"false\"><defs>"
+            "<clipPath id=\"db-c\"><circle cx=\"60\" cy=\"72\" r=\"52\"/></clipPath>"
+            "<radialGradient id=\"db-shade\" cx=\"36%\" cy=\"34%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".55\"/>"
+            "<stop offset=\".45\" stop-color=\"#fff\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#000\" stop-opacity=\".62\"/></radialGradient></defs>"
+            "<path class=\"db-wire\" d=\"M60 0v20\"/><rect class=\"db-cap\" x=\"54\" y=\"16\" width=\"12\" height=\"6\" rx=\"1.5\"/>"
+            "<g clip-path=\"url(#db-c)\"><circle cx=\"60\" cy=\"72\" r=\"52\" class=\"db-d\"/>"
+            f"<g class=\"db-tiles\">{''.join(tiles)}</g><circle cx=\"60\" cy=\"72\" r=\"52\" fill=\"url(#db-shade)\"/></g>"
+            "<path class=\"db-star\" d=\"M38 44l2.2 6 6 2.2-6 2.2-2.2 6-2.2-6-6-2.2 6-2.2Z\"/></svg>")
+
+
+DISCO = _disco()
+
+SPARK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 0c.9 5.4 4.6 9.1 10 10-5.4.9-9.1 4.6-10 10-.9-5.4-4.6-9.1-10-10C5.4 9.1 9.1 5.4 10 0Z"/></svg>'
+
+
+def balloon_text(ctx) -> str:
+    """What the chrome balloons spell: an age from the title (\"Thabo turns 40\" → 40), else a word."""
+    m = re.search(r"(?<!\d)(\d{1,3})(?:st|nd|rd|th)?(?!\d)", f'{ctx["title"]} {ctx["hosts"]}')
+    if m:
+        return m.group(1)
+    if ctx["group"] == "baby":
+        return "oh baby"
+    if ctx["group"] == "weddings":
+        return "I do"
+    d = ctx["date"]
+    return str(d.year) if (ctx["group"] == "other" and d) else "party"
+
+
+def balloons(text: str) -> str:
+    cells = "".join(f'<span class="gl-b" style="--i:{k}">{esc(ch)}</span>' if ch != " " else '<span class="gl-sp"></span>'
+                    for k, ch in enumerate(text))
+    return f'<p class="gl-balloons" aria-hidden="true" style="--n:{max(2, len(text))}">{cells}</p>'
+
+
+# --- matcha: awning, glass, pilates ball -------------------------------------------------------------
+MATCHA = """<svg class="matcha" viewBox="0 0 90 150" aria-hidden="true" focusable="false"><defs>
+<clipPath id="mt-glass"><path d="M14 30h62l-6 108a8 8 0 0 1-8 8H28a8 8 0 0 1-8-8Z"/></clipPath>
+<linearGradient id="mt-green" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A9C46F"/><stop offset="1" stop-color="#6F8F3A"/></linearGradient></defs>
+<path class="mt-straw" d="M58 4 50 120"/><g clip-path="url(#mt-glass)"><rect x="0" y="30" width="90" height="120" fill="#FFFDF8"/>
+<g class="mt-milk"><path d="M-100 70c10-6 20-6 30 0s20 6 30 0 20-6 30 0 20 6 30 0 20-6 30 0 20 6 30 0 20-6 30 0 20 6 30 0 20-6 30 0V150H-100Z" fill="#F4EEDF"/></g>
+<g class="mt-tea"><path d="M-100 96c10-5 20-5 30 0s20 5 30 0 20-5 30 0 20 5 30 0 20-5 30 0 20 5 30 0 20-5 30 0 20 5 30 0 20-5 30 0V150H-100Z" fill="url(#mt-green)"/></g>
+<rect class="mt-ice" x="24" y="52" width="20" height="18" rx="4" transform="rotate(-12 34 61)"/><rect class="mt-ice" x="46" y="60" width="18" height="16" rx="4" transform="rotate(14 55 68)"/>
+<rect x="18" y="30" width="7" height="120" fill="#fff" opacity=".45"/></g>
+<path class="mt-glassline" d="M14 30h62l-6 108a8 8 0 0 1-8 8H28a8 8 0 0 1-8-8Z"/></svg>"""
+
+BALL = """<svg class="pball" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><defs><radialGradient id="pb-g" cx="35%" cy="30%" r="75%">
+<stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></radialGradient></defs>
+<ellipse class="pb-shadow" cx="50" cy="96" rx="30" ry="4"/><g class="pb-ball"><circle class="pb-fill" cx="50" cy="50" r="42"/><path class="pb-seam" d="M12 40c20 8 56 8 76 0"/><circle cx="50" cy="50" r="42" fill="url(#pb-g)"/></g></svg>"""
+
+
+# --- festive: tree with bows, snow -------------------------------------------------------------------
+def _tree() -> str:
+    tiers = [(30, 70, 32), (54, 104, 46), (84, 140, 60), (118, 178, 74)]
+    shapes = []
+    for k, (top, bottom, half) in enumerate(tiers):
+        scallops = "".join(f"q{half / 4:.1f} 9 {half / 2:.1f} 0" for _ in range(4))   # left to right along the hem
+        shapes.append(f'<path class="ft-g{k % 2}" d="M80 {top - 24}L{80 - half} {bottom}{scallops}Z"/>')
+    lights = []
+    rnd = _rng(33)
+    for k in range(18):
+        t = rnd()
+        tier = tiers[k % 4]
+        y = tier[0] + (tier[1] - tier[0]) * (.45 + .45 * t)
+        span = tier[2] * (.25 + .7 * (y - tier[0] + 24) / (tier[1] - tier[0] + 24))
+        x = 80 + (rnd() - .5) * 2 * span * .9
+        lights.append(f'<circle class="ft-light" cx="{x:.1f}" cy="{y:.1f}" r="2.3" style="--d:{-rnd() * 3:.2f}s"/>')
+    bows = []
+    for k, (x, y) in enumerate([(70, 60), (96, 92), (62, 120), (102, 128), (80, 158), (52, 166), (110, 168)]):
+        bows.append(f'<g class="ft-bow" transform="translate({x} {y}) scale(.11)" style="--d:{k * -.6:.1f}s"><use href="#ft-bowshape"/></g>')
+    bowshape = ('<g id="ft-bowshape"><path class="ft-bow__a" d="M0 0C-16-18-36-40-60-44-84-48-100-34-96-14-92 6-64 16-34 12-20 10-8 6 0 2Z"/>'
+                '<path class="ft-bow__a" d="M0 0C16-18 36-40 60-44 84-48 100-34 96-14 92 6 64 16 34 12 20 10 8 6 0 2Z"/>'
+                '<path class="ft-bow__a" d="M-6 8C-16 30-30 58-48 88l22-6 6 16C-6 68 2 38 4 10Z"/><path class="ft-bow__a" d="M6 8c10 22 22 50 40 76l-22-4-2 18C10 68 2 38-2 10Z"/>'
+                '<circle class="ft-bow__k" r="14"/></g>')
+    return (f'<svg class="tree" viewBox="0 0 160 230" aria-hidden="true" focusable="false"><defs>{bowshape}</defs>'
+            f'<rect class="ft-trunk" x="72" y="184" width="16" height="22" rx="2"/>'
+            f'<g class="ft-gift"><rect class="ft-box1" x="26" y="192" width="34" height="28" rx="2"/><path class="ft-rib" d="M43 192v28M26 204h34"/>'
+            f'<rect class="ft-box2" x="98" y="198" width="38" height="22" rx="2"/><path class="ft-rib2" d="M117 198v22M98 208h38"/></g>'
+            f'{"".join(shapes)}<g class="ft-lights">{"".join(lights)}</g>{"".join(bows)}'
+            f'<path class="ft-star" d="M80 0l4.4 10.6 11.4.8-8.8 7.4 2.8 11.2L80 24l-9.8 6 2.8-11.2-8.8-7.4 11.4-.8Z"/></svg>')
+
+
+TREE = _tree()
+
+
+def snow(count: int = 34, seed: int = 41) -> str:
+    rnd = _rng(seed)
+    flakes = "".join(f'<i style="--x:{rnd() * 100:.1f}%;--s:{3 + rnd() * 5:.1f}px;--d:{7 + rnd() * 9:.1f}s;--dl:{-rnd() * 14:.1f}s;--dx:{(rnd() - .5) * 80:.0f}px"></i>'
+                     for _ in range(count))
+    return f'<div class="snow" aria-hidden="true">{flakes}</div>'
+
+
+# --- cheers: coupes and bubbles ------------------------------------------------------------------------
+def _coupes() -> str:
+    rnd = _rng(52)
+    bubbles = "".join(f'<circle class="cs-bub" cx="{x:.1f}" cy="{y:.1f}" r="{1 + rnd() * 1.6:.1f}" style="--d:{1.6 + rnd() * 1.8:.2f}s;--dl:{-rnd() * 3:.2f}s"/>'
+                      for x, y in [(60 + rnd() * 34, 62 + rnd() * 6) for _ in range(9)] + [(132 + rnd() * 34, 62 + rnd() * 6) for _ in range(9)])
+    glass = ('<path class="cs-wine" d="M-34 0h68c-2 14-16 24-34 24S-32 14-34 0Z"/>'
+             '<path class="cs-line" d="M-38-4h76M-38-4c0 18 16 30 38 30S38 14 38-4M0 26v40M-20 70h40"/>'
+             '<path class="cs-glint" d="M-26 4c2 6 6 10 12 13"/>')
+    return (f'<svg class="coupes" viewBox="0 0 230 160" aria-hidden="true" focusable="false">'
+            f'<g transform="translate(76 66) rotate(-14)"><g class="cs-glass cs-glass--l">{glass}</g></g>'
+            f'<g transform="translate(154 66) rotate(14)"><g class="cs-glass cs-glass--r">{glass}</g></g>'
+            f'<g class="cs-bubbles">{bubbles}</g>'
+            f'<g class="cs-pop"><path d="M115 22v-14M115 22l-12-8M115 22l12-8M104 28l-12-2M126 28l12-2"/></g>'
+            f'<path class="cs-star" d="M30 30l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/><path class="cs-star" d="M200 20l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/>'
+            f'<path class="cs-squig" d="M18 120c8-10 16 10 24 0s16 10 24 0"/><path class="cs-squig" d="M168 128c8-10 16 10 24 0s16 10 24 0"/></svg>')
+
+
+COUPES = _coupes()
+
+
+# --- shared invitation pieces -------------------------------------------------------------------------
+def date_row(ctx, cls: str = "iv-daterow") -> str:
+    dp = D.date_parts(ctx)
+    if not dp["day"]:
+        return f'<p class="{cls} {cls}--tba">{esc(ctx["date_text"])}</p>'
+    return (f'<p class="{cls}"><span class="{cls}__side">{esc(dp["weekday"])}</span>'
+            f'<span class="{cls}__mid"><b>{esc(dp["day"])}</b> <span>{esc(dp["month"])}</span></span>'
+            f'<span class="{cls}__side">{esc(dp["year"])}</span></p>')
+
+
+def families(ctx) -> str:
+    sides = [s for s in (ctx["gs"].get("sides") or []) if s][:2]
+    if len(sides) == 2 and ctx["group"] in ("weddings", "other"):
+        return (f'<p class="iv-families"><span class="iv-families__f">{esc(sides[0])}</span> <span class="iv-families__and">and</span> '
+                f'<span class="iv-families__f">{esc(sides[1])}</span></p>')
+    return ""
+
+
+def where(ctx, cls: str = "iv-where") -> str:
+    v = ctx["venue"]
+    out = ""
+    if ctx["time_text"]:
+        out += f'<span class="{cls}__time">{esc(ctx["time_text"])}</span>'
+    if v.get("name"):
+        out += f'<span class="{cls}__venue">{esc(v["name"])}</span>'
+    if v.get("address"):
+        out += f'<span class="{cls}__addr">{esc(v["address"])}</span>'
+    return f'<p class="{cls}">{out}</p>' if out else ""
+
+
+def reply_by(ctx) -> str:
+    if ctx["show"].get("rsvp") and ctx["gs"].get("rsvp_deadline"):
+        return f'<p class="iv-by">Kindly reply by {esc(ctx["deadline_text"])}</p>'
+    return ""
+
+
+def actions(ctx, label: str = "RSVP") -> str:
+    btns = D.rsvp_cta(ctx, label)
+    if ctx["show"].get("venue") and ctx["map_url"]:
+        btns += f'<a class="ev-btn ev-btn--ghost" href="#venue">Directions</a>'
+    return f'<div class="ev-actions iv-actions">{btns}</div>' if btns else ""
+
+
+def body(ctx, secs, cls: str, divider: str = "") -> str:
+    out = []
+    for n, (k, html) in enumerate(secs):
+        title = ""
+        if k == "venue" and len(ctx["functions"]) > 1:
+            title = "The ceremonies" if ctx["group"] in ("weddings", "other") else "Where and when"
+        out.append(D.section(k, html, title=title, cls=f"iv-sec {cls} rv"))
+        if divider and n < len(secs) - 1:
+            out.append(divider)
+    return "".join(out)
+
+
+def photo(ctx, cls: str) -> str:
+    return f'<div class="iv-photo {cls} rv">{D.hero_image(ctx)}</div>' if ctx["hero"] else ""
+
+
+OCCASION = {
+    "lobola": ("Lobola", "Celebration"), "traditional-wedding": ("Traditional", "Wedding"),
+    "white-wedding": ("Wedding", "Celebration"), "engagement": ("Engagement", "Celebration"),
+    "multi-day-wedding": ("Wedding", "Celebrations"), "family-celebration": ("Family", "Celebration"),
+    "graduation": ("Graduation", "Celebration"), "anniversary": ("Anniversary", "Celebration"),
+    "birthday": ("Birthday", "Celebration"), "baby-shower": ("Baby", "Shower"), "welcome-baby": ("Welcome", "Baby"),
+}
+
+
+def occasion(ctx) -> tuple:
+    cat = ctx["ev"].get("category") or ""
+    if cat in OCCASION:
+        return OCCASION[cat]
+    from .. import catalog
+    words = catalog.category_name(cat).split() if cat else []
+    return (words[0].capitalize(), " ".join(words[1:]).capitalize() or "Celebration") if words else ("You're", "Invited")
+
+
+# --- layouts ---------------------------------------------------------------------------------------------
+def nguni(ctx) -> str:
+    """Nguni: a cowhide envelope sealed in gold wax opens, and the invitation card rises out of it."""
+    secs = D.collect(ctx)
+    fam = families(ctx)
+    card = (f'<article class="nv-card env-card" id="welcome" aria-labelledby="nv-names">{seal(ctx["monogram"], "nv-seal-c", "nv-card__seal")}'
+            f'{D.greeting(ctx)}{fam}<p class="nv-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="nv-names" id="nv-names">{D.names_html(ctx, "and")}</h1>'
+            f'<div class="nv-rule" aria-hidden="true"><i></i></div>{date_row(ctx, "nv-date")}{where(ctx, "nv-where")}'
+            f'{actions(ctx, "RSVP")}{reply_by(ctx)}</article>')
+    env = (f'<div class="env-scene nv-scene">{pampas("nv-pampas nv-pampas--l", 3)}{pampas("nv-pampas nv-pampas--r", 8)}{BASKETS}'
+           f'<div class="env-flapwrap" aria-hidden="true"><div class="env-flap"><div class="env-flap__out">{hide_fill()}</div>'
+           f'<div class="env-flap__in"></div>{seal(ctx["monogram"], "nv-seal-f", "env-flap__seal")}</div></div>'
+           f'{card}<div class="env-pocket" aria-hidden="true">{hide_fill()}<span class="env-pocket__seams"></span></div></div>')
+    hero = (f'<header class="nv-hero">{defs_hide()}{env}'
+            f'<a class="iv-scroll" href="#{secs[0][0] if secs else "welcome"}">Read the invitation</a></header>')
+    strip = f'<div class="nv-strip" aria-hidden="true">{hide_fill(small=True)}</div>'
+    return (hero + D.nav(ctx, secs, "ev-nav iv-nav nv-nav") + photo(ctx, "nv-photo")
+            + f'<div class="nv-body">{body(ctx, secs, "nv-sec", strip)}</div>')
+
+
+def terracotta(ctx) -> str:
+    """Terracotta: cream paper, beadwork, a shield and spears, and a Nguni cow among the baskets and pots."""
+    secs = D.collect(ctx)
+    title, sub = occasion(ctx)
+    count = D.s_countdown(ctx) if ctx["show"].get("countdown") else ""
+    facts = []
+    dp = D.date_parts(ctx)
+    facts.append(("date", "Date", f'{dp["day"]} {dp["month"]} {dp["year"]}'.strip() or ctx["date_text"]))
+    if ctx["time_text"]:
+        facts.append(("time", "Time", ctx["time_text"].split(" – ")[0]))
+    if ctx["venue"].get("name"):
+        facts.append(("venue", "Venue", ctx["venue"]["name"]))
+    fact_html = "".join(f'<div>{ICONS[k]}<b>{esc(lab)}</b><span>{esc(val)}</span></div>' for k, lab, val in facts)
+    hero = (f'<header class="tc-hero" id="welcome"><span class="tc-beads" aria-hidden="true"></span><div class="tc-card">'
+            f'{CREST}<p class="tc-title">{esc(title)}</p><p class="tc-sub">{esc(sub)}</p>{D.greeting(ctx)}'
+            f'<p class="tc-intro">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="tc-names">{D.names_html(ctx, "&amp;")}</h1>{ORNAMENT}{families(ctx)}'
+            f'<div class="tc-facts">{fact_html}</div>{count}{actions(ctx, "RSVP")}{reply_by(ctx)}</div>'
+            f'<div class="tc-still" aria-hidden="true">{BASKET_BOWL}{POT}</div></header>')
+    divider = f'<div class="tc-div" aria-hidden="true">{ORNAMENT}</div>'
+    rest = [(k, h) for k, h in secs if k != "countdown"]
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav tc-nav") + photo(ctx, "tc-photo") + f'<div class="tc-body">{body(ctx, rest, "tc-sec", divider)}</div>'
+
+
+def ribbon(ctx) -> str:
+    """Ribbon: a card framed by a hand-drawn ribbon that draws itself, then ties into a bow."""
+    secs = D.collect(ctx)
+    hero = (f'<header class="rb-hero" id="welcome">{scatter("rb-bows", 9, 5, MINI_BOW)}<article class="rb-card" aria-labelledby="rb-names">'
+            f'{ribbon_frame("rb-frame")}{BOW_RB}<div class="rb-in">'
+            f'{D.greeting(ctx)}<p class="rb-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="rb-names" id="rb-names">{D.names_html(ctx, "&amp;")}</h1>{families(ctx)}'
+            f'{date_row(ctx, "rb-date")}{where(ctx, "rb-where")}{actions(ctx, "Kindly reply")}{reply_by(ctx)}</div></article></header>')
+    divider = f'<div class="rb-div" aria-hidden="true">{BOW_DIV}</div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav rb-nav") + photo(ctx, "rb-photo") + f'<div class="rb-body">{body(ctx, secs, "rb-sec", divider)}</div>'
+
+
+def weave(ctx) -> str:
+    """Weave: a woven chevron envelope opens and a soft pink card rises out."""
+    secs = D.collect(ctx)
+    card = (f'<article class="wv-card env-card" id="welcome" aria-labelledby="wv-names"><p class="wv-mono" aria-hidden="true">{esc(ctx["monogram"])}</p>'
+            f'{D.greeting(ctx)}<p class="wv-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="wv-names" id="wv-names">{D.names_html(ctx, "&amp;")}</h1>{families(ctx)}'
+            f'{date_row(ctx, "wv-date")}{where(ctx, "wv-where")}{actions(ctx, "RSVP")}{reply_by(ctx)}</article>')
+    env = (f'<div class="env-scene wv-scene">'
+           f'<div class="env-flapwrap" aria-hidden="true"><div class="env-flap"><div class="env-flap__out">{cloth_fill()}</div>'
+           f'<div class="env-flap__in"></div>{seal(ctx["monogram"], "wv-seal-f", "env-flap__seal")}</div></div>'
+           f'{card}<div class="env-pocket" aria-hidden="true">{cloth_fill()}<span class="env-pocket__seams"></span></div></div>')
+    hero = f'<header class="wv-hero">{defs_weave()}{env}</header>'
+    strip = f'<div class="wv-strip" aria-hidden="true">{cloth_fill()}</div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav wv-nav") + photo(ctx, "wv-photo") + f'<div class="wv-body">{body(ctx, secs, "wv-sec", strip)}</div>'
+
+
+def glitter(ctx) -> str:
+    """Glitter: chrome balloons, a turning disco ball and sequins that catch the light."""
+    secs = D.collect(ctx)
+    hero = (f'<header class="gl-hero" id="welcome"><div class="gl-sequins" aria-hidden="true"></div>{scatter("gl-sparks", 16, 7, SPARK)}'
+            f'<div class="gl-disco" aria-hidden="true">{DISCO}</div>{balloons(balloon_text(ctx))}<div class="gl-in">'
+            f'{D.greeting(ctx)}<p class="gl-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="gl-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "gl-date")}{where(ctx, "gl-where")}'
+            f'{actions(ctx, "Count me in")}{reply_by(ctx)}</div></header>')
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav gl-nav") + photo(ctx, "gl-photo") + f'<div class="gl-body">{body(ctx, secs, "gl-sec")}</div>'
+
+
+def matcha(ctx) -> str:
+    """Matcha: pink cabana stripes, an olive bow, a matcha latte and a pilates ball."""
+    secs = D.collect(ctx)
+    hero = (f'<header class="mt-hero" id="welcome"><div class="mt-awning" aria-hidden="true"></div>'
+            f'<div class="mt-card">{BOW_MT}'
+            f'{D.greeting(ctx)}<p class="mt-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="mt-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "mt-date")}{where(ctx, "mt-where")}'
+            f'{actions(ctx, "Save my spot")}{reply_by(ctx)}</div>'
+            f'<div class="mt-still" aria-hidden="true">{MATCHA}{BALL}</div></header>')
+    divider = '<div class="mt-div" aria-hidden="true"><i></i></div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav mt-nav") + photo(ctx, "mt-photo") + f'<div class="mt-body">{body(ctx, secs, "mt-sec", divider)}</div>'
+
+
+def festive(ctx) -> str:
+    """Festive: candy stripes, an arched card tied with red ribbon, a tree with bows and falling snow."""
+    secs = D.collect(ctx)
+    hero = (f'<header class="fs-hero" id="welcome">{snow()}<div class="fs-arch">'
+            f'{BOW_FS}<div class="fs-in">'
+            f'{D.greeting(ctx)}<p class="fs-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="fs-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "fs-date")}{where(ctx, "fs-where")}'
+            f'{actions(ctx, "RSVP")}{reply_by(ctx)}</div></div><div class="fs-tree" aria-hidden="true">{TREE}</div></header>')
+    divider = '<div class="fs-div" aria-hidden="true"></div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav fs-nav") + photo(ctx, "fs-photo") + f'<div class="fs-body">{body(ctx, secs, "fs-sec", divider)}</div>'
+
+
+def cheers(ctx) -> str:
+    """Cheers: retro stripes, a hand-drawn champagne toast with rising bubbles."""
+    secs = D.collect(ctx)
+    hero = (f'<header class="cs-hero" id="welcome"><div class="cs-panel">{COUPES}'
+            f'{D.greeting(ctx)}<p class="cs-kicker">{esc(ctx["wording"]["welcome"])}</p>'
+            f'<h1 class="cs-names">{D.names_html(ctx, "&amp;")}</h1>{date_row(ctx, "cs-date")}{where(ctx, "cs-where")}'
+            f'{actions(ctx, "Count me in")}{reply_by(ctx)}</div></header>')
+    divider = '<div class="cs-div" aria-hidden="true"><svg viewBox="0 0 120 16"><path d="M4 8c8-8 16 8 24 0s16 8 24 0 16 8 24 0 16 8 24 0 16 8 16 0"/></svg></div>'
+    return hero + D.nav(ctx, secs, "ev-nav iv-nav cs-nav") + photo(ctx, "cs-photo") + f'<div class="cs-body">{body(ctx, secs, "cs-sec", divider)}</div>'
+
+
+LAYOUTS = {"nguni": nguni, "terracotta": terracotta, "ribbon": ribbon, "weave": weave, "glitter": glitter,
+           "matcha": matcha, "festive": festive, "cheers": cheers}
+```
+
 ### `app/eventsite/render.py`
 
-<!-- FILE: app/eventsite/render.py sha256=592fb7063a02701428f7d46ec133fdc0c09b710089fa0a39325af308888f607f nl=1 -->
+<!-- FILE: app/eventsite/render.py sha256=921a0887fc198b9fe82593a1e4cfa52b4eb7ca880442eb1a67764ecf3d404594 nl=1 -->
 ```python
 """Turn an event (from the database or a demo dict) into a complete event website.
 
@@ -4357,9 +5219,10 @@ def build_context(ev, mode: str = "public", guest=None, req=None, notice: str = 
 
 
 def render(ev: dict, mode: str = "public", guest=None, req=None, notice: str = "", form: Optional[dict] = None) -> str:
-    from . import designs
+    from . import designs, invites
     ctx = build_context(ev, mode, guest, req, notice, form)
-    body = designs.LAYOUTS.get(ctx["design"], designs.LAYOUTS["atelier"])(ctx)
+    layout = invites.LAYOUTS.get(ctx["design"]) or designs.LAYOUTS.get(ctx["design"], designs.LAYOUTS["atelier"])
+    body = layout(ctx)
     return document(ctx, body)
 
 
@@ -4468,6 +5331,11 @@ def document(ctx, body: str) -> str:
     if cult:
         classes += f" cult-{cult}"
         style += themes.culture_vars(cult)
+    extra = themes.extra_font(ctx["design"])
+    if extra:
+        style += f"--ev-extra:'{extra}',var(--ev-display);"
+    from .invites import LAYOUTS as INVITES
+    invite_css = '<link rel="stylesheet" href="/static/css/invites.css">' if ctx["design"] in INVITES else ""
     return f"""<!doctype html><html lang="en-ZA"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">{robots}
@@ -4475,8 +5343,8 @@ def document(ctx, body: str) -> str:
 <meta name="theme-color" content="{esc(t['colors']['bg'])}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="{esc(themes.fonts_url(t['display'], t['body']))}">
-<link rel="stylesheet" href="/static/css/eventsite.css">
+<link rel="stylesheet" href="{esc(themes.fonts_url(t['display'], t['body'], *([extra] if extra else [])))}">
+<link rel="stylesheet" href="/static/css/eventsite.css">{invite_css}
 </head><body class="{classes}" style="{style}">
 <a class="ev-skip" href="#ev-main">Skip to content</a>{banner(ctx)}
 <main id="ev-main">{body}</main>
@@ -4487,7 +5355,7 @@ def document(ctx, body: str) -> str:
 
 ### `app/eventsite/themes.py`
 
-<!-- FILE: app/eventsite/themes.py sha256=64cbad7316ab4e1302c03d8593cf6807bd7288ec4126a6f7de7cedb45e5dfeb7 nl=1 -->
+<!-- FILE: app/eventsite/themes.py sha256=e58354bcdf6db1a101719a8abd3bf0361488e440322f4a240e900dd972b185a5 nl=1 -->
 ```python
 """Palettes, font pairings and background options for each event-website design.
 
@@ -4526,6 +5394,9 @@ FONTS = {
     "Lora": "ital,wght@0,400..700;1,400..700",
     "Instrument Serif": "ital@0;1",
     "Geist": "wght@300..700",
+    "Gloock": "",
+    "DM Serif Display": "ital@0;1",
+    "Caveat": "wght@400..700",
 }
 
 FONT_PAIRS = {
@@ -4543,6 +5414,8 @@ FONT_PAIRS = {
     "fraunces-dm": ("Warm storybook", "Fraunces", "DM Sans"),
     "playfair-lato": ("Timeless", "Playfair Display", "Lato"),
     "instrument-geist": ("Contemporary serif", "Instrument Serif", "Geist"),
+    "gloock-dm": ("Retro serif", "Gloock", "DM Sans"),
+    "dmserif-dm": ("Soft display serif", "DM Serif Display", "DM Sans"),
 }
 
 # palette keys: bg, surface, text, muted, accent, accent2
@@ -4637,6 +5510,77 @@ DESIGNS = {
         ]},
 }
 
+# --- The invitation collection (app/eventsite/invites.py) -----------------------------------------
+# "extra" is a third font some designs use for a script or hand-written accent (--ev-extra).
+DESIGNS.update({
+    "nguni": {
+        "font_pair": "cormorant-jost", "fonts": ["cormorant-jost", "cinzel-marcellus", "playfair-lato", "bodoni-inter"],
+        "backgrounds": ["paper", "plain", "image"], "background": "paper", "extra": "Pinyon Script",
+        "palettes": [
+            ("brown-hide", "Brown hide and gold", {"bg": "#F2EBE0", "surface": "#FFFBF4", "text": "#2B1D14", "muted": "#6E5A4A", "accent": "#A97C2F", "accent2": "#6B3F22"}),
+            ("black-hide", "Black hide and gold", {"bg": "#EFEDE8", "surface": "#FFFDF8", "text": "#1A1714", "muted": "#615A53", "accent": "#A88A4E", "accent2": "#2A2420"}),
+            ("golden-hide", "Golden hide", {"bg": "#F5EDE1", "surface": "#FFFAF1", "text": "#3A2414", "muted": "#755F4C", "accent": "#B0782F", "accent2": "#A8692F"}),
+        ]},
+    "terracotta": {
+        "font_pair": "greatvibes-lora", "fonts": ["greatvibes-lora", "pinyon-cormorant", "cinzel-marcellus", "playfair-lato"],
+        "backgrounds": ["paper", "plain", "image"], "background": "paper", "extra": "Cinzel",
+        "palettes": [
+            ("terracotta", "Terracotta and cream", {"bg": "#F8EEDD", "surface": "#FFF8EC", "text": "#2E1F14", "muted": "#6B4A33", "accent": "#8E3B22", "accent2": "#D9A441"}),
+            ("indigo", "Indigo and sand", {"bg": "#EEF1F6", "surface": "#FFFFFF", "text": "#13213F", "muted": "#4E5A72", "accent": "#1F3A73", "accent2": "#C9A26B"}),
+            ("olive", "Olive and clay", {"bg": "#F3F0E2", "surface": "#FFFDF4", "text": "#2B2E1C", "muted": "#5E604A", "accent": "#5E6B42", "accent2": "#C0702E"}),
+        ]},
+    "ribbon": {
+        "font_pair": "instrument-geist", "fonts": ["instrument-geist", "cormorant-jost", "playfair-lato", "pinyon-cormorant"],
+        "backgrounds": ["paper", "plain", "image"], "background": "paper",
+        "palettes": [
+            ("olive", "Olive ribbon", {"bg": "#F5F1E6", "surface": "#FFFDF7", "text": "#2C3122", "muted": "#626850", "accent": "#66743A", "accent2": "#D8CBA4"}),
+            ("burgundy", "Burgundy bow", {"bg": "#F7EEEC", "surface": "#FFFBFA", "text": "#3A1418", "muted": "#6E4E52", "accent": "#7A1F2B", "accent2": "#E8C5C3"}),
+            ("blush", "Blush bow", {"bg": "#FCF2F3", "surface": "#FFFFFF", "text": "#4A2B33", "muted": "#7E5F66", "accent": "#D17C8F", "accent2": "#F3D3D9"}),
+            ("powder", "Powder blue", {"bg": "#F1F5F9", "surface": "#FFFFFF", "text": "#1F2E44", "muted": "#58677C", "accent": "#6F95BE", "accent2": "#D8E4F1"}),
+        ]},
+    "weave": {
+        "font_pair": "fraunces-dm", "fonts": ["fraunces-dm", "playfair-lato", "instrument-geist", "gloock-dm"],
+        "backgrounds": ["plain", "paper", "image"], "background": "plain",
+        "palettes": [
+            ("sunset", "Sunset weave", {"bg": "#FFF4EF", "surface": "#FFE3E7", "text": "#540F1B", "muted": "#83434E", "accent": "#E4572E", "accent2": "#F49BB4"}),
+            ("indigo", "Indigo weave", {"bg": "#F2F4FA", "surface": "#E4EAF7", "text": "#14213D", "muted": "#4F5B78", "accent": "#2B50AA", "accent2": "#9EC1E8"}),
+            ("earth", "Earth weave", {"bg": "#F7F0E6", "surface": "#F3E5D0", "text": "#3B2314", "muted": "#6F5643", "accent": "#B5651D", "accent2": "#E3B47A"}),
+        ]},
+    "glitter": {
+        "font_pair": "bodoni-inter", "fonts": ["bodoni-inter", "syne-space", "italiana-montserrat", "playfair-lato"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Fredoka",
+        "palettes": [
+            ("silver", "Silver chrome", {"bg": "#0B0B10", "surface": "#17171F", "text": "#F4F4F8", "muted": "#A9A9B9", "accent": "#C9CDD8", "accent2": "#FF6FAE"}),
+            ("gold", "Gold chrome", {"bg": "#0E0B07", "surface": "#1B160E", "text": "#FBF3E2", "muted": "#B8A98C", "accent": "#E3C27A", "accent2": "#F2E2BC"}),
+            ("pink", "Pink glitter", {"bg": "#FFEFF6", "surface": "#FFFFFF", "text": "#3A0B24", "muted": "#7A4A63", "accent": "#E0428A", "accent2": "#C9CDD8"}),
+        ]},
+    "matcha": {
+        "font_pair": "gloock-dm", "fonts": ["gloock-dm", "fraunces-dm", "instrument-geist", "playfair-lato"],
+        "backgrounds": ["plain", "paper", "image"], "background": "plain",
+        "palettes": [
+            ("matcha-pink", "Matcha and pink", {"bg": "#FFF6F6", "surface": "#FFFFFF", "text": "#2F3A1F", "muted": "#626B4E", "accent": "#E98AA6", "accent2": "#7E8C45"}),
+            ("strawberry", "Strawberry milk", {"bg": "#FFF3F3", "surface": "#FFFFFF", "text": "#4A1D24", "muted": "#7B5157", "accent": "#E55B6F", "accent2": "#8FA352"}),
+            ("butter", "Butter yellow", {"bg": "#FFF9EA", "surface": "#FFFFFF", "text": "#3B331A", "muted": "#6B6247", "accent": "#E9B53F", "accent2": "#7E8C45"}),
+        ]},
+    "festive": {
+        "font_pair": "playfair-lato", "fonts": ["playfair-lato", "cormorant-jost", "fraunces-dm", "greatvibes-lora"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Great Vibes",
+        "palettes": [
+            ("candy-cane", "Candy cane red", {"bg": "#FBF5EE", "surface": "#FFFDF8", "text": "#2B1414", "muted": "#6A4E4E", "accent": "#C8102E", "accent2": "#1F5C3A"}),
+            ("evergreen", "Evergreen and gold", {"bg": "#0F2A20", "surface": "#16382B", "text": "#F7F1E6", "muted": "#B9C2B4", "accent": "#D9B45F", "accent2": "#C8102E"}),
+            ("frost", "Frosted blue", {"bg": "#F2F6FA", "surface": "#FFFFFF", "text": "#172A40", "muted": "#56677C", "accent": "#2F5D8C", "accent2": "#B8C4D3"}),
+        ]},
+    "cheers": {
+        "font_pair": "dmserif-dm", "fonts": ["dmserif-dm", "playfair-lato", "gloock-dm", "bodoni-inter"],
+        "backgrounds": ["pattern", "plain", "image"], "background": "pattern", "extra": "Caveat",
+        "palettes": [
+            ("retro-red", "Retro red", {"bg": "#FBF1E4", "surface": "#FFF9F0", "text": "#4A0F1A", "muted": "#7A4B50", "accent": "#C8323E", "accent2": "#E9C46A"}),
+            ("burgundy", "Burgundy night", {"bg": "#2E0A12", "surface": "#3E111B", "text": "#F8EBDD", "muted": "#C9AFA6", "accent": "#E9C46A", "accent2": "#E8A0A0"}),
+            ("olive", "Olive toast", {"bg": "#F4F0E3", "surface": "#FFFCF3", "text": "#2F3320", "muted": "#61644E", "accent": "#6B7A3A", "accent2": "#E2C98F"}),
+        ]},
+})
+
+
 # --- Cultural styles for Heritage ----------------------------------------------------------------
 # Each is a palette for the page (text contrast checked to WCAG AA) plus six motif colours for the
 # beadwork borders, which also take the culture's own pattern (designs.MOTIFS). They are chosen like
@@ -4685,6 +5629,11 @@ BACKGROUND_LABELS = {
 
 def design(key: str) -> dict:
     return DESIGNS.get(key) or DESIGNS["atelier"]
+
+
+def extra_font(key: str) -> str:
+    """The design's accent font (a script or hand-writing), or "" when it has none."""
+    return design(key).get("extra", "")
 
 
 def palettes(key: str) -> list:
@@ -5229,6 +6178,19 @@ ALTER TABLE user_tokens_new RENAME TO user_tokens;
 -- fit every table, so rows of tables are never cut off. Earlier percent values convert against the
 -- editor's 640px starting height.
 UPDATE seating_tables SET pos_y = ROUND(pos_y * 6.4);
+```
+
+### `app/migrations/004_invitation_collection.sql`
+
+<!-- FILE: app/migrations/004_invitation_collection.sql sha256=45eaf36c666671e5cb1c403e250a23e1c4af635151721c66ecbb5d6d3be1aecf nl=1 -->
+```sql
+-- The invitation collection replaces the original designs in the catalogue. The original templates
+-- stay in the table (every event that uses one keeps rendering, and the admin can switch any back on);
+-- they are only hidden from the choices. Heritage stays and moves after the new designs, which
+-- catalog.ensure_catalog() adds with sort 0-7.
+UPDATE templates SET active = 0
+ WHERE slug IN ('atelier', 'folio', 'bloom', 'champagne', 'linea', 'confetti', 'pulse', 'aurora', 'laureate', 'cradle');
+UPDATE templates SET sort = 8 WHERE slug = 'heritage';
 ```
 
 ### `app/notify.py`
@@ -7427,7 +8389,7 @@ def delete_upload(upload_id: int, event_id: int) -> bool:
 
 ### `app/stock.py`
 
-<!-- FILE: app/stock.py sha256=3254ad585804bc010fb9d0c473298003b4bd656c9b7b10701ecef1c9163ce68b nl=1 -->
+<!-- FILE: app/stock.py sha256=52e2e6e0b0e7c7749a825d3a8468f9d1d9a82f25265e99b66e494a28e0af163c nl=1 -->
 ```python
 """Stock photos for the marketing pages and the template samples.
 
@@ -7453,7 +8415,8 @@ SLOTS = {
 
 # Each template can also have its own main photo, static/img/stock/tpl-<template>.jpg (e.g. tpl-heritage.jpg),
 # shown in that template's samples instead of the occasion photo.
-TEMPLATES = ("atelier", "folio", "bloom", "heritage", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+TEMPLATES = ("nguni", "terracotta", "ribbon", "weave", "glitter", "matcha", "festive", "cheers", "heritage",
+             "atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
 
 CREDITS: dict = {}   # slot -> "Photographer, source link, licence" (or the AI tool used)
 
@@ -12190,12 +13153,13 @@ def comms_final_report(req, uid):
 
 ### `app/views/marketing.py`
 
-<!-- FILE: app/views/marketing.py sha256=c0976c726be797216f5a9b9c7e34bad5f1a977127e8e75fc94dac365f083f3b7 nl=1 -->
+<!-- FILE: app/views/marketing.py sha256=684376dec4e93f3820326bfaea1a307f5470df1ed30d838c4b2b5a8ba737e117 nl=1 -->
 ```python
 """The customer-facing marketing website."""
 from __future__ import annotations
 
 from .. import auth, catalog, config, db, stock
+from ..eventsite.invites import CREST
 from ..icons import i
 from ..services import email as mail
 from ..web import HTTPError, esc, redirect, router, url
@@ -12327,6 +13291,17 @@ def page_hero(title: str, intro: str, crumbs: list, extra: str = "") -> str:
 
 
 # --- home --------------------------------------------------------------------------------------
+# The invitation's crest (the Terracotta template's: a Nguni cow between two shields over crossed spears),
+# with its colours written in because the homepage doesn't load the event-website styles.
+HERO_CREST = (CREST.replace('class="crest"', 'class="invite__emblem"')
+              .replace('class="cow-base"', 'fill="#F7F1E7"').replace('class="cow-a"', 'fill="#6B3F22"')
+              .replace('class="cow-b"', 'fill="#241A14"').replace('class="cow-in"', 'fill="#E3BFA4"')
+              .replace('class="cow-eye"', 'fill="#1E1611"').replace('class="cow-muzzle"', 'fill="#CFA392"')
+              .replace('class="sh-spear" fill="none"', 'fill="none" stroke="#4A2E1C" stroke-width="1.7"')
+              .replace('class="sh-tip"', 'fill="#8A5A2B"')
+              .replace('class="sh-body"', 'fill="#F6E8CF" stroke="#4A2E1C" stroke-width="1.8"')
+              .replace('class="sh-spots"', 'fill="#4A2E1C"').replace('class="sh-stick"', 'stroke="#4A2E1C" stroke-width="1.6"'))
+
 HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 <div class="orbit__ring"></div><div class="orbit__ring orbit__ring--2"></div>
 <svg class="orbit__lines" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -12335,11 +13310,7 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 <div class="phone"><div class="phone__screen"><div class="phone__notch"></div>
 <div class="invite"><span class="invite__beads"></span>
 <svg class="invite__leaf" viewBox="0 0 60 80"><g fill="#7C8C5A"><path d="M58 2C40 10 30 26 28 46c10-14 22-24 30-44Z"/><path d="M60 22C46 30 40 44 40 60c8-10 16-22 20-38Z" opacity=".75"/></g><path d="M58 2 26 70" stroke="#5E6B42" stroke-width="1" fill="none"/></svg>
-<svg class="invite__emblem" viewBox="0 0 64 56"><g stroke="#4A2E1C" stroke-width="1.6" stroke-linecap="round" fill="none"><path d="M8 52 56 4"/><path d="M56 52 8 4"/></g>
-<ellipse cx="56.5" cy="3.5" rx="5" ry="1.9" transform="rotate(-45 56.5 3.5)" fill="#8A5A2B"/><ellipse cx="7.5" cy="3.5" rx="5" ry="1.9" transform="rotate(45 7.5 3.5)" fill="#8A5A2B"/>
-<ellipse cx="32" cy="29" rx="12" ry="21" fill="#F6E8CF" stroke="#4A2E1C" stroke-width="1.8"/>
-<path d="M27 16c3-2 7-1 8 2-1 3-6 4-8 2-1-1-1-3 0-4Zm7 14c3 0 5 3 4 6-3 2-7 1-8-2 0-2 2-4 4-4Zm-10 7c2-1 4 1 4 3-1 2-4 2-5 1-1-1 0-3 1-4Z" fill="#4A2E1C"/>
-<path d="M32 6v46" stroke="#4A2E1C" stroke-width="1.6"/></svg>
+{HERO_CREST}
 <p class="invite__title">Lobola</p><p class="invite__sub">Celebration</p>
 <p class="invite__intro">You are warmly invited to celebrate with our families</p>
 <p class="invite__names">Lerato <span>&amp;</span> Sipho</p>
@@ -12366,7 +13337,7 @@ HERO_VISUAL = f"""<div class="orbit" data-tilt aria-hidden="true">
 </div>"""
 
 FEATURES = [
-    ("globe", "A website for your event", "Eleven distinct designs, made for phones first and filled with your details and photos."),
+    ("globe", "A website for your event", "Animated invitation designs, made for phones first and filled with your details and photos."),
     ("check", "RSVPs that count themselves", "Attending, declined and pending at a glance, with plus-ones, children and meal choices."),
     ("users", "Guest list and families", "Import a spreadsheet, group families, mark VIPs and send personal invitation links."),
     ("seat", "Drag-and-drop seating", "Build your floor plan, seat parties at tables, and print the final chart."),
@@ -12432,7 +13403,7 @@ def healthz(req):
 
 @router.get("/")
 def home(req):
-    featured = ["champagne", "atelier", "heritage", "bloom", "cradle", "confetti"]   # gold-friendly first
+    featured = ["nguni", "ribbon", "weave", "terracotta", "glitter", "matcha"]   # weddings first
     templates = sorted(catalog.templates(), key=lambda t: featured.index(t["slug"]) if t["slug"] in featured else 99)[:6]
     tpl_cards = "".join(template_card(t) for t in templates)
     feats = "".join(f'<div class="feature card" data-reveal><span class="icon-tile">{i(ic)}</span><h3>{esc(t)}</h3><p>{esc(d)}</p></div>'
@@ -12460,11 +13431,11 @@ def home(req):
 {why_digital()}
 
 <section class="section section--surface"><div class="container">
-{section_head("Finished event websites", "Real layouts, filled with sample content. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
+{section_head("Finished event websites", "Each one opens like a real invitation, then carries on as the full event website. This is what your guests open on their phones.", '<a class="arrow-link" href="/templates"><span>All templates</span>' + i("arrow") + '</a>', "split")}
 <div class="showcase">
-<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/champagne/preview?group=weddings" width="1280" title="Champagne wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Champagne · a black-tie wedding</figcaption></figure>
-<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/bloom/preview?group=baby" width="390" title="Bloom baby shower sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Bloom · a baby shower</figcaption></figure>
-<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/confetti/preview?group=parties" width="390" title="Confetti party sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Confetti · a first birthday</figcaption></figure>
+<figure data-reveal><div class="device device--browser"><div class="device__screen" data-fit><iframe src="/templates/nguni/preview?group=weddings" width="1280" title="Nguni traditional wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Nguni · a traditional wedding</figcaption></figure>
+<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/ribbon/preview?group=weddings" width="390" title="Ribbon wedding sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Ribbon · a white wedding</figcaption></figure>
+<figure data-reveal><div class="device device--phone"><div class="device__screen" data-fit><iframe src="/templates/glitter/preview?group=parties" width="390" title="Glitter 21st birthday sample" loading="lazy" tabindex="-1" aria-hidden="true"></iframe></div></div><figcaption>Glitter · a 21st birthday</figcaption></figure>
 </div></div></section>
 
 <section class="section"><div class="container">{section_head("How it works", "From blank page to RSVPs in an afternoon.")}
@@ -12476,7 +13447,7 @@ def home(req):
 </ol></div></section>
 
 <section class="section section--surface"><div class="container">
-{section_head("Templates with their own character", "Not one design in different colours. Each template has its own layout, typography and details.", '<a class="arrow-link" href="/templates"><span>Browse all ' + str(len(catalog.templates())) + '</span>' + i("arrow") + '</a>', "split")}
+{section_head("Templates with their own character", "Invitations that move: an envelope that unseals, a ribbon that ties itself, balloons that float. Each has its own layout, typography and details.", '<a class="arrow-link" href="/templates"><span>Browse all ' + str(len(catalog.templates())) + '</span>' + i("arrow") + '</a>', "split")}
 <div class="grid grid--3" data-stagger>{tpl_cards}</div></div></section>
 
 <section class="section"><div class="container">{section_head("One platform for the whole event", "Everything you would otherwise print, chase or put in a spreadsheet.")}
@@ -12569,7 +13540,7 @@ def templates_gallery(req):
             card = card.replace('<article class="tpl-card"', '<article class="tpl-card" hidden', 1)
         cards.append(card)
     body = (page_hero('Event website <span class="serif grad">templates</span>',
-                      "Eleven designs with their own layouts and character. Filter by occasion, preview on desktop and mobile, then make it yours.",
+                      "Invitations that open, draw and sparkle, then carry on as your full event website. Filter by occasion, preview on desktop and mobile, then make it yours.",
                       [("Templates", "")]) + f"""
 <section class="section"><div class="container"><div class="chips-scroll" data-filter-bar role="group" aria-label="Filter by event type" style="margin-bottom:28px">{"".join(chips)}</div>
 <div class="grid grid--3">{"".join(cards)}</div></div></section>{cta_panel("Found the one?", "Start with any template. You can switch designs at any time before and after publishing.")}""")
@@ -13565,7 +14536,7 @@ def page_head(title: str, intro: str = "", actions: str = "") -> str:
 
 ### `app/views/wizard.py`
 
-<!-- FILE: app/views/wizard.py sha256=f046a403457771957a6481531c5a32113ec3079ecc970db4c20ba94f3827f208 nl=1 -->
+<!-- FILE: app/views/wizard.py sha256=5856905d67eba4e151ca9009f01678e326bbf564dbb9bf078b77d9fbef691e22 nl=1 -->
 ```python
 """Event creation: /create (choose occasion and template) and the 10-step set-up wizard.
 
@@ -13937,7 +14908,10 @@ def step_design(req, ev):
     g = group_of(ev)
     upload_errors = []
     if req.method == "POST":
-        tpl = f.choice("template", [t["slug"] for t in catalog.templates()], "templates", required=True, default=ev["template"])
+        offered = [t["slug"] for t in catalog.templates()]
+        if ev["template"] not in offered:            # a retired design the event already uses stays allowed
+            offered.append(ev["template"])
+        tpl = f.choice("template", offered, "templates", required=True, default=ev["template"])
         t_row = catalog.template(tpl)
         dkey = t_row["design"] if t_row else "atelier"
         dsg = themes.design(dkey)
@@ -13992,7 +14966,10 @@ def step_design(req, ev):
     res = themes.resolve(dkey, ev["design"])
     w = (ev["design"] or {}).get("wording", {})
     tpl_opts = []
-    for t in sorted(catalog.templates(), key=lambda t: g not in db.loads(t["groups"], [])):
+    choices = list(catalog.templates())
+    if not t_row["active"] and t_row["slug"] == ev["template"]:
+        choices.insert(0, t_row)                     # keep showing a retired design the event already uses
+    for t in sorted(choices, key=lambda t: g not in db.loads(t["groups"], [])):
         p = themes.design(t["design"])["palettes"][0][2]
         sw = "".join(f'<i style="background:{c}"></i>' for c in (p["bg"], p["text"], p["accent"], p["accent2"]))
         tpl_opts.append(f'<label class="choice"><input type="radio" name="template" value="{esc(t["slug"])}"{" checked" if t["slug"] == ev["template"] else ""}>'
@@ -17238,7 +18215,7 @@ os.execv(sys.executable, [sys.executable, "run.py", *sys.argv[1:]])
 
 ### `static/css/app.css`
 
-<!-- FILE: static/css/app.css sha256=c4b81abf9e6b7a90f1cb6592816d5d9659c01366b11b07dec7ff72c9af0c0147 nl=1 -->
+<!-- FILE: static/css/app.css sha256=5c91372692951f0e6ad051eaaaadf5c0ff2a95ff8a9dd1f7ba9a16eba2ad0dc3 nl=1 -->
 ```css
 /* Aurelia design system
    Built from docs/website-style-playbook.md (STS Holdings, Oct 2026). Colours since 25 Nov 2026:
@@ -17688,7 +18665,7 @@ a.chip, button.chip { min-height: 44px; }
 .invite__beads { position: absolute; left: 0; top: 0; bottom: 0; width: 15px; width: 6.5cqw; border-right: 2px solid #D9A441; border-right-width: .8cqw;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='24'%3E%3Crect width='12' height='24' fill='%23F3E3C3'/%3E%3Cpath d='M0 0 12 6 0 12Z' fill='%23A0522D'/%3E%3Cpath d='M0 12 12 18 0 24Z' fill='%231E1A16'/%3E%3Ccircle cx='9.5' cy='12' r='1.3' fill='%23D9A441'/%3E%3Ccircle cx='9.5' cy='0' r='1.3' fill='%23D9A441'/%3E%3Ccircle cx='9.5' cy='24' r='1.3' fill='%23D9A441'/%3E%3C/svg%3E") 0 0 / 100% auto repeat-y; }
 .invite__leaf { position: absolute; top: 5%; right: -3%; width: 22%; height: auto; opacity: .9; }
-.invite__emblem { width: 56px; width: 24cqw; height: auto; flex: none; }
+.invite__emblem { width: 92px; width: 40cqw; height: auto; flex: none; margin-top: 2px; margin-top: 1cqw; }
 .invite__title { font: 400 38px/1 var(--font-serif); font-size: 16.5cqw; letter-spacing: .06em; text-transform: uppercase; color: #8E3B22; }
 .invite__sub { margin-top: -2px !important; font-size: 9px; font-size: 4cqw; font-weight: 600; letter-spacing: .32em; text-transform: uppercase; color: #5B3A22; }
 .invite__intro { max-width: 80%; font-size: 8.5px; font-size: 3.6cqw; line-height: 1.35; color: #5B4636; }
@@ -18945,6 +19922,606 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 .i--tag { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'%3E%3Cpath d='M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8-9 9Z'/%3E%3Ccircle cx='8' cy='8' r='1.5'/%3E%3C/svg%3E"); }
 ```
 
+### `static/css/invites.css`
+
+<!-- FILE: static/css/invites.css sha256=72beba3f809666750ffa577b7d983f297dfbe50f9f700692bbe63bef184f86dd nl=1 -->
+```css
+/* Aurelia invitation collection (app/eventsite/invites.py), loaded after eventsite.css.
+   Each design opens like a real invitation. The finished invitation is the base style: every
+   @keyframes only describes where a piece starts (animation-fill-mode: both), and all motion sits
+   inside prefers-reduced-motion: no-preference, so nothing has to move to be read. */
+
+/* ---------- shared ---------- */
+.iv-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.hide-fill, .cloth-fill { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.hd-base { fill: var(--hide-base); } .hd-a { fill: var(--hide-a); } .hd-b { fill: var(--hide-b); }
+.iv-scatter { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.iv-scatter i { position: absolute; left: var(--x); top: var(--y); width: var(--s); rotate: var(--r, 0deg); }
+.iv-scatter svg { display: block; width: 100%; height: auto; fill: currentColor; }
+.iv-families { display: grid; justify-items: center; font-size: .75rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; line-height: 1.5; color: var(--ev-muted); }
+.iv-families__and { font-family: var(--ev-extra, var(--ev-display)); font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 1.5em; line-height: 1.1; color: var(--ev-ink-s); }
+.iv-by { margin-top: 14px !important; font-size: .8125rem; letter-spacing: .06em; color: var(--ev-muted); }
+.iv-actions { justify-content: center; }
+.iv-scroll { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 28px; padding: 0 6px;
+  font-size: .75rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none; color: var(--ev-muted); }
+.iv-scroll::after { content: ""; width: 7px; height: 7px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; rotate: 45deg; translate: 0 -2px; }
+.iv-nav { background: color-mix(in srgb, var(--ev-bg) 86%, transparent); }
+.iv-photo { max-width: 920px; margin: clamp(24px, 5vw, 56px) auto 0; padding: 0 var(--ev-pad); }
+.iv-photo .ev-photo { aspect-ratio: 3 / 2; border-radius: var(--ev-radius); }
+
+/* sections: centred invitation cards (each design gives them its own finish) */
+.iv-sec { text-align: center; padding-block: clamp(26px, 5vw, 52px); }
+.iv-sec .ev-sec__in { max-width: 800px; padding: clamp(30px, 6vw, 60px) clamp(20px, 5vw, 56px); background: var(--ev-surface); }
+.iv-sec .ev-kicker { display: none; }
+.iv-sec .ev-h h2 { font-weight: 400; }
+.iv-sec .ev-lead, .iv-sec .ev-text { margin-inline: auto; }
+.iv-sec .ev-actions, .iv-sec .ev-choice { justify-content: center; }
+.iv-sec .ev-rsvp, .iv-sec .ev-prog, .iv-sec .ev-notes, .iv-sec .ev-list, .iv-sec .ev-contacts, .iv-sec .ev-funcs { text-align: left; }
+.iv-sec .ev-rsvp, .iv-sec .ev-count, .iv-sec .ev-thanks, .iv-sec .ev-table, .iv-sec .ev-prog { margin-inline: auto; }
+.iv-sec .ev-prog { max-width: 560px; }
+.iv-sec .ev-table, .iv-sec .ev-thanks { justify-items: center; text-align: center; }
+.iv-sec .ev-menu__items .ev-tags, .iv-sec .ev-venue .ev-actions { justify-content: center; }
+.iv-sec .ev-gal { text-align: left; }
+
+/* sections drift in as they scroll into view (eventsite.js sets .ev-motion when motion is welcome) */
+.ev-motion .rv { opacity: 0; translate: 0 28px; transition: opacity .9s cubic-bezier(.16, 1, .3, 1), translate .9s cubic-bezier(.16, 1, .3, 1); }
+.ev-motion .rv.is-in { opacity: 1; translate: 0 0; }
+
+/* ---------- the envelope (Nguni and Weave) ----------
+   The card is in the page flow; the envelope's pocket and flap are drawn round it. At the start they
+   cover the card exactly; the flap opens, the card rises out, comes to the front, and the envelope
+   settles behind it at a slight angle. */
+.env-scene { position: relative; isolation: isolate; width: min(100%, var(--card-w, 460px)); margin-inline: auto; }
+.env-card { position: relative; z-index: 6; }
+.env-flapwrap, .env-pocket { position: absolute; inset: -16px -18px -22px; pointer-events: none; translate: -2.5% 6%; rotate: -4deg; }
+.env-flapwrap { z-index: 1; }
+.env-pocket { z-index: 4; overflow: hidden; border-radius: 6px; background: var(--hide-base, #eee);
+  box-shadow: 0 40px 60px -36px rgb(35 20 8 / .55), 0 10px 22px -14px rgb(35 20 8 / .4); }
+.env-pocket__seams { position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 1.6px), rgb(20 10 0 / .32) calc(50% - .4px), rgb(255 255 255 / .28) calc(50% + .6px), transparent calc(50% + 1.8px)) 0 100% / 50.4% 66% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 1.6px), rgb(20 10 0 / .32) calc(50% - .4px), rgb(255 255 255 / .28) calc(50% + .6px), transparent calc(50% + 1.8px)) 100% 100% / 50.4% 66% no-repeat,
+    linear-gradient(to top, rgb(20 10 0 / .14), transparent 40%) 0 100% / 100% 66% no-repeat,
+    linear-gradient(180deg, rgb(20 10 0 / .32), transparent 7%); }
+.env-flap { position: absolute; inset: 0 0 auto; height: var(--flap-h, 27%); transform-origin: 50% 0; transform: perspective(1600px) rotateX(180deg); transform-style: preserve-3d; }
+.env-flap__out, .env-flap__in { position: absolute; inset: 0; overflow: hidden; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  clip-path: polygon(0 0, 100% 0, 54.5% 93%, 52.4% 96.4%, 50% 97.6%, 47.6% 96.4%, 45.5% 93%); }
+.env-flap__out { background: var(--hide-base, #eee); }
+.env-flap__out::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgb(20 10 0 / .28)); }
+.env-flap__in { transform: rotateX(180deg); background: var(--lining);
+  clip-path: polygon(0 100%, 100% 100%, 54.5% 7%, 52.4% 3.6%, 50% 2.4%, 47.6% 3.6%, 45.5% 7%); }
+.env-flap__in::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(255 255 255 / .3), transparent 45%, rgb(60 35 0 / .18)); }
+.env-flap__seal { position: absolute; left: 50%; top: 95%; width: clamp(62px, 17%, 84px); translate: -50% -50%; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .env-flap { animation: env-open 1s cubic-bezier(.5, 0, .25, 1) .7s both; }
+  .env-flapwrap { animation: env-under 1s linear .7s both, env-drop 1.1s cubic-bezier(.2, .8, .2, 1) 2.45s both; }
+  .env-pocket { animation: env-drop 1.1s cubic-bezier(.2, .8, .2, 1) 2.45s both; }
+  .env-card { animation: env-card 2.3s cubic-bezier(.45, 0, .25, 1) 1.25s both; }
+}
+@keyframes env-open { from { transform: perspective(1600px) rotateX(0deg); } }
+@keyframes env-under { 0%, 50% { z-index: 5; } 50.01%, 100% { z-index: 1; } }
+@keyframes env-drop { from { translate: 0 0; rotate: 0deg; } }
+@keyframes env-card { 0%, 14% { translate: 0 0; z-index: 2; } 52% { translate: 0 -24%; z-index: 2; } 52.01%, 100% { z-index: 6; } 100% { translate: 0 0; } }
+
+/* wax seal */
+.seal { display: block; width: 100%; height: auto; overflow: visible; }
+.seal .sl-1 { stop-color: #FCEDB8; } .seal .sl-2 { stop-color: #E4BE63; } .seal .sl-3 { stop-color: #B98D31; } .seal .sl-4 { stop-color: #8A6420; }
+.seal__ring { fill: none; stroke: rgb(110 76 18 / .55); stroke-width: 1.6; }
+.seal__ring2 { fill: none; stroke: rgb(255 242 205 / .55); stroke-width: .9; }
+.seal__mono, .seal__shadow { font-family: var(--ev-display); font-weight: 600; letter-spacing: .02em; }
+.seal__mono { fill: #74500F; }
+.seal__shadow { fill: rgb(255 246 214 / .75); }
+.seal__glint { transform-box: view-box; transform-origin: 60px 60px; transform: rotate(22deg) translateX(-30px); }
+@media (prefers-reduced-motion: no-preference) { .seal__glint { animation: seal-glint 6s ease-in-out 3.6s infinite; } }
+@keyframes seal-glint { 0% { transform: rotate(22deg) translateX(-30px); } 26%, 100% { transform: rotate(22deg) translateX(190px); } }
+
+/* bow (Ribbon, Matcha, Festive) */
+.bow { display: block; overflow: visible; }
+.bw-a { fill: var(--bow, var(--ev-accent)); stroke: var(--bow-line, color-mix(in srgb, var(--bow, var(--ev-accent)) 62%, #000)); stroke-width: 1.5; stroke-linejoin: round; }
+.bw-b { fill: color-mix(in srgb, var(--bow, var(--ev-accent)) 70%, #000); opacity: .45; }
+.bw-k { fill: color-mix(in srgb, var(--bow, var(--ev-accent)) 86%, #000); stroke: var(--bow-line, color-mix(in srgb, var(--bow, var(--ev-accent)) 62%, #000)); stroke-width: 1.5; }
+.bw-line { fill: none; stroke: var(--bow-line, color-mix(in srgb, var(--bow, var(--ev-accent)) 62%, #000)); stroke-width: 1.3; stroke-linecap: round; opacity: .55; }
+.bw-hi { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; opacity: .38; }
+.bow__tail--l, .bow__tail--r, .bow__loop--l, .bow__loop--r { transform-box: view-box; }
+.bow__tail--l { transform-origin: 114px 78px; } .bow__tail--r { transform-origin: 126px 78px; }
+.bow__loop--l { transform-origin: 112px 70px; } .bow__loop--r { transform-origin: 128px 70px; }
+@media (prefers-reduced-motion: no-preference) {
+  .bow__tail--l { animation: bow-tail 4.4s ease-in-out infinite alternate; }
+  .bow__tail--r { animation: bow-tail 4.4s ease-in-out -2.2s infinite alternate-reverse; }
+}
+@keyframes bow-tail { from { rotate: -3.5deg; } to { rotate: 3.5deg; } }
+@keyframes bow-pop { 0% { opacity: 0; scale: .3; rotate: -14deg; } 60% { opacity: 1; scale: 1.08; rotate: 3deg; } 100% { scale: 1; rotate: 0deg; } }
+@keyframes iv-rise { from { opacity: 0; translate: 0 22px; } }
+@keyframes iv-fade { from { opacity: 0; } }
+@keyframes twinkle { 0%, 100% { opacity: .25; scale: .7; } 50% { opacity: 1; scale: 1; } }
+
+/* date rows: weekday | day month | year */
+.ev .nv-date, .ev .rb-date, .ev .wv-date, .ev .gl-date, .ev .mt-date, .ev .fs-date, .ev .cs-date { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; max-width: 360px; margin: 0 auto; }
+.nv-date__side, .rb-date__side, .wv-date__side, .gl-date__side, .mt-date__side, .fs-date__side, .cs-date__side {
+  padding: 7px 0; border-block: 1px solid color-mix(in srgb, currentColor 28%, transparent); font-size: .6875rem; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; }
+.nv-date__mid, .rb-date__mid, .wv-date__mid, .gl-date__mid, .mt-date__mid, .fs-date__mid, .cs-date__mid { display: grid; justify-items: center; line-height: 1; }
+.nv-date__mid b, .rb-date__mid b, .wv-date__mid b, .gl-date__mid b, .mt-date__mid b, .fs-date__mid b, .cs-date__mid b { font-family: var(--ev-display); font-weight: 400; font-size: clamp(2.5rem, 13cqw, 3.4rem); }
+.nv-date__mid span, .rb-date__mid span, .wv-date__mid span, .gl-date__mid span, .mt-date__mid span, .fs-date__mid span, .cs-date__mid span { margin-top: 4px; font-size: .6875rem; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; }
+[class$="-date--tba"] { display: block; font-family: var(--ev-display); font-size: 1.3rem; }
+.nv-where, .rb-where, .wv-where, .gl-where, .mt-where, .fs-where, .cs-where { display: grid; gap: 3px; margin-top: 18px !important; }
+[class$="-where__time"] { font-weight: 600; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+[class$="-where__venue"] { font-family: var(--ev-display); font-size: 1.25rem; line-height: 1.25; }
+[class$="-where__addr"] { font-size: .875rem; color: var(--ev-muted); }
+
+/* =========================================================================================== */
+/* NGUNI: cowhide envelope, gold wax seal, pampas and woven baskets                             */
+.d-nguni { --hide-base: #F7F1E7; --hide-a: var(--ev-accent2); --hide-b: color-mix(in srgb, var(--ev-accent2) 38%, #0E0906); --card-w: 468px;
+  --lining: linear-gradient(165deg, #FAEDC6 0%, #E3BF6F 28%, #F7E3B0 50%, #C99A44 76%, #F2D89C 100%); --ev-radius: 4px; }
+.nv-hero { position: relative; overflow: clip; display: grid; justify-items: center; padding: clamp(150px, 10vw + 100px, 196px) 18px 76px; }
+.nv-hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(55% 45% at 50% 32%, rgb(255 255 255 / .75), transparent 72%); }
+.nv-card { container-type: inline-size; padding: 72px 9% 42px; text-align: center; border-radius: 3px;
+  background: radial-gradient(120% 70% at 50% 0%, #fff, transparent 65%), var(--ev-surface);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .9), 0 0 0 1px rgb(110 80 35 / .12), 0 28px 50px -28px rgb(40 24 8 / .55), 0 3px 8px rgb(40 24 8 / .08); }
+.nv-card::before { content: ""; position: absolute; inset: 12px; border: 1px solid color-mix(in srgb, var(--ev-accent) 55%, transparent); pointer-events: none; }
+.nv-card__seal { position: absolute !important; z-index: 2; top: 0; left: 50%; width: 92px !important; translate: -50% -44%; filter: drop-shadow(0 6px 6px rgb(70 45 10 / .32)); }
+.nv-card .ev-greet { font-family: var(--ev-extra); font-style: normal; font-size: 1.5rem; }
+.nv-card .iv-families { margin-bottom: 12px !important; }
+.nv-kicker { font-family: var(--ev-extra); font-size: clamp(1.35rem, 6.6cqw, 1.95rem); line-height: 1.3; color: var(--ev-ink-s); }
+.ev .nv-names { display: grid; justify-items: center; margin: 14px 0 0; font-weight: 400; font-size: clamp(2rem, 11.4cqw, 3.3rem); line-height: 1.02; letter-spacing: .14em; text-transform: uppercase; overflow-wrap: anywhere; }
+.nv-names .ev-name { padding-left: .14em; }
+.nv-names .ev-amp { font-family: var(--ev-extra); font-size: .6em; letter-spacing: 0; text-transform: none; color: var(--ev-ink-s); line-height: 1.2; }
+.nv-rule { display: flex; align-items: center; gap: 10px; width: 64%; margin: 20px auto; }
+.nv-rule::before, .nv-rule::after { content: ""; flex: 1; height: 1px; background: color-mix(in srgb, var(--ev-accent) 65%, transparent); }
+.nv-rule i { width: 7px; height: 7px; rotate: 45deg; background: var(--ev-accent); }
+.nv-card .iv-actions { margin-top: 24px; }
+.d-nguni .ev-btn { letter-spacing: .16em; text-transform: uppercase; font-size: .75rem; }
+.nv-pampas { position: absolute; z-index: 0; width: 58%; top: -30%; pointer-events: none; }
+.nv-pampas--l { left: -38%; rotate: -26deg; }
+.nv-pampas--r { right: -38%; rotate: 24deg; scale: -1 1; }
+.pm-s { fill: none; stroke: #BFA37A; stroke-width: 1.4; stroke-linecap: round; }
+.pm-s--thin { stroke-width: 1; }
+.pm-glow { fill: none; stroke: #EADBC2; stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; opacity: .28; }
+.pm-glow--in { stroke: #E2CDA9; stroke-width: 9; opacity: .6; }
+.pm-f { fill: none; stroke: #D6BC93; stroke-width: .9; stroke-linecap: round; opacity: .7; }
+.pm-bun { fill: #EBDDC5; stroke: #DCC7A3; stroke-width: 1; }
+.pm-stem, .pm-tail { transform-box: view-box; transform-origin: 110px 318px; }
+.nv-scene .baskets { position: absolute; z-index: 0; width: 60%; right: -44%; bottom: -10%; pointer-events: none; }
+.nv-hero .iv-scroll, .wv-hero .iv-scroll { margin-top: 76px; }
+.bk-straw { fill: #D7B37E; } .bk-straw2 { fill: #E5C893; } .bk-dark { fill: #2E241C; } .bk-ink { fill: #2A1F18; } .bk-clay { fill: #A4512D; }
+.bk-ring { fill: none; stroke: rgb(110 72 34 / .32); stroke-width: 1.1; }
+.bk-dark ~ .bk-ring { stroke: rgb(230 200 150 / .35); }
+.bk-spoke { stroke: rgb(110 72 34 / .16); stroke-width: .9; }
+.bk-c { fill: #8A6438; }
+.bk-shadow { fill: rgb(40 25 10 / .16); }
+@media (prefers-reduced-motion: no-preference) {
+  .nv-card__seal { animation: nv-seal 1s cubic-bezier(.25, 1.5, .45, 1) 2.55s both; }
+  .nv-pampas { animation: nv-grow 1.4s cubic-bezier(.2, .8, .2, 1) 2.6s both; }
+  .pm-stem, .pm-tail { animation: pm-sway 6.5s ease-in-out calc(var(--i) * -1.3s) infinite alternate; }
+  .nv-scene .baskets { animation: nv-baskets 1.3s cubic-bezier(.2, .8, .2, 1) 2.75s both; }
+  .nv-hero .iv-scroll { animation: iv-fade .8s ease 3.4s both; }
+  .nv-hero .iv-scroll::after { animation: nudge 1.8s ease-in-out 4s infinite; }
+}
+@keyframes nv-seal { 0% { opacity: 0; scale: 1.8; } 100% { opacity: 1; scale: 1; } }
+@keyframes nv-grow { from { opacity: 0; scale: .6; translate: 0 14%; } }
+@keyframes pm-sway { from { rotate: -2.6deg; } to { rotate: 2.6deg; } }
+@keyframes nv-baskets { from { opacity: 0; rotate: 40deg; translate: -20% 0; } }
+@keyframes nudge { 50% { translate: 0 2px; } }
+.nv-body { padding: 4px 0 24px; }
+.nv-sec .ev-sec__in { position: relative; max-width: 760px; border-radius: 3px; box-shadow: 0 0 0 1px rgb(110 80 35 / .12), 0 22px 44px -34px rgb(40 24 8 / .5); }
+.nv-sec .ev-sec__in::before { content: ""; position: absolute; inset: 10px; border: 1px solid color-mix(in srgb, var(--ev-accent) 38%, transparent); pointer-events: none; }
+.nv-sec .ev-h h2 { text-transform: uppercase; letter-spacing: .16em; font-size: clamp(1.45rem, 1.1rem + 1.5vw, 2.2rem); }
+.nv-sec .ev-h::before { content: ""; display: block; width: 9px; height: 9px; margin: 0 auto 16px; rotate: 45deg; background: var(--ev-accent); }
+.nv-sec .ev-lead { font-style: italic; }
+.d-nguni .ev-count__cell { border-radius: 3px; }
+.nv-strip { position: relative; width: min(56%, 340px); height: 18px; margin: 0 auto; border-radius: 999px; overflow: hidden;
+  box-shadow: 0 0 0 1.5px var(--ev-accent), 0 0 0 4px var(--ev-bg), 0 0 0 5px color-mix(in srgb, var(--ev-accent) 45%, transparent); }
+.nv-photo .ev-photo { border-radius: 3px; box-shadow: 0 0 0 10px var(--ev-surface), 0 0 0 11px color-mix(in srgb, var(--ev-accent) 40%, transparent), 0 30px 50px -30px rgb(40 24 8 / .5); }
+@media (max-width: 599px) {
+  .nv-pampas { width: 54%; top: -24%; }
+  .nv-pampas--l { left: -30%; } .nv-pampas--r { right: -30%; }
+  .nv-scene .baskets { width: 54%; right: -24%; bottom: -14%; }
+}
+
+/* =========================================================================================== */
+/* TERRACOTTA: cream paper, beadwork, shield and spears, a Nguni cow among baskets and pots     */
+.d-terracotta { --ev-radius: 10px; }
+.tc-hero { position: relative; overflow: clip; display: grid; justify-items: center; padding: clamp(34px, 6vw, 64px) 18px 0 34px; text-align: center;
+  background: radial-gradient(110% 55% at 85% 0%, color-mix(in srgb, var(--ev-surface) 85%, #fff), transparent 62%), radial-gradient(80% 40% at 0% 100%, color-mix(in srgb, var(--ev-accent2) 22%, transparent), transparent 70%); }
+.tc-beads { position: absolute; left: 0; top: 0; bottom: 0; width: 16px; border-right: 3px solid var(--ev-accent2);
+  background:
+    radial-gradient(circle at 74% 50%, var(--ev-accent2) 0 1.7px, transparent 2.2px) 0 -7px / 100% 14px,
+    conic-gradient(from 246.4deg at 100% 25%, var(--ev-accent) 0 47.2deg, transparent 0) 0 0 / 100% 28px,
+    conic-gradient(from 246.4deg at 100% 75%, var(--ev-text) 0 47.2deg, transparent 0) 0 0 / 100% 28px,
+    color-mix(in srgb, var(--ev-accent2) 22%, var(--ev-surface)); }
+.tc-card { position: relative; display: grid; justify-items: center; gap: 6px; width: min(100%, 600px); }
+.crest { width: clamp(150px, 20vw, 210px); height: auto; margin-bottom: 2px; overflow: visible; }
+.crest__shield, .crest__cow { transform-box: fill-box; transform-origin: 50% 100%; }
+.sh-spear { stroke: #4A2E1C; stroke-width: 1.6; }
+.sh-tip { fill: #8A5A2B; }
+.sh-body { fill: #F6E8CF; stroke: #4A2E1C; stroke-width: 1.8; }
+.sh-spots { fill: #4A2E1C; }
+.sh-stick { fill: none; stroke: #4A2E1C; stroke-width: 1.6; }
+.tc-title { font-family: var(--ev-extra); font-size: clamp(2.6rem, 1.6rem + 5vw, 4.6rem); line-height: 1; letter-spacing: .06em; text-transform: uppercase; color: var(--ev-ink); }
+.tc-sub { margin-top: -2px !important; font-size: .8125rem; font-weight: 700; letter-spacing: .34em; text-transform: uppercase; color: var(--ev-muted); padding-left: .34em; }
+.tc-intro { max-width: 34ch; margin-top: 12px !important; color: var(--ev-muted); }
+.tc-card .ev-greet { margin: 8px 0 0 !important; }
+.ev .tc-names { font-size: clamp(3.2rem, 2rem + 6vw, 5.6rem); font-weight: 400; line-height: 1.05; color: var(--ev-text); display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0 .2em; margin: 4px 0 2px; }
+.tc-names .ev-amp { font-size: .7em; color: var(--ev-ink); }
+.tc-orn { width: min(60%, 260px); height: auto; }
+.tc-orn path { stroke: var(--ev-accent2); }
+.tc-orn__d { fill: var(--ev-accent2); stroke: none !important; }
+.tc-orn__h { fill: var(--ev-accent); stroke: none !important; }
+.tc-card .iv-families { margin-top: 6px !important; }
+.tc-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 520px); margin-top: 18px; }
+.tc-facts div { display: grid; justify-items: center; align-content: start; gap: 4px; padding: 0 8px; }
+.tc-facts div + div { border-left: 1px solid color-mix(in srgb, var(--ev-accent) 30%, transparent); }
+.tc-facts svg { width: 26px; height: 26px; fill: none; stroke: var(--ev-ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tc-facts b { font-size: .6875rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ev-ink); }
+.tc-facts span { font-size: .875rem; font-weight: 600; line-height: 1.3; letter-spacing: .04em; text-transform: uppercase; }
+.tc-card .ev-count { width: min(100%, 420px); margin-top: 20px; gap: 8px; }
+.tc-card .ev-count__cell { padding: 12px 4px; border-color: color-mix(in srgb, var(--ev-accent) 35%, transparent); background: color-mix(in srgb, var(--ev-surface) 75%, transparent); }
+.tc-card .ev-count__cell b { font-family: var(--ev-body); font-weight: 500; font-size: clamp(1.3rem, 1rem + 1.6vw, 1.8rem); }
+.tc-card .ev-count__cell span { color: var(--ev-ink); font-size: .625rem; }
+.tc-card .ev-count__done { margin-top: 14px !important; }
+.tc-card .iv-actions { margin-top: 22px; }
+.d-terracotta .ev-btn { background: linear-gradient(180deg, color-mix(in srgb, var(--ev-btn) 85%, #fff), var(--ev-btn)); letter-spacing: .12em; text-transform: uppercase; font-size: .75rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .3), 0 8px 18px -10px color-mix(in srgb, var(--ev-btn) 70%, transparent); }
+.d-terracotta .ev-btn--ghost { background: transparent; box-shadow: none; }
+.tc-still { position: relative; display: flex; justify-content: space-between; align-items: flex-end; width: min(86%, 420px); margin-top: 34px; padding: 0 4% 6px; }
+.tc-still::after { content: ""; position: absolute; left: -10%; right: -10%; bottom: 0; height: 2px; border-radius: 2px; background: color-mix(in srgb, var(--ev-accent2) 55%, transparent); }
+.tc-still svg { display: block; width: 30%; height: auto; }
+.tc-still .pot { width: 26%; }
+.cow-base { fill: #F7F1E7; } .cow-a { fill: #6B3F22; } .cow-b { fill: #241A14; } .cow-in { fill: #E3BFA4; } .cow-eye { fill: #1E1611; } .cow-muzzle { fill: #CFA392; }
+.cow__ears path { transform-box: view-box; }
+.cow__ears path:nth-child(odd) { transform-origin: 46px 40px; }
+.cow__ears path:nth-child(even) { transform-origin: 74px 40px; }
+.pot__body { fill: #8E4A2A; }
+@media (prefers-reduced-motion: no-preference) {
+  .tc-beads { animation: tc-beads 1.6s cubic-bezier(.5, 0, .2, 1) .1s both; }
+  .sh-spear path, .sh-stick, .sh-body { stroke-dasharray: 1; animation: draw 1.1s cubic-bezier(.5, 0, .3, 1) .25s both; }
+  .sh-body { animation: draw 1.1s cubic-bezier(.5, 0, .3, 1) .45s both, fill-in .6s ease 1.25s both; }
+  .sh-tip, .sh-spots { animation: iv-fade .6s ease 1.25s both; }
+  .crest__cow { animation: iv-rise 1s cubic-bezier(.2, 1.3, .4, 1) .9s both; }
+  .tc-title { animation: iv-rise .9s cubic-bezier(.16, 1, .3, 1) .5s both; }
+  .tc-sub { animation: iv-rise .9s cubic-bezier(.16, 1, .3, 1) .65s both; }
+  .tc-intro, .tc-card .ev-greet { animation: iv-rise .9s cubic-bezier(.16, 1, .3, 1) .8s both; }
+  .tc-names { animation: write 1.6s cubic-bezier(.6, .1, .3, 1) 1s both; }
+  .tc-orn, .tc-card .iv-families { animation: iv-fade .8s ease 1.9s both; }
+  .tc-facts, .tc-card .ev-count { animation: iv-rise .9s cubic-bezier(.16, 1, .3, 1) 2s both; }
+  .tc-card .iv-actions, .tc-card .iv-by { animation: iv-rise .9s cubic-bezier(.16, 1, .3, 1) 2.2s both; }
+  .tc-still > svg { animation: iv-rise 1s cubic-bezier(.16, 1, .3, 1) both; }
+  .tc-still .bowl { animation-delay: 2.3s; } .tc-still .pot { animation-delay: 2.5s; }
+  .tc-still::after { animation: grow-x 1.2s cubic-bezier(.16, 1, .3, 1) 2.2s both; }
+  .cow__ears path:nth-child(1), .cow__ears path:nth-child(3) { animation: ear-l 7s ease-in-out 4s infinite; }
+  .cow__ears path:nth-child(2), .cow__ears path:nth-child(4) { animation: ear-r 7s ease-in-out 5.2s infinite; }
+}
+@keyframes tc-beads { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes fill-in { from { fill-opacity: 0; } }
+@keyframes write { from { clip-path: inset(-20% 100% -20% 0); } to { clip-path: inset(-20% -5% -20% -5%); } }
+@keyframes grow-x { from { scale: 0 1; } }
+@keyframes ear-l { 0%, 90%, 100% { rotate: 0deg; } 93% { rotate: -14deg; } 96% { rotate: 4deg; } }
+@keyframes ear-r { 0%, 90%, 100% { rotate: 0deg; } 93% { rotate: 14deg; } 96% { rotate: -4deg; } }
+.tc-body { padding: 24px 0 24px; }
+.tc-sec .ev-sec__in { max-width: 760px; background: transparent; }
+.tc-sec .ev-h h2 { font-family: var(--ev-extra); text-transform: uppercase; letter-spacing: .08em; font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.3rem); color: var(--ev-ink); }
+.tc-sec .ev-lead { font-family: var(--ev-body); font-style: italic; }
+.tc-div { display: grid; place-items: center; }
+.tc-div .tc-orn { width: min(46%, 220px); }
+.d-terracotta .ev-note, .d-terracotta .ev-func, .d-terracotta .ev-list li, .d-terracotta .ev-contacts li, .d-terracotta .ev-table, .d-terracotta .ev-thanks {
+  border-color: color-mix(in srgb, var(--ev-accent) 28%, transparent); background: color-mix(in srgb, var(--ev-surface) 80%, transparent); }
+.tc-photo .ev-photo { border-radius: 999px 999px 14px 14px; aspect-ratio: 4 / 3; }
+
+/* =========================================================================================== */
+/* RIBBON: a card in a hand-drawn ribbon that ties itself into a bow                            */
+.d-ribbon { --ev-radius: 16px; --bow: var(--ev-accent); }
+.rb-hero { position: relative; overflow: clip; isolation: isolate; display: grid; justify-items: center; padding: clamp(96px, 11vw, 132px) 18px clamp(56px, 8vw, 96px); }
+.rb-bows i { width: calc(var(--s) * 1.6); color: color-mix(in srgb, var(--ev-accent) 38%, transparent); }
+.rb-card { position: relative; z-index: 1; width: min(100%, 480px); padding: 132px clamp(28px, 4vw, 54px) 64px; text-align: center; container-type: inline-size;
+  background: var(--ev-surface); box-shadow: 0 36px 60px -42px rgb(40 30 20 / .45), 0 2px 10px rgb(40 30 20 / .05); }
+.ribbon-frame { position: absolute; inset: 0; pointer-events: none; }
+.rf { position: absolute; overflow: visible; }
+.rf path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.rf-under { stroke: color-mix(in srgb, var(--ev-accent) 55%, #000); stroke-width: 6.5; opacity: .16; translate: .8px 1.8px; }
+.rf-ribbon { stroke: var(--ev-accent); stroke-width: 5; }
+.rf-sheen { stroke: color-mix(in srgb, var(--ev-accent) 32%, #fff); stroke-width: 1.2; opacity: .8; translate: -.5px -1px; }
+.rf-t1, .rf-t2, .rf-b { height: 12px; }
+.rf-t1 { top: 8px; left: 38px; width: calc(50% - 38px); }
+.rf-t2 { top: 8px; left: 50%; width: calc(50% - 38px); }
+.rf-b { bottom: 8px; left: 38px; width: calc(100% - 76px); }
+.rf-r, .rf-l { width: 12px; top: 38px; height: calc(100% - 76px); }
+.rf-r { right: 8px; } .rf-l { left: 8px; }
+.rf-c { width: 36px; height: 36px; }
+.rf-c1 { top: 2px; right: 2px; }
+.rf-c2 { bottom: 2px; right: 2px; rotate: 90deg; }
+.rf-c3 { bottom: 2px; left: 2px; rotate: 180deg; }
+.rf-c4 { top: 2px; left: 2px; rotate: 270deg; }
+.rb-bow { position: absolute; z-index: 2; top: -55px; left: 50%; width: min(58%, 230px); translate: -50% 0; transform-origin: 50% 40%; filter: drop-shadow(0 8px 10px rgb(40 20 10 / .16)); }
+.rb-kicker { font-size: .75rem; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--ev-ink-s); }
+.rb-card .ev-greet { font-size: 1.35rem; }
+.ev .rb-names { display: grid; justify-items: center; margin: 14px 0 20px; font-style: italic; font-weight: 400; font-size: clamp(2.8rem, 15cqw, 4.4rem); line-height: .95; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.rb-names .ev-amp { font-size: .55em; color: var(--ev-ink-s); margin: .1em 0; }
+.rb-card .iv-families { margin: 0 0 20px !important; }
+.d-ribbon .ev-btn { letter-spacing: .06em; }
+@media (prefers-reduced-motion: no-preference) {
+  .rf path { stroke-dasharray: 1; animation: draw var(--t, .3s) linear var(--at, 0s) both; }
+  .rf-t2 { --at: .35s; --t: .3s; } .rf-c1 { --at: .65s; --t: .22s; } .rf-r { --at: .87s; --t: .42s; } .rf-c2 { --at: 1.29s; --t: .22s; }
+  .rf-b { --at: 1.51s; --t: .3s; } .rf-c3 { --at: 1.81s; --t: .22s; } .rf-l { --at: 2.03s; --t: .42s; } .rf-c4 { --at: 2.45s; --t: .22s; } .rf-t1 { --at: 2.67s; --t: .3s; }
+  .rf-t1 path, .rf-b path, .rf-l path { animation-timing-function: linear; }
+  .rb-bow { animation: bow-pop 1s cubic-bezier(.3, 1.4, .5, 1) 2.85s both; }
+  .rb-in > * { animation: iv-rise 1s cubic-bezier(.16, 1, .3, 1) both; }
+  .rb-in > :nth-child(1) { animation-delay: .4s; } .rb-in > :nth-child(2) { animation-delay: .55s; } .rb-in > :nth-child(3) { animation-delay: .7s; }
+  .rb-in > :nth-child(4) { animation-delay: .9s; } .rb-in > :nth-child(5) { animation-delay: 1.05s; } .rb-in > :nth-child(n+6) { animation-delay: 1.2s; }
+  .rb-bows i { animation: float-bow var(--d) ease-in-out var(--dl) infinite alternate; }
+}
+@keyframes float-bow { from { translate: 0 -6px; rotate: calc(var(--r, 0deg) - 6deg); } to { translate: 0 6px; rotate: calc(var(--r, 0deg) + 6deg); } }
+.rb-body { padding: 8px 0 24px; }
+.rb-sec .ev-sec__in { max-width: 740px; border-radius: 4px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--ev-accent) 22%, transparent), 0 26px 50px -40px rgb(40 30 20 / .4); }
+.rb-sec .ev-h h2 { font-style: italic; font-size: clamp(2.1rem, 1.6rem + 2vw, 3.1rem); color: var(--ev-ink); }
+.rb-div { display: grid; place-items: center; }
+.rb-div .bow { width: 74px; }
+.rb-photo .ev-photo { border-radius: 4px; outline: 5px solid var(--ev-accent); outline-offset: 8px; }
+
+/* =========================================================================================== */
+/* WEAVE: a woven chevron envelope and a soft pink card                                         */
+.d-weave { --card-w: 452px; --ev-radius: 18px; --hide-base: var(--ev-accent2);
+  --wc-1: var(--ev-accent); --wc-2: var(--ev-accent2); --wc-3: color-mix(in srgb, var(--ev-text) 62%, var(--ev-accent)); --wc-4: color-mix(in srgb, var(--ev-accent) 45%, #FFDDB0);
+  --lining: repeating-linear-gradient(45deg, color-mix(in srgb, var(--ev-accent2) 55%, #fff) 0 9px, #fff 9px 18px); }
+.wc-1 { fill: var(--wc-1); } .wc-2 { fill: var(--wc-2); } .wc-3 { fill: var(--wc-3); } .wc-4 { fill: var(--wc-4); }
+.wc-ta { fill: rgb(255 255 255 / .2); } .wc-tb { fill: rgb(0 0 0 / .14); }
+.d-weave .seal .sl-1 { stop-color: color-mix(in srgb, var(--ev-accent2) 40%, #fff); } .d-weave .seal .sl-2 { stop-color: var(--ev-accent2); }
+.d-weave .seal .sl-3 { stop-color: color-mix(in srgb, var(--ev-accent2) 60%, var(--ev-accent)); } .d-weave .seal .sl-4 { stop-color: color-mix(in srgb, var(--ev-accent) 70%, #000); }
+.d-weave .seal__mono { fill: color-mix(in srgb, var(--ev-text) 80%, var(--ev-accent)); }
+.d-weave .seal__ring { stroke: color-mix(in srgb, var(--ev-text) 40%, transparent); }
+.wv-hero { position: relative; overflow: clip; display: grid; justify-items: center; padding: clamp(150px, 10vw + 100px, 190px) 18px 80px;
+  background: radial-gradient(60% 50% at 50% 35%, color-mix(in srgb, var(--ev-accent2) 28%, transparent), transparent 75%); }
+.wv-card { container-type: inline-size; padding: 58px 10% 44px; text-align: center; border-radius: 22px;
+  background: radial-gradient(110% 60% at 50% 0%, color-mix(in srgb, var(--ev-surface) 60%, #fff), transparent 70%), var(--ev-surface);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .6), 0 30px 54px -30px rgb(80 20 30 / .5); }
+.wv-card .wv-mono { display: grid; place-items: center; width: 74px; height: 74px; margin: 0 auto 16px; border-radius: 50%; border: 1.5px solid var(--ev-ink-s); font-family: var(--ev-display); font-style: italic; font-size: 1.6rem; color: var(--ev-ink-s); }
+.wv-kicker { font-size: .75rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--ev-ink-s); }
+.ev .wv-names { display: grid; justify-items: center; margin: 12px 0 18px; font-style: italic; font-weight: 500; font-size: clamp(2.6rem, 14cqw, 4rem); line-height: .98; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.wv-names .ev-amp { font-size: .5em; font-style: normal; color: var(--ev-ink-s); margin: .12em 0; }
+.wv-card .iv-families { margin: 0 0 18px !important; }
+.wv-card .iv-actions { margin-top: 22px; }
+@media (prefers-reduced-motion: no-preference) {
+  .wv-card .wv-mono { animation: iv-fade .8s ease 2.5s both; }
+}
+.wv-body { padding: 8px 0 24px; }
+.wv-sec .ev-sec__in { max-width: 760px; border-radius: 24px; box-shadow: 0 26px 50px -40px rgb(80 20 30 / .45); }
+.wv-sec .ev-h h2 { font-style: italic; font-size: clamp(2rem, 1.5rem + 2vw, 3rem); color: var(--ev-ink-s); }
+.wv-strip { position: relative; width: min(64%, 420px); height: 18px; margin: 0 auto; border-radius: 4px; overflow: hidden; }
+.wv-photo .ev-photo { border-radius: 24px; }
+
+/* =========================================================================================== */
+/* GLITTER: chrome balloons, a turning disco ball, sequins                                      */
+.d-glitter { --ev-radius: 20px;
+  --chrome: linear-gradient(180deg, #FFFFFF 0%, color-mix(in srgb, var(--ev-accent) 55%, #fff) 18%, color-mix(in srgb, var(--ev-accent) 78%, #1A1A22) 44%, color-mix(in srgb, var(--ev-accent) 35%, #fff) 56%, var(--ev-accent) 74%, color-mix(in srgb, var(--ev-accent) 52%, #121218) 100%); }
+.gl-hero { position: relative; overflow: clip; isolation: isolate; display: grid; justify-items: center; align-content: center; text-align: center;
+  min-height: min(100svh, 940px); padding: clamp(150px, 16vw, 210px) 18px clamp(64px, 8vw, 100px);
+  background: radial-gradient(70% 45% at 50% 0%, color-mix(in srgb, var(--ev-accent) 24%, transparent), transparent 70%),
+    radial-gradient(45% 35% at 85% 85%, color-mix(in srgb, var(--ev-accent2) 20%, transparent), transparent 70%), var(--ev-bg); }
+.gl-hero::before { content: ""; position: absolute; z-index: -2; left: 50%; top: 90px; width: 240vmax; height: 240vmax; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--ev-text) 7%, transparent) 0 4deg, transparent 4deg 19deg);
+  -webkit-mask-image: radial-gradient(closest-side, #000 8%, transparent 42%); mask-image: radial-gradient(closest-side, #000 8%, transparent 42%); }
+.gl-sequins { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ev-accent) 40%, transparent) 0 1.1px, transparent 1.7px) 0 0 / 10px 10px,
+    radial-gradient(circle, color-mix(in srgb, var(--ev-text) 16%, transparent) 0 .9px, transparent 1.4px) 5px 5px / 10px 10px;
+  -webkit-mask-image: radial-gradient(100% 75% at 50% 35%, #000 25%, transparent 88%); mask-image: radial-gradient(100% 75% at 50% 35%, #000 25%, transparent 88%); }
+.gl-sequins::after { content: ""; position: absolute; inset: 0; opacity: .85;
+  background: linear-gradient(115deg, transparent 38%, rgb(255 255 255 / .95) 50%, transparent 62%) 100% 0 / 300% 100% no-repeat;
+  -webkit-mask: radial-gradient(circle, #000 1.2px, transparent 1.8px) 0 0 / 10px 10px; mask: radial-gradient(circle, #000 1.2px, transparent 1.8px) 0 0 / 10px 10px; }
+.gl-sparks i { color: color-mix(in srgb, var(--ev-accent) 70%, #fff); }
+.gl-disco { position: absolute; z-index: 1; top: 0; left: 50%; width: clamp(104px, 13vw, 158px); translate: -50% 0; }
+.gl-disco svg { display: block; width: 100%; height: auto; transform-origin: 50% 0; filter: drop-shadow(0 18px 24px rgb(0 0 0 / .45)); }
+.db-wire { stroke: color-mix(in srgb, var(--ev-text) 45%, transparent); stroke-width: 1.2; }
+.db-cap { fill: color-mix(in srgb, var(--ev-accent) 60%, #333); }
+.db-d { fill: color-mix(in srgb, var(--ev-accent) 30%, #1C1D24); } .db-m { fill: color-mix(in srgb, var(--ev-accent) 70%, #4A4C57); }
+.db-l { fill: color-mix(in srgb, var(--ev-accent) 75%, #fff); } .db-h { fill: #fff; }
+.db-star { fill: #fff; transform-box: fill-box; transform-origin: center; }
+.gl-balloons { position: relative; z-index: 1; display: flex; justify-content: center; align-items: flex-end; flex-wrap: wrap; gap: 0 .02em; margin: 0 0 4px !important;
+  font: 700 clamp(3.4rem, calc(96vw / var(--n, 2)), 12.5rem)/.9 var(--ev-extra), system-ui, sans-serif; letter-spacing: -.02em; }
+.gl-b { display: inline-block; padding: 0 .015em;
+  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / .95) 49%, transparent 58%) 220% 0 / 250% 100% no-repeat, var(--chrome);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 .025em 0 color-mix(in srgb, var(--ev-accent) 40%, #000)) drop-shadow(0 .09em .1em rgb(0 0 0 / .45)); }
+.gl-sp { width: .28em; }
+.gl-in { position: relative; z-index: 1; display: grid; justify-items: center; max-width: 620px; }
+.gl-kicker { margin-top: 10px !important; font-size: .75rem; font-weight: 700; letter-spacing: .3em; text-transform: uppercase; color: var(--ev-accent2); }
+.d-glitter.grp-weddings .gl-kicker, .d-glitter[style*="--ev-accent2:#F2E2BC"] .gl-kicker { color: var(--ev-ink); }
+.ev .gl-names { margin: 12px 0 24px; font-style: italic; font-weight: 500; font-size: clamp(2.6rem, 1.6rem + 5vw, 5rem); line-height: 1; letter-spacing: -.02em; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 .25em; text-shadow: 0 0 30px color-mix(in srgb, var(--ev-accent) 35%, transparent); }
+.gl-names .ev-amp { font-size: .6em; color: var(--ev-ink); }
+.gl-in .gl-date { color: var(--ev-text); }
+.d-glitter .ev-btn { background: var(--chrome); color: #15151B !important; border: 0; box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), 0 10px 26px -12px color-mix(in srgb, var(--ev-accent) 70%, transparent); letter-spacing: .1em; text-transform: uppercase; font-size: .75rem; }
+.d-glitter .ev-btn--ghost { background: transparent; color: var(--ev-text) !important; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ev-accent) 55%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .gl-hero::before { animation: spin 48s linear infinite; }
+  .gl-sequins::after { animation: sequin-sweep 6s linear infinite; }
+  .gl-sparks i { animation: twinkle var(--d) ease-in-out var(--dl) infinite; }
+  .gl-disco { animation: gl-drop 1.2s cubic-bezier(.2, 1.2, .4, 1) .1s both; }
+  .gl-disco svg { animation: swing 5s ease-in-out 1.3s infinite alternate; }
+  .db-tiles { animation: db-turn 7s linear infinite; }
+  .db-star { animation: twinkle 2.6s ease-in-out infinite; }
+  .gl-balloons { animation: gl-up 1.6s cubic-bezier(.2, .9, .3, 1) .4s both; }
+  .gl-b { animation: bob 3.4s ease-in-out calc(var(--i) * -.9s) infinite alternate, chrome-glint 5s ease-in-out calc(2s + var(--i) * .2s) infinite; }
+  .gl-in > * { animation: iv-rise 1s cubic-bezier(.16, 1, .3, 1) both; }
+  .gl-in > :nth-child(1) { animation-delay: 1.1s; } .gl-in > :nth-child(2) { animation-delay: 1.25s; } .gl-in > :nth-child(3) { animation-delay: 1.4s; }
+  .gl-in > :nth-child(n+4) { animation-delay: 1.6s; }
+}
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes sequin-sweep { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+@keyframes gl-drop { from { translate: -50% -110%; } }
+@keyframes swing { from { rotate: -3deg; } to { rotate: 3deg; } }
+@keyframes db-turn { to { transform: translateX(-109.2px); } }
+@keyframes gl-up { from { opacity: 0; translate: 0 40vh; } }
+@keyframes bob { from { translate: 0 -5px; rotate: -2deg; } to { translate: 0 5px; rotate: 2deg; } }
+@keyframes chrome-glint { 0% { background-position: 220% 0, 0 0; } 35%, 100% { background-position: -120% 0, 0 0; } }
+.gl-body { padding: 8px 0 24px; }
+.gl-sec .ev-sec__in { max-width: 780px; border-radius: 26px; background: color-mix(in srgb, var(--ev-surface) 88%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ev-accent) 26%, transparent), 0 30px 60px -40px rgb(0 0 0 / .6); }
+.gl-sec .ev-h h2 { font-style: italic; font-size: clamp(2rem, 1.5rem + 2vw, 3rem); background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.d-glitter.bg-pattern { background-image: radial-gradient(circle, color-mix(in srgb, var(--ev-accent) 18%, transparent) 0 .8px, transparent 1.3px); background-size: 14px 14px; }
+.gl-photo .ev-photo { border-radius: 26px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--ev-accent) 40%, transparent), 0 30px 60px -30px rgb(0 0 0 / .6); }
+
+/* =========================================================================================== */
+/* MATCHA: pink cabana stripes, an olive bow, a matcha latte and a pilates ball                 */
+.d-matcha { --ev-radius: 22px; --bow: var(--ev-accent2); }
+.mt-hero { position: relative; overflow: clip; display: grid; justify-items: center; padding: 0 18px clamp(64px, 8vw, 104px); }
+.mt-awning { position: relative; width: calc(100% + 36px); margin: 0 -18px; height: clamp(84px, 9vw + 40px, 132px); filter: drop-shadow(0 10px 10px rgb(80 40 50 / .14)); transform-origin: 50% 0; }
+.mt-awning::before { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgb(0 0 0 / .06), transparent 30%), repeating-linear-gradient(90deg, var(--ev-accent) 0 40px, #FFFDFB 40px 80px);
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 20px) no-repeat, radial-gradient(circle 20px at 50% 0, #000 97%, transparent) bottom / 40px 20px repeat-x;
+  mask: linear-gradient(#000 0 0) top / 100% calc(100% - 20px) no-repeat, radial-gradient(circle 20px at 50% 0, #000 97%, transparent) bottom / 40px 20px repeat-x; }
+.mt-card { position: relative; z-index: 1; width: min(100%, 500px); margin-top: clamp(64px, 8vw, 86px); padding: 118px clamp(24px, 4vw, 52px) 48px; text-align: center; container-type: inline-size;
+  border-radius: 30px; background: var(--ev-surface); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ev-accent) 30%, transparent), 0 34px 60px -44px rgb(80 40 50 / .5); }
+.mt-bow { position: absolute; top: -50px; left: 50%; width: min(52%, 210px); translate: -50% 0; transform-origin: 50% 40%; filter: drop-shadow(0 8px 8px rgb(40 50 20 / .16)); }
+.mt-kicker { font-size: .75rem; font-weight: 700; letter-spacing: .24em; text-transform: uppercase; color: var(--ev-ink-s); }
+.ev .mt-names { display: grid; justify-items: center; margin: 14px 0 20px; font-weight: 400; font-size: clamp(2.6rem, 14cqw, 4.1rem); line-height: .98; letter-spacing: -.02em; color: var(--ev-text); overflow-wrap: anywhere; }
+.mt-names .ev-amp { font-size: .55em; color: var(--ev-ink-s); }
+.mt-card .iv-actions { margin-top: 22px; }
+.mt-still { position: relative; z-index: 2; display: flex; align-items: flex-end; gap: 10px; width: 190px; margin-top: -34px; }
+.mt-still .matcha { width: 46%; height: auto; }
+.mt-still .pball { width: 54%; height: auto; }
+@media (min-width: 900px) {
+  .mt-still { position: absolute; left: calc(50% + 200px); bottom: clamp(48px, 6vw, 80px); width: 250px; margin: 0; }
+}
+.mt-straw { stroke: var(--ev-accent); stroke-width: 6; stroke-linecap: round; }
+.mt-ice { fill: rgb(255 255 255 / .5); stroke: rgb(255 255 255 / .95); stroke-width: 1.2; }
+.mt-glassline { fill: none; stroke: color-mix(in srgb, var(--ev-text) 40%, transparent); stroke-width: 1.8; }
+.pb-fill { fill: var(--ev-accent); }
+.pb-seam { fill: none; stroke: rgb(255 255 255 / .55); stroke-width: 1.6; }
+.pb-shadow { fill: rgb(60 30 40 / .14); transform-box: fill-box; transform-origin: center; }
+.pb-ball { transform-box: view-box; transform-origin: 50px 92px; }
+@media (prefers-reduced-motion: no-preference) {
+  .mt-awning { animation: mt-drop 1s cubic-bezier(.3, 1.3, .5, 1) .1s both, mt-breeze 6s ease-in-out 1.4s infinite alternate; }
+  .mt-bow { animation: bow-pop 1s cubic-bezier(.3, 1.4, .5, 1) 1.2s both; }
+  .mt-card { animation: iv-rise 1s cubic-bezier(.16, 1, .3, 1) .5s both; }
+  .mt-milk { animation: mt-wave 5s linear infinite; }
+  .mt-tea { animation: mt-wave 7s linear infinite reverse; }
+  .pb-ball { animation: pb-bounce .9s cubic-bezier(.5, 0, .5, 1) infinite alternate; }
+  .pb-shadow { animation: pb-shadow .9s cubic-bezier(.5, 0, .5, 1) infinite alternate; }
+  .mt-still { animation: iv-rise 1s cubic-bezier(.16, 1, .3, 1) 1.4s both; }
+}
+@keyframes mt-drop { from { translate: 0 -100%; } }
+@keyframes mt-breeze { from { scale: 1 1; } to { scale: 1 1.04; } }
+@keyframes mt-wave { from { transform: translateX(0); } to { transform: translateX(60px); } }
+@keyframes pb-bounce { from { translate: 0 -12px; scale: 1; } 85% { scale: 1; } to { translate: 0 0; scale: 1.05 .95; } }
+@keyframes pb-shadow { from { scale: .7; opacity: .6; } to { scale: 1; opacity: 1; } }
+.mt-body { padding: 8px 0 24px; }
+.mt-sec .ev-sec__in { max-width: 740px; border-radius: 28px; box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ev-accent) 22%, transparent); }
+.mt-sec .ev-h h2 { font-size: clamp(2rem, 1.5rem + 2vw, 2.9rem); color: var(--ev-text); }
+.mt-div { display: grid; place-items: center; }
+.mt-div i { display: block; width: min(40%, 220px); height: 14px; border-radius: 999px; background: repeating-linear-gradient(90deg, var(--ev-accent) 0 14px, var(--ev-surface) 14px 28px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ev-accent) 50%, transparent); }
+.d-matcha .ev-btn { letter-spacing: .06em; }
+.mt-photo .ev-photo { border-radius: 30px; }
+
+/* =========================================================================================== */
+/* FESTIVE: candy stripes, an arched card tied in red ribbon, a tree with bows, snow            */
+.d-festive { --ev-radius: 18px; --bow: var(--ev-accent); }
+.fs-hero { position: relative; overflow: clip; isolation: isolate; display: grid; justify-items: center; padding: clamp(96px, 10vw, 128px) 18px clamp(64px, 8vw, 104px); }
+.d-festive.bg-pattern .fs-hero { background: repeating-linear-gradient(90deg, var(--ev-accent) 0 46px, color-mix(in srgb, var(--ev-surface) 94%, var(--ev-accent)) 46px 92px); }
+.fs-arch { position: relative; z-index: 1; width: min(100%, 470px); padding: 130px clamp(26px, 4vw, 54px) 54px; text-align: center; container-type: inline-size;
+  border-radius: 999px 999px 26px 26px; background: var(--ev-surface);
+  box-shadow: 0 0 0 10px var(--ev-surface), 0 0 0 13px var(--ev-accent), 0 44px 70px -40px rgb(40 0 0 / .55); }
+.fs-arch::before { content: ""; position: absolute; inset: 14px; border: 1.5px solid color-mix(in srgb, var(--ev-accent) 70%, transparent); border-radius: 999px 999px 16px 16px; pointer-events: none; }
+.fs-bow { position: absolute; z-index: 2; top: -64px; left: 50%; width: min(54%, 210px); translate: -50% 0; transform-origin: 50% 40%; filter: drop-shadow(0 8px 8px rgb(60 0 0 / .2)); }
+.fs-kicker { font-family: var(--ev-extra); font-size: clamp(1.6rem, 8cqw, 2.3rem); line-height: 1.1; color: var(--ev-ink-s); }
+.ev .fs-names { display: grid; justify-items: center; margin: 10px 0 20px; font-weight: 500; font-size: clamp(2.4rem, 13cqw, 3.8rem); line-height: 1; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.fs-names .ev-amp { font-family: var(--ev-extra); font-weight: 400; font-size: .7em; color: var(--ev-ink-s); }
+.fs-arch .iv-actions { margin-top: 22px; }
+.fs-tree { position: relative; z-index: 2; width: 150px; margin-top: -40px; }
+.fs-tree .tree { display: block; width: 100%; height: auto; filter: drop-shadow(0 16px 16px rgb(0 0 0 / .2)); }
+@media (min-width: 900px) {
+  .fs-tree { position: absolute; left: calc(50% + 230px); bottom: clamp(56px, 7vw, 96px); width: clamp(190px, 18vw, 250px); margin: 0; }
+}
+.ft-g0 { fill: #2F6B45; } .ft-g1 { fill: #3E8256; }
+.ft-g0, .ft-g1 { stroke: rgb(255 255 255 / .18); stroke-width: 1; }
+.ft-trunk { fill: #6B4428; }
+.ft-light { fill: #FFE8A6; }
+.ft-bow__a { fill: var(--ev-accent); stroke: color-mix(in srgb, var(--ev-accent) 60%, #000); stroke-width: 6; }
+.ft-bow__k { fill: color-mix(in srgb, var(--ev-accent) 80%, #000); }
+.ft-star { fill: #F2C14E; stroke: #C99A2E; stroke-width: 1; transform-box: fill-box; transform-origin: center; }
+.ft-box1 { fill: var(--ev-accent); } .ft-box2 { fill: #F2C14E; }
+.ft-rib { fill: none; stroke: #FFF4E6; stroke-width: 4; } .ft-rib2 { fill: none; stroke: var(--ev-accent); stroke-width: 4; }
+.snow { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .snow { display: block; position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .snow i { position: absolute; top: -12px; left: var(--x); width: var(--s); height: var(--s); border-radius: 50%; background: #fff; opacity: .92;
+    box-shadow: 0 0 5px rgb(255 255 255 / .9); animation: snow var(--d) linear var(--dl) infinite; }
+  .fs-bow { animation: bow-pop 1s cubic-bezier(.3, 1.4, .5, 1) 1s both; }
+  .fs-arch { animation: iv-rise 1.1s cubic-bezier(.16, 1, .3, 1) .2s both; }
+  .fs-tree { animation: iv-rise 1.1s cubic-bezier(.16, 1, .3, 1) .9s both; }
+  .ft-light { animation: lights 1.6s ease-in-out var(--d) infinite alternate; }
+  .ft-star { animation: star 3s ease-in-out infinite; }
+  .d-festive.bg-pattern .fs-hero { animation: stripes 14s linear infinite; }
+}
+@keyframes snow { from { translate: 0 -12px; } to { translate: var(--dx) 1100px; } }
+@keyframes lights { from { opacity: .3; } to { opacity: 1; } }
+@keyframes star { 0%, 100% { scale: 1; rotate: 0deg; } 50% { scale: 1.15; rotate: 8deg; } }
+@keyframes stripes { to { background-position: 92px 0; } }
+.fs-body { padding: 8px 0 24px; }
+.fs-sec .ev-sec__in { position: relative; max-width: 740px; border-radius: 22px; box-shadow: 0 0 0 6px var(--ev-surface), 0 0 0 8px var(--ev-accent), 0 30px 50px -40px rgb(40 0 0 / .45); }
+.fs-sec .ev-h h2 { font-size: clamp(2rem, 1.5rem + 2vw, 2.9rem); color: var(--ev-ink-s); }
+.fs-div { width: min(56%, 360px); height: 12px; margin: 10px auto; border-radius: 999px; background: repeating-linear-gradient(-45deg, var(--ev-accent) 0 9px, var(--ev-surface) 9px 18px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ev-accent) 50%, transparent); }
+.fs-photo .ev-photo { border-radius: 999px 999px 22px 22px; aspect-ratio: 4 / 3; box-shadow: 0 0 0 8px var(--ev-surface), 0 0 0 10px var(--ev-accent); }
+
+/* =========================================================================================== */
+/* CHEERS: retro stripes and a hand-drawn champagne toast                                       */
+.d-cheers { --ev-radius: 18px; }
+.cs-hero { position: relative; overflow: clip; display: grid; justify-items: center; padding: clamp(72px, 9vw, 112px) 18px clamp(64px, 8vw, 104px); }
+.d-cheers.bg-pattern .cs-hero { background: repeating-linear-gradient(90deg, var(--ev-accent) 0 38px, var(--ev-bg) 38px 76px); }
+.cs-panel { position: relative; width: min(100%, 500px); padding: 34px clamp(24px, 4vw, 52px) 54px; text-align: center; container-type: inline-size;
+  border-radius: 250px 250px 26px 26px / 210px 210px 26px 26px; background: var(--ev-surface);
+  box-shadow: 0 0 0 2px var(--ev-text), 0 0 0 9px var(--ev-surface), 0 0 0 10.5px var(--ev-text), 0 40px 70px -40px rgb(40 0 10 / .55); }
+.coupes { display: block; width: min(84%, 290px); height: auto; margin: 0 auto 6px; overflow: visible; }
+.cs-line { fill: none; stroke: var(--ev-text); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.cs-wine { fill: var(--ev-accent2); }
+.cs-glint { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; opacity: .7; }
+.cs-bub { fill: color-mix(in srgb, var(--ev-accent2) 40%, #fff); stroke: var(--ev-text); stroke-width: .9; }
+.cs-pop path { fill: none; stroke: var(--ev-accent); stroke-width: 2.6; stroke-linecap: round; }
+.cs-star { fill: var(--ev-accent2); stroke: var(--ev-text); stroke-width: 1.2; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; }
+.cs-squig { fill: none; stroke: var(--ev-accent); stroke-width: 2.4; stroke-linecap: round; }
+.cs-glass { transform-box: fill-box; transform-origin: 50% 100%; }
+.cs-pop { transform-box: fill-box; transform-origin: 50% 100%; }
+.cs-kicker { font-family: var(--ev-extra); font-size: clamp(1.6rem, 8cqw, 2.2rem); font-weight: 600; line-height: 1.1; color: var(--ev-ink-s); rotate: -3deg; }
+.ev .cs-names { display: grid; justify-items: center; margin: 10px 0 20px; font-style: italic; font-weight: 400; font-size: clamp(2.6rem, 14cqw, 4rem); line-height: .98; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.cs-names .ev-amp { font-size: .55em; color: var(--ev-ink-s); }
+.cs-panel .iv-actions { margin-top: 22px; }
+.d-cheers .ev-btn { letter-spacing: .06em; }
+@media (prefers-reduced-motion: no-preference) {
+  .cs-panel { animation: iv-rise 1.1s cubic-bezier(.16, 1, .3, 1) .15s both; }
+  .cs-glass--l { animation: clink-l 1.5s cubic-bezier(.3, 1.5, .5, 1) .6s both; }
+  .cs-glass--r { animation: clink-r 1.5s cubic-bezier(.3, 1.5, .5, 1) .6s both; }
+  .cs-pop { animation: pop .6s cubic-bezier(.3, 1.6, .5, 1) 1.35s both; }
+  .cs-bub { animation: bubble var(--d) ease-in var(--dl) infinite; }
+  .cs-star { animation: twinkle 2.8s ease-in-out infinite; }
+  .cs-star + .cs-star { animation-delay: -1.4s; }
+  .cs-squig { stroke-dasharray: 80; animation: squig 1.2s ease 1.6s both; }
+}
+@keyframes clink-l { from { rotate: -26deg; translate: -26px 6px; } }
+@keyframes clink-r { from { rotate: 26deg; translate: 26px 6px; } }
+@keyframes pop { from { opacity: 0; scale: .2; } }
+@keyframes bubble { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 1; } 100% { translate: 0 -48px; opacity: 0; } }
+@keyframes squig { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }
+.cs-body { padding: 8px 0 24px; }
+.cs-sec .ev-sec__in { max-width: 740px; border-radius: 24px; box-shadow: 0 0 0 2px var(--ev-text), 0 0 0 7px var(--ev-surface), 0 0 0 8.5px color-mix(in srgb, var(--ev-text) 55%, transparent); }
+.cs-sec .ev-h h2 { font-style: italic; font-size: clamp(2rem, 1.5rem + 2vw, 2.9rem); color: var(--ev-text); }
+.cs-div { display: grid; place-items: center; }
+.cs-div svg { width: 120px; height: 16px; fill: none; stroke: var(--ev-accent); stroke-width: 2.4; stroke-linecap: round; }
+.cs-photo .ev-photo { border-radius: 24px; box-shadow: 0 0 0 2px var(--ev-text), 0 0 0 8px var(--ev-surface), 0 0 0 9.5px var(--ev-text); }
+
+/* ---------- phones ---------- */
+@media (max-width: 599px) {
+  .nv-hero, .wv-hero { padding-inline: 34px; }
+  .fs-hero, .cs-hero { padding-inline: 26px; }
+  .iv-sec { padding-inline: 12px; }
+  .nv-card { padding: 68px 8% 38px; }
+  .tc-hero { padding-left: 28px; padding-right: 12px; }
+  .tc-facts span { font-size: .75rem; }
+  .rb-card { padding: 120px 22px 54px; }
+  .gl-hero { min-height: 0; }
+}
+
+@media print {
+  .ev-motion .rv { opacity: 1 !important; translate: none !important; }
+  .snow, .iv-scatter, .gl-sequins, .gl-hero::before { display: none !important; }
+}
+```
+
 ### `static/img/favicon.svg`
 
 <!-- FILE: static/img/favicon.svg sha256=f3068dcca3815f4393dca09cb1152f9ff0d6813e535d52602bd625068a767779 nl=0 -->
@@ -19203,7 +20780,7 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 
 ### `static/js/eventsite.js`
 
-<!-- FILE: static/js/eventsite.js sha256=9d65aaae5e49a78548425c7bd5a5988311b240b1d6241157dcce5025bdd39c90 nl=1 -->
+<!-- FILE: static/js/eventsite.js sha256=a67f7d4438655955e44ddce8a0626c56c2c4cc72983dd357718078794f452510 nl=1 -->
 ```javascript
 /* Event website behaviour: live countdown, show/hide attending details, focus the thank-you. */
 (function () {
@@ -19246,6 +20823,20 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
     form.addEventListener("change", function (e) { if (e.target.name === "status") sync(); });
     sync();
   });
+
+  // Sections drift in as they scroll into view, only for visitors happy to see motion.
+  // Without JavaScript or with reduced motion, everything is simply shown.
+  var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var reveal = document.querySelectorAll(".rv");
+  if (!calm && reveal.length && "IntersectionObserver" in window) {
+    document.documentElement.classList.add("ev-motion");
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target); }
+      });
+    }, { rootMargin: "0px 0px -6% 0px", threshold: 0.06 });
+    reveal.forEach(function (el) { io.observe(el); });
+  }
 
   var thanks = document.querySelector("[data-focus-me]");
   if (thanks) { thanks.focus({ preventScroll: false }); }
@@ -20045,7 +21636,7 @@ class BackupTest(unittest.TestCase):
 
 ### `tests/test_core.py`
 
-<!-- FILE: tests/test_core.py sha256=e37f0a3853773ecf2253400da9bc8cc956b3729f66e6f58216b45d9378c3ea79 nl=1 -->
+<!-- FILE: tests/test_core.py sha256=6cdf26a3e2c77f8e556b6e4e1eea43b86bb44275b1d1f00a566d20b8c812a39f nl=1 -->
 ```python
 """Accounts, marketing pages, the create flow, the wizard and payments."""
 import json
@@ -20065,12 +21656,13 @@ class AccountsTest(unittest.TestCase):
 
     def test_marketing_pages_render(self):
         for path in ["/", "/weddings", "/baby-celebrations", "/parties", "/celebrations", "/templates",
-                     "/templates/atelier", "/pricing", "/how-it-works", "/faq", "/contact", "/privacy", "/terms",
+                     "/templates/nguni", "/pricing", "/how-it-works", "/faq", "/contact", "/privacy", "/terms",
                      "/refunds", "/create", "/login", "/register", "/forgot-password"]:
             r = self.c.get(path)
             self.assertEqual(r.status, 200, path)
             self.assertIn("<h1", r.text, path)
         self.assertEqual(self.c.get("/templates/does-not-exist").status, 404)
+        self.assertEqual(self.c.get("/templates/atelier").status, 404)       # a retired design is no longer offered
 
     def test_pricing_reads_packages_from_db(self):
         db.run("UPDATE packages SET price_cents = 1234500 WHERE code = 'premium'")
@@ -20083,7 +21675,8 @@ class AccountsTest(unittest.TestCase):
         r = self.c.get("/sitemap.xml")
         self.assertEqual(r.status, 200)
         self.assertIn("/pricing</loc>", r.text)
-        self.assertIn("/templates/atelier</loc>", r.text)
+        self.assertIn("/templates/nguni</loc>", r.text)
+        self.assertNotIn("/templates/atelier</loc>", r.text)
 
     def test_register_login_logout(self):
         r = self.c.post("/register", {"name": "Lerato Dube", "email": "lerato@example.com", "password": "Sunrise-2027a",
@@ -20142,14 +21735,14 @@ class WizardTest(unittest.TestCase):
         self.user = make_user()
         login(self.c)
 
-    def create(self, category="white-wedding", template="atelier", hosts="Lerato & Sipho"):
+    def create(self, category="white-wedding", template="ribbon", hosts="Lerato & Sipho"):
         r = self.c.post("/create", {"category": category, "template": template, "hosts": hosts})
         self.assertEqual(r.status, 303, r.text[:400])
         uid = find(r"/dashboard/events/([0-9a-f]+)/setup/1", r.location)
         return uid
 
     def test_create_asks_for_names(self):
-        r = self.c.post("/create", {"category": "white-wedding", "template": "atelier"})
+        r = self.c.post("/create", {"category": "white-wedding", "template": "ribbon"})
         self.assertEqual(r.status, 200)
         self.assertIn("Add the names", r.text)
         uid = self.create()
@@ -20159,14 +21752,14 @@ class WizardTest(unittest.TestCase):
 
     def test_create_without_account_needs_name_email_and_password(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle"})
+        r = anon.post("/create", {"category": "baby-shower", "template": "matcha", "hosts": "Amahle"})
         self.assertEqual(r.status, 200)
         self.assertIn("Your name", r.text)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
+        r = anon.post("/create", {"category": "baby-shower", "template": "matcha", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1"})
         self.assertEqual(r.status, 200)
         self.assertIn("Choose a password", r.text)
-        r = anon.post("/create", {"category": "baby-shower", "template": "bloom", "hosts": "Amahle", "package": "essential",
+        r = anon.post("/create", {"category": "baby-shower", "template": "matcha", "hosts": "Amahle", "package": "essential",
                                   "contact_name": "Amahle Zulu", "contact_email": "amahle@example.com", "terms": "1",
                                   "password": "Nursery-2027b", "password_confirm": "Nursery-2027b"})
         self.assertEqual(r.status, 303, r.text[:300])
@@ -20179,7 +21772,7 @@ class WizardTest(unittest.TestCase):
 
     def test_create_with_existing_email_sends_sign_in_link(self):
         anon = Client(self.app)
-        r = anon.post("/create", {"category": "birthday", "template": "pulse", "hosts": "Kagiso's 40th", "contact_name": "Thandi",
+        r = anon.post("/create", {"category": "birthday", "template": "glitter", "hosts": "Kagiso's 40th", "contact_name": "Thandi",
                                   "contact_email": "organiser@example.com", "terms": "1"})
         self.assertEqual(r.status, 200)
         self.assertIn("sign-in link", r.text)
@@ -20195,10 +21788,10 @@ class WizardTest(unittest.TestCase):
         self.assertEqual(r.location, base + "/2")
         ev = events.get(uid)
         self.assertEqual((ev["slug"], ev["venue"]["name"]), ("lerato-and-sipho", "Avianto"))
-        r = self.c.post(base + "/2", {"template": "atelier", "palette": "stone", "font_pair": "cormorant-jost", "background": "paper",
+        r = self.c.post(base + "/2", {"template": "ribbon", "palette": "burgundy", "font_pair": "instrument-geist", "background": "paper",
                                       "monogram": "L&S", "w_welcome": "Together with their families", "nav": "next"})
         self.assertEqual(r.status, 303)
-        self.assertEqual(events.get(uid)["design"]["palette"], "stone")
+        self.assertEqual(events.get(uid)["design"]["palette"], "burgundy")
         r = self.c.post(base + "/3", {"estimated": "150", "categories": ["Family", "Friends"], "categories_other": "Choir",
                                       "plus_one_policy": "per_guest", "plus_ones_default": "1", "rsvp_deadline": "2027-02-01",
                                       "children_allowed": "1", "max_children": "2", "nav": "next"})
@@ -20261,11 +21854,11 @@ class WizardTest(unittest.TestCase):
 
     def test_image_upload_checks_content(self):
         uid = self.create()
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"},
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "ribbon", "nav": "stay"},
                              {"hero": ("evil.png", b"<script>alert(1)</script>", "image/png")})
         self.assertIn("Upload a JPG, PNG, WebP or GIF", r.text)
         png = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
-        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "atelier", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
+        r = self.c.multipart(f"/dashboard/events/{uid}/setup/2", {"template": "ribbon", "nav": "stay"}, {"hero": ("ok.png", png, "image/png")})
         self.assertEqual(r.status, 303)
         self.assertEqual(len(events.uploads(events.get(uid)["id"], "hero")), 1)
 
@@ -20747,7 +22340,7 @@ class GuestImportTests(unittest.TestCase):
 
 ### `tests/test_eventsite.py`
 
-<!-- FILE: tests/test_eventsite.py sha256=40db6c605990afa3ac8f49bad0533f71d2044106236fe60b75c0e9f5c95a33b2 nl=1 -->
+<!-- FILE: tests/test_eventsite.py sha256=65a13a7a7f9f35f04b99e317729025c8cabd64252dff96da75bccde5b8f3d325 nl=1 -->
 ```python
 """Event websites, template previews, RSVP and media access."""
 from __future__ import annotations
@@ -20795,7 +22388,7 @@ class TemplateTests(unittest.TestCase):
     def test_every_template_renders_demo(self):
         c = Client(self.app)
         slugs = [t["slug"] for t in catalog.templates()]
-        self.assertGreaterEqual(len(slugs), 10)
+        self.assertGreaterEqual(len(slugs), 9)
         bodies = set()
         for slug in slugs:
             for group in ("weddings", "baby", "parties", "other"):
@@ -20825,6 +22418,89 @@ class TemplateTests(unittest.TestCase):
         html = render(demo_event("heritage", "weddings"), "demo")
         self.assertIn("Two families", html)
         self.assertIn("The ceremonies", html)
+
+
+class InvitationCollectionTests(unittest.TestCase):
+    """The animated invitation designs replace the original ones in the catalogue."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = fresh_app("eventsite-invites")
+        cls.owner = make_user("invites-owner@example.com")
+
+    def test_catalogue_offers_the_invitation_collection_only(self):
+        offered = [t["slug"] for t in catalog.templates()]
+        self.assertEqual(offered[:3], ["nguni", "terracotta", "ribbon"])                  # weddings first
+        self.assertIn("heritage", offered)
+        for slug in catalog.RETIRED:
+            self.assertNotIn(slug, offered)
+            self.assertEqual(catalog.template(slug)["active"], 0)                         # kept, switched off
+        c = Client(self.app)
+        self.assertEqual(c.get("/templates/bloom/preview").status, 404)
+        home = c.get("/").text
+        for slug in ("nguni", "ribbon", "glitter"):
+            self.assertIn(f"/templates/{slug}/preview", home)
+        self.assertNotIn("/templates/champagne/preview", home)
+
+    def test_each_design_opens_like_an_invitation(self):
+        c = Client(self.app)
+        marks = {"nguni": ("env-flap", "nv-hide", "seal"), "weave": ("env-flap", "wv-cloth", "seal"),
+                 "terracotta": ('class="crest"', "tc-beads", 'data-countdown'), "ribbon": ("ribbon-frame", "rb-bow"),
+                 "glitter": ("gl-balloons", "disco"), "matcha": ("mt-awning", "matcha", "pball"),
+                 "festive": ("fs-arch", "snow", "tree"), "cheers": ("coupes", "cs-bub")}
+        for slug, needles in marks.items():
+            r = c.get(f"/templates/{slug}/preview?group=parties")
+            self.assertEqual(r.status, 200, slug)
+            self.assertIn("/static/css/invites.css", r.text, slug)
+            for n in needles:
+                self.assertIn(n, r.text, (slug, n))
+        self.assertNotIn("invites.css", c.get("/templates/heritage/preview").text)        # only where it's used
+
+    def test_glitter_balloons_spell_the_age(self):
+        from app.eventsite import invites
+        from app.eventsite.render import build_context
+        for hosts, name, group, want in [("Thabo's 40th", "Thabo turns 40", "parties", "40"),
+                                         ("Naledi", "Naledi turns 21", "parties", "21"),
+                                         ("Amahle", "Baby shower for Amahle", "baby", "oh baby")]:
+            ev = demo_event("glitter", group)
+            ev.update(hosts=hosts, name=name)
+            self.assertEqual(invites.balloon_text(build_context(ev, "demo")), want)
+
+    def test_motion_is_only_for_visitors_who_welcome_it(self):
+        """Every animation in invites.css sits inside @media (prefers-reduced-motion: no-preference)."""
+        from pathlib import Path
+        css = (Path(__file__).resolve().parent.parent / "static/css/invites.css").read_text()
+        depth, stack, outside = 0, [], []
+        i = 0
+        while i < len(css):
+            ch = css[i]
+            if ch == "{":
+                start = css.rfind("}", 0, i)
+                start = max(start, css.rfind("{", 0, i), css.rfind("*/", 0, i))
+                stack.append(css[start + 1:i].strip())
+                depth += 1
+            elif ch == "}":
+                stack.pop()
+                depth -= 1
+            elif css.startswith("animation:", i) or css.startswith("animation-name:", i):
+                if not any("prefers-reduced-motion: no-preference" in sel for sel in stack):
+                    outside.append(css[max(0, i - 60):i + 40])
+            i += 1
+        self.assertEqual(outside, [])
+
+    def test_existing_events_keep_a_retired_design(self):
+        ev = make_event(self.owner, template="atelier", paid="")
+        c = Client(self.app)
+        login(c, "invites-owner@example.com")
+        r = c.get(f"/dashboard/events/{ev['uid']}/setup/2")
+        self.assertEqual(r.status, 200)
+        self.assertIn('value="atelier" checked', r.text)                 # still shown as the current design
+        r = c.post(f"/dashboard/events/{ev['uid']}/setup/2", {"template": "atelier", "nav": "stay"})
+        self.assertEqual(r.status, 303, r.text[:300])
+        self.assertIn("d-atelier", render(events.by_id(ev["id"]), "preview"))
+        r = c.post(f"/dashboard/events/{ev['uid']}/setup/2", {"template": "folio", "nav": "stay"})
+        self.assertEqual(r.status, 200)                                   # but can't switch to another retired one
+        self.assertEqual(events.by_id(ev["id"])["template"], "atelier")
 
 
 class CulturalStyleTests(unittest.TestCase):
@@ -21456,7 +23132,7 @@ if __name__ == "__main__":
 
 ### `tools/add_photos.py`
 
-<!-- FILE: tools/add_photos.py sha256=2f3b9d0da4acc24013c90bf88865ea4fa40846f451e9352ea6a5ba57a18977dd nl=1 -->
+<!-- FILE: tools/add_photos.py sha256=718453f08336e1b8272ac2aefbed8caad5e3a49d4fc9cdf87cd0b62f58b9eaea nl=1 -->
 ```python
 #!/usr/bin/env python3
 """Add photos for the home page tiles and the template sample galleries.
@@ -21485,7 +23161,8 @@ from PIL import Image, ImageOps
 ROOT = Path(__file__).resolve().parent.parent
 STOCK = ROOT / "static" / "img" / "stock"
 SLOTS = ("weddings", "traditional", "baby", "parties", "other")
-TEMPLATES = ("atelier", "folio", "bloom", "heritage", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
+TEMPLATES = ("nguni", "terracotta", "ribbon", "weave", "glitter", "matcha", "festive", "cheers", "heritage",
+             "atelier", "folio", "bloom", "champagne", "linea", "confetti", "pulse", "aurora", "laureate", "cradle")
 
 
 def template_of(path: str) -> str:

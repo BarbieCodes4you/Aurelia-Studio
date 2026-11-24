@@ -8,26 +8,27 @@ permission you need.
 **For every image:** photorealistic, natural skin texture and lighting, natural-looking hands and faces,
 no text, logos or watermarks. If a face or hand looks odd, generate it again.
 
-**Shape:** "portrait 4:5" for Folio and Bloom, "square 1:1" for Heritage and Cradle, "landscape 3:2" for
-the rest. Keep the people in the middle of the picture: some templates crop to an arch, a diamond or a
-circle.
+**Shape:** "landscape 3:2" for every template except Heritage, which crops to a diamond ("square 1:1").
+In the new templates the photo appears just below the opening invitation. Keep the people in the middle
+of the picture.
 
-**Name each file after its template** (for example `heritage.jpg`) and send them to Claude: attach them
+**Name each file after its template** (for example `nguni.jpg`) and send them to Claude: attach them
 in the chat, or put the originals in a Google Drive folder for full quality. Claude resizes and adds them.
 
 | File | Template (style) | Prompt |
 | --- | --- | --- |
-| `atelier.jpg` | Atelier, minimalist luxury | Photorealistic wedding photo of a Black South African couple on their wedding day, bride in a minimalist ivory satin gown, groom in a black tuxedo, standing close and laughing, soft window light, warm ivory stone wall behind them, elegant and calm, 85mm lens, shallow depth of field, landscape 3:2, no text. |
-| `folio.jpg` | Folio, modern editorial | Photorealistic editorial-style photo of a stylish South African couple in modern wedding outfits on a Johannesburg rooftop at golden hour, city skyline softly blurred, confident fashion-magazine pose, portrait 4:5, no text. |
-| `bloom.jpg` | Bloom, romantic floral | Photorealistic photo of a smiling Black South African bride and groom under an arch of blush roses and greenery in a Cape Winelands garden, soft afternoon light, romantic and joyful, portrait 4:5, no text. |
+| `nguni.jpg` | Nguni, cowhide envelope | Photorealistic photo of a Black South African couple at their traditional wedding, bride in a beaded headpiece and an ochre and cream outfit, groom in a traditional shirt with a cowhide accent, standing beside woven baskets and dried pampas grass, warm afternoon light, joyful and elegant, landscape 3:2, couple centred, no text. |
+| `terracotta.jpg` | Terracotta, lobola | Photorealistic photo of two South African families meeting at a lobola celebration at a family home, elders in traditional dress greeting each other warmly, terracotta pots and woven mats in the yard, golden sunlight, landscape 3:2, no text. |
+| `ribbon.jpg` | Ribbon, romantic | Photorealistic photo of a smiling Black South African bride and groom in a garden, bride in a simple ivory gown with an olive-green satin bow in her hair, groom in a sage suit, soft afternoon light, romantic and modern, landscape 3:2, no text. |
+| `weave.jpg` | Weave, colourful modern | Photorealistic photo of a stylish South African couple at a colourful modern wedding, bride in a pink gown, groom in a burnt-orange suit, a backdrop of woven fabric in red, orange and pink, joyful, landscape 3:2, no text. |
+| `glitter.jpg` | Glitter, 21st birthdays | Photorealistic photo of a young South African woman celebrating her 21st birthday with friends, silver chrome "21" balloons, a disco ball and sequin outfits, sparkling party lights, energetic and stylish, landscape 3:2, no text. |
+| `matcha.jpg` | Matcha, brunches and showers | Photorealistic photo of three South African women laughing at a soft-pink pilates and matcha brunch, holding iced matcha lattes, pink and white striped decor, pastel exercise balls, bright daylight, landscape 3:2, no text. |
+| `festive.jpg` | Festive, Christmas and year-end | Photorealistic photo of a South African family at a summer Christmas lunch outdoors, a long table with red and white decorations, a small Christmas tree with red bows, everyone smiling and raising glasses, landscape 3:2, no text. |
+| `cheers.jpg` | Cheers, year-end and New Year's | Photorealistic photo of friends at a South African rooftop New Year's Eve party clinking champagne coupes, warm string lights and a city skyline at dusk, celebratory, landscape 3:2, no text. |
 | `heritage.jpg` | Heritage, traditional (7 cultural styles) | Photorealistic photo of a South African couple in traditional wedding attire at a lobola celebration, bride in beaded jewellery and a traditional headpiece, groom in a traditional shirt, family softly blurred in the background, rural homestead, warm sunlight, square 1:1, couple centred, no text. |
-| `champagne.jpg` | Champagne, black tie | Photorealistic photo of an elegant South African couple in black-tie evening wear raising champagne glasses at a candlelit gala, warm gold bokeh lights, luxurious ballroom, landscape 3:2, no text. |
-| `linea.jpg` | Linea, contemporary minimalist | Photorealistic photo of an Indian South African bride and groom in contemporary minimalist wedding attire in a light-filled modern space with clean lines and neutral tones, landscape 3:2, no text. |
-| `confetti.jpg` | Confetti, pastel celebrations | Photorealistic photo of a joyful first birthday party: a South African mother lifting her laughing toddler among pastel balloons and confetti, soft daylight, playful, landscape 3:2, no text. |
-| `pulse.jpg` | Pulse, bold modern parties | Photorealistic photo of a young South African woman celebrating her 21st birthday with friends at a night party, gold "21" balloons, disco-ball reflections and glitter, energetic and stylish, landscape 3:2, no text. |
-| `aurora.jpg` | Aurora, glass and light | Photorealistic photo of a South African couple sharing a slow dance at a modern wedding reception, dreamy iridescent pastel lighting and soft haze, romantic, landscape 3:2, no text. |
-| `laureate.jpg` | Laureate, graduations | Photorealistic photo of a proud young South African graduate in gown and cap hugging her parents on a university campus on a sunny day, landscape 3:2, no text. |
-| `cradle.jpg` | Cradle, baby celebrations | Photorealistic photo of an expecting South African couple at a baby shower, mother-to-be in a soft sage dress holding her bump, partner smiling beside her, cream and sage decor, gentle light, square 1:1, no text. |
+
+The original eleven designs (Atelier, Folio, Bloom and the rest) are no longer offered to new customers,
+so they don't need photos.
 
 **Optional, for the home page tiles and the sample galleries:** up to six photos per occasion, in
 folders named `weddings`, `traditional`, `baby`, `parties` and `other` (the first photo in each folder

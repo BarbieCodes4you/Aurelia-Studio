@@ -193,9 +193,10 @@ def build_context(ev, mode: str = "public", guest=None, req=None, notice: str = 
 
 
 def render(ev: dict, mode: str = "public", guest=None, req=None, notice: str = "", form: Optional[dict] = None) -> str:
-    from . import designs
+    from . import designs, invites
     ctx = build_context(ev, mode, guest, req, notice, form)
-    body = designs.LAYOUTS.get(ctx["design"], designs.LAYOUTS["atelier"])(ctx)
+    layout = invites.LAYOUTS.get(ctx["design"]) or designs.LAYOUTS.get(ctx["design"], designs.LAYOUTS["atelier"])
+    body = layout(ctx)
     return document(ctx, body)
 
 
@@ -304,6 +305,11 @@ def document(ctx, body: str) -> str:
     if cult:
         classes += f" cult-{cult}"
         style += themes.culture_vars(cult)
+    extra = themes.extra_font(ctx["design"])
+    if extra:
+        style += f"--ev-extra:'{extra}',var(--ev-display);"
+    from .invites import LAYOUTS as INVITES
+    invite_css = '<link rel="stylesheet" href="/static/css/invites.css">' if ctx["design"] in INVITES else ""
     return f"""<!doctype html><html lang="en-ZA"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>{esc(title)}</title>
 <meta name="description" content="{esc(desc)}">{robots}
@@ -311,8 +317,8 @@ def document(ctx, body: str) -> str:
 <meta name="theme-color" content="{esc(t['colors']['bg'])}">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="{esc(themes.fonts_url(t['display'], t['body']))}">
-<link rel="stylesheet" href="/static/css/eventsite.css">
+<link rel="stylesheet" href="{esc(themes.fonts_url(t['display'], t['body'], *([extra] if extra else [])))}">
+<link rel="stylesheet" href="/static/css/eventsite.css">{invite_css}
 </head><body class="{classes}" style="{style}">
 <a class="ev-skip" href="#ev-main">Skip to content</a>{banner(ctx)}
 <main id="ev-main">{body}</main>

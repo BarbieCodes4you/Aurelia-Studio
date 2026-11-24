@@ -1,4 +1,7 @@
-"""The eleven event-website designs.
+"""The original eleven event-website designs, and the section builders every design uses.
+
+The invitation collection (invites.py), which opens like a real invitation and is what the catalogue
+now offers, builds on these; render.py picks the layout from either.
 
 Shared section builders turn the render context into semantic HTML (only for sections that are
 visible and have content). Each design then arranges them in its own structure: a different
