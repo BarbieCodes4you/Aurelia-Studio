@@ -19924,7 +19924,7 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 
 ### `static/css/invites.css`
 
-<!-- FILE: static/css/invites.css sha256=72beba3f809666750ffa577b7d983f297dfbe50f9f700692bbe63bef184f86dd nl=1 -->
+<!-- FILE: static/css/invites.css sha256=8106062cd54e6b3174ffbf4f155a81d25c4bab6c3a6018f17ed9424aa893ad86 nl=1 -->
 ```css
 /* Aurelia invitation collection (app/eventsite/invites.py), loaded after eventsite.css.
    Each design opens like a real invitation. The finished invitation is the base style: every
@@ -19987,11 +19987,15 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 .env-flap__out, .env-flap__in { position: absolute; inset: 0; overflow: hidden; -webkit-backface-visibility: hidden; backface-visibility: hidden;
   clip-path: polygon(0 0, 100% 0, 54.5% 93%, 52.4% 96.4%, 50% 97.6%, 47.6% 96.4%, 45.5% 93%); }
 .env-flap__out { background: var(--hide-base, #eee); }
-.env-flap__out::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgb(20 10 0 / .28)); }
+.env-flap__out::after { content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(to top right, transparent 50%, rgb(20 10 0 / .42) calc(50% + .6px), rgb(255 255 255 / .22) calc(50% + 2px), transparent calc(50% + 3.5px)) 0 0 / 50.2% 97.6% no-repeat,
+    linear-gradient(to top left, transparent 50%, rgb(20 10 0 / .42) calc(50% + .6px), rgb(255 255 255 / .22) calc(50% + 2px), transparent calc(50% + 3.5px)) 100% 0 / 50.2% 97.6% no-repeat,
+    linear-gradient(180deg, transparent 50%, rgb(20 10 0 / .24)); }
 .env-flap__in { transform: rotateX(180deg); background: var(--lining);
   clip-path: polygon(0 100%, 100% 100%, 54.5% 7%, 52.4% 3.6%, 50% 2.4%, 47.6% 3.6%, 45.5% 7%); }
 .env-flap__in::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(255 255 255 / .3), transparent 45%, rgb(60 35 0 / .18)); }
-.env-flap__seal { position: absolute; left: 50%; top: 95%; width: clamp(62px, 17%, 84px); translate: -50% -50%; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.env-flap .env-flap__seal { position: absolute; left: 50%; top: 95%; width: clamp(62px, 17%, 84px); translate: -50% -50%; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 @media (prefers-reduced-motion: no-preference) {
   .env-flap { animation: env-open 1s cubic-bezier(.5, 0, .25, 1) .7s both; }
   .env-flapwrap { animation: env-under 1s linear .7s both, env-drop 1.1s cubic-bezier(.2, .8, .2, 1) 2.45s both; }
@@ -20507,6 +20511,7 @@ select.ev-input { appearance: none; background-image: linear-gradient(45deg, tra
 /* ---------- phones ---------- */
 @media (max-width: 599px) {
   .nv-hero, .wv-hero { padding-inline: 34px; }
+  .gl-sparks i:nth-child(n+9) { display: none; }
   .fs-hero, .cs-hero { padding-inline: 26px; }
   .iv-sec { padding-inline: 12px; }
   .nv-card { padding: 68px 8% 38px; }
